@@ -10,7 +10,7 @@ import {
 import { hasPublicEpisodeReadableContent } from "../../../src/lib/public-project-episodes";
 import { isChapterBasedType } from "../../../src/lib/project-utils";
 import type { PublicRouteProjectDetailPayload } from "../../../src/types/public-bootstrap";
-import PublicSiteIslandApp from "../../components/react/PublicSiteIslandApp";
+import PublicProjectDetailIsland from "../../components/react/PublicProjectDetailIsland";
 import PublicLayout from "../../layouts/PublicLayout.astro";
 import { resolveProjectPageMeta } from "../../lib/public-phase3-meta";
 
@@ -141,14 +141,13 @@ const _meta = resolveProjectPageMeta({
       </div>
     ) : null
   }
-  <PublicSiteIslandApp
-    client:load
+  <PublicProjectDetailIsland
+    client:idle
     initialPath={`${Astro.url.pathname}${Astro.url.search}`}
     initialCurrentUser={locals?.currentUser ?? null}
-    initialProjectSlug={Astro.params.slug || ""}
     initialPublicBootstrap={publicBootstrap}
     initialPublicRoutePayload={locals?.routePayload || null}
     initialSettings={locals?.siteSettings || null}
-    staticProjectHeroId={renderAstroHero ? staticProjectHeroId : undefined}
+    slug={Astro.params.slug || ""}
   />
 </PublicLayout>

@@ -1,6 +1,7 @@
 ---
 import "../../src/index.css";
 import "../../src/styles/fonts.css";
+import { ClientRouter } from "astro:transitions";
 import { serializeSchemaOrgEntry } from "../../server/lib/schema-org.js";
 import type { SiteSettings } from "../../src/types/site-settings";
 import PublicChromeIsland from "../components/react/PublicChromeIsland";
@@ -129,6 +130,7 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
     {_imageAlt ? <meta name="twitter:image:alt" content={_imageAlt} /> : null}
     <link rel="canonical" href={_canonicalUrl} />
     {_absoluteFavicon ? <link rel="icon" href={_absoluteFavicon} /> : null}
+    <ClientRouter />
     {
       Array.isArray(_structuredData)
         ? _structuredData
@@ -147,7 +149,7 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
   <body class="min-h-screen bg-background text-foreground">
     <div class:list={["flex min-h-screen flex-col bg-background text-foreground", _hasSurfaceGradient && "bg-gradient-surface"]}>
       <PublicChromeIsland
-        client:load
+        client:idle
         kind="header"
         location={_location}
         initialCurrentUser={locals?.currentUser ?? null}
@@ -161,7 +163,7 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
       </main>
 
       <PublicChromeIsland
-        client:load
+        client:idle
         kind="footer"
         location={_location}
         initialCurrentUser={locals?.currentUser ?? null}

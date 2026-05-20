@@ -1,6 +1,5 @@
 ---
 import PublicPageHero from "../components/PublicPageHero.astro";
-import PublicSiteIslandApp from "../components/react/PublicSiteIslandApp";
 import PublicTeamPageContent from "../../src/components/public-pages/PublicTeamPageContent";
 import type { PublicRouteTeamPayload } from "../../src/types/public-bootstrap";
 import { emptyPublicPagesConfig } from "../../src/types/public-pages";
@@ -29,7 +28,6 @@ const teamPage = {
   retiredSubtitle: "Agradecemos por todas as contribuicoes.",
   ...(locals?.pages?.team || {}),
 };
-const staticShellRootId = "public-team-route-shell";
 ---
 
 <PublicLayout
@@ -38,14 +36,14 @@ const staticShellRootId = "public-team-route-shell";
   image={meta.image}
   imageAlt={meta.imageAlt}
 >
-  <div id={staticShellRootId} class="min-h-screen bg-background text-foreground">
+  <div class="min-h-screen bg-background text-foreground">
     <PublicPageHero
       badge={teamPage.heroBadge}
       title={teamPage.heroTitle}
       subtitle={teamPage.heroSubtitle}
     />
     <PublicTeamPageContent
-      client:load
+      client:idle
       isLoading={false}
       linkTypes={routePayload?.teamLinkTypes || []}
       mediaVariants={routePayload?.mediaVariants || {}}
@@ -54,13 +52,4 @@ const staticShellRootId = "public-team-route-shell";
       siteSettings={locals?.siteSettings || null}
     />
   </div>
-  <PublicSiteIslandApp
-    client:load
-    initialPath={`${Astro.url.pathname}${Astro.url.search}`}
-    initialCurrentUser={locals?.currentUser ?? null}
-    initialPublicBootstrap={locals?.publicBootstrap || null}
-    initialPublicRoutePayload={locals?.routePayload || null}
-    initialSettings={locals?.siteSettings || null}
-    staticShellRootId={staticShellRootId}
-  />
 </PublicLayout>

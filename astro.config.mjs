@@ -6,6 +6,10 @@ import { classifyManualChunk } from "./src/lib/build-chunking";
 
 export default defineConfig({
   integrations: [react()],
+  prefetch: {
+    defaultStrategy: "hover",
+    prefetchAll: false,
+  },
   output: "server",
   adapter: node({
     mode: "middleware",

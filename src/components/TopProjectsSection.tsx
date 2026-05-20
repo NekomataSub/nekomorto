@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import PublicProjectCard, {
   PUBLIC_PROJECT_CARD_CLAMP_PROFILES,
@@ -9,7 +9,6 @@ import PublicProjectCard, {
 import { Combobox } from "@/components/public-form-controls";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDynamicSynopsisClamp } from "@/hooks/use-dynamic-synopsis-clamp";
 import { usePublicBootstrap } from "@/hooks/use-public-bootstrap";
 
 const TOP_PROJECTS_LIMIT = 10;
@@ -134,21 +133,13 @@ const TopProjectsSection = () => {
       .slice(0, TOP_PROJECTS_LIMIT);
   }, [mode, projects, referenceDate]);
 
-  const synopsisKeys = useMemo(() => topProjects.map((item) => item.id), [topProjects]);
-  const resolveSidebarSynopsisMaxLines = useCallback(
-    ({ columnWidth, defaultMaxLines }: { columnWidth: number; defaultMaxLines: number }) =>
-      resolvePublicProjectCardResponsiveMaxLines({
-        profile: sidebarClampProfile,
-        columnWidth,
-        defaultMaxLines,
-      }),
-    [],
-  );
-  const { rootRef: synopsisRootRef, lineByKey } = useDynamicSynopsisClamp({
-    enabled: topProjects.length > 0,
-    keys: synopsisKeys,
-    maxLines: sidebarClampProfile.defaultMaxLines,
-    resolveMaxLines: resolveSidebarSynopsisMaxLines,
+  const defaultSynopsisClampState = resolvePublicProjectCardClampState({
+    profile: sidebarClampProfile,
+    lines: resolvePublicProjectCardResponsiveMaxLines({
+      profile: sidebarClampProfile,
+      columnWidth: 280,
+      defaultMaxLines: sidebarClampProfile.defaultMaxLines,
+    }),
   });
 
   return (
@@ -209,7 +200,6 @@ const TopProjectsSection = () => {
         ) : (
           <div className="top-projects-viewport">
             <div
-              ref={synopsisRootRef}
               data-testid="top-projects-scroll-region"
               style={listLayoutStyle}
               className="top-projects-scroll-region no-scrollbar"
@@ -222,11 +212,6 @@ const TopProjectsSection = () => {
                       : mode === "7d"
                         ? entry.views7d
                         : entry.viewsAll;
-                  const synopsisClampState = resolvePublicProjectCardClampState({
-                    profile: sidebarClampProfile,
-                    lines: lineByKey[entry.id],
-                  });
-
                   return (
                     <PublicProjectCard
                       key={entry.id}
@@ -245,8 +230,8 @@ const TopProjectsSection = () => {
                           entry.project.description ||
                           "Sem sinopse cadastrada.",
                         synopsisKey: entry.id,
-                        synopsisLines: synopsisClampState.synopsisLines,
-                        synopsisClampClass: synopsisClampState.synopsisClampClass,
+                        synopsisLines: defaultSynopsisClampState.synopsisLines,
+                        synopsisClampClass: defaultSynopsisClampState.synopsisClampClass,
                         trailingStats: [
                           {
                             key: "rank",

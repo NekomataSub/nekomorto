@@ -5,7 +5,6 @@ import type { AboutPageConfig } from "../../src/types/public-pages";
 import { Flame, Sparkles } from "lucide-react";
 import { normalizeAboutPublicPage } from "../../shared/public-page-content.js";
 import PublicPageHero from "../components/PublicPageHero.astro";
-import PublicSiteIslandApp from "../components/react/PublicSiteIslandApp";
 import { buildInstitutionalPageMeta } from "../lib/public-page-meta";
 import { astroStaticRevealClassName } from "../lib/public-reveal";
 import PublicLayout from "../layouts/PublicLayout.astro";
@@ -17,11 +16,10 @@ const meta = buildInstitutionalPageMeta({
   pages: locals?.pages,
   siteSettings: locals?.siteSettings,
 });
-const staticShellRootId = "public-about-route-shell";
 ---
 
 <PublicLayout title={meta.title || "Sobre"} description={meta.description} image={meta.image} imageAlt={meta.imageAlt}>
-  <div id={staticShellRootId} class="min-h-screen bg-background text-foreground">
+  <div class="min-h-screen bg-background text-foreground">
     <main>
       <PublicPageHero
         badge={about.heroBadge}
@@ -115,13 +113,4 @@ const staticShellRootId = "public-about-route-shell";
       ) : null}
     </main>
   </div>
-  <PublicSiteIslandApp
-    client:load
-    initialPath={`${Astro.url.pathname}${Astro.url.search}`}
-    initialCurrentUser={locals?.currentUser ?? null}
-    initialPublicBootstrap={locals?.publicBootstrap || null}
-    initialPublicRoutePayload={locals?.routePayload || null}
-    initialSettings={locals?.siteSettings || null}
-    staticShellRootId={staticShellRootId}
-  />
 </PublicLayout>

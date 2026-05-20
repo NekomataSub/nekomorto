@@ -509,13 +509,15 @@ const HeroSlideFrame = ({
                   <UploadPicture
                     src={slide.heroLogoUrl}
                     alt={slide.heroLogoAlt || `Marca oficial de ${slide.title}`}
-                    preset="card"
+                    preset="cardHomeXs"
                     mediaVariants={mediaVariants}
+                    sizes="(max-width: 768px) min(72vw, 22rem), 387px"
                     className="hero-home__brand-picture"
                     imgClassName="hero-home__brand-image"
                     style={heroLogoImageStyle}
                     loading={isPrioritySlide ? "eager" : "lazy"}
                     decoding="async"
+                    fetchPriority={isPrioritySlide ? "high" : "auto"}
                   />
                 </div>
               </div>

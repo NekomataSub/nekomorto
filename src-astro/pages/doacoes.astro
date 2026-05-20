@@ -1,6 +1,5 @@
 ---
 import PublicPageHero from "../components/PublicPageHero.astro";
-import PublicSiteIslandApp from "../components/react/PublicSiteIslandApp";
 import PublicDonationsPageContent from "../../src/components/public-pages/PublicDonationsPageContent";
 import type { PublicRouteDonationsPayload } from "../../src/types/public-bootstrap";
 import { emptyPublicPagesConfig } from "../../src/types/public-pages";
@@ -25,7 +24,6 @@ const donations = {
 };
 const merchantName =
   locals?.siteSettings?.site?.name || locals?.siteSettings?.footer?.brandName || "Nekomata";
-const staticShellRootId = "public-donations-route-shell";
 ---
 
 <PublicLayout
@@ -34,23 +32,14 @@ const staticShellRootId = "public-donations-route-shell";
   image={meta.image}
   imageAlt={meta.imageAlt}
 >
-  <div id={staticShellRootId} class="min-h-screen bg-background text-foreground">
+  <div class="min-h-screen bg-background text-foreground">
     <PublicPageHero title={donations.heroTitle} subtitle={donations.heroSubtitle} />
     <PublicDonationsPageContent
-      client:load
+      client:idle
       donations={donations}
       merchantName={merchantName}
       routePayload={routePayload}
       shouldShowHydrationState={false}
     />
   </div>
-  <PublicSiteIslandApp
-    client:load
-    initialPath={`${Astro.url.pathname}${Astro.url.search}`}
-    initialCurrentUser={locals?.currentUser ?? null}
-    initialPublicBootstrap={locals?.publicBootstrap || null}
-    initialPublicRoutePayload={locals?.routePayload || null}
-    initialSettings={locals?.siteSettings || null}
-    staticShellRootId={staticShellRootId}
-  />
 </PublicLayout>

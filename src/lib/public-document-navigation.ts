@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 
 export const PUBLIC_DOCUMENT_LOCATION_CHANGE_EVENT = "nekomata:public-document-location-change";
 
-const isPublicAstroClientRoutePath = (value: string) => {
+export const isPublicAstroClientRoutePath = (value: string) => {
   const pathname = normalizePathname(value);
   const routeKind = resolvePublicRouteKind(pathname);
   return (
@@ -129,10 +129,12 @@ export const usePublicDocumentLocation = (initialPath = "/") => {
       setLocation(buildBrowserLocationSnapshot());
     };
 
+    document.addEventListener("astro:page-load", sync as EventListener);
     window.addEventListener("pageshow", sync);
     window.addEventListener("popstate", sync);
     window.addEventListener(PUBLIC_DOCUMENT_LOCATION_CHANGE_EVENT, sync as EventListener);
     return () => {
+      document.removeEventListener("astro:page-load", sync as EventListener);
       window.removeEventListener("pageshow", sync);
       window.removeEventListener("popstate", sync);
       window.removeEventListener(PUBLIC_DOCUMENT_LOCATION_CHANGE_EVENT, sync as EventListener);

@@ -1,6 +1,5 @@
 ---
 /* biome-ignore-all lint/correctness/noUnusedVariables: Astro template consumes frontmatter bindings. */
-import PublicSiteIslandApp from "../components/react/PublicSiteIslandApp";
 import PublicLayout from "../layouts/PublicLayout.astro";
 import { buildInstitutionalPageMeta } from "../lib/public-page-meta";
 
@@ -10,7 +9,6 @@ const meta = buildInstitutionalPageMeta({
   pages: locals?.pages,
   siteSettings: locals?.siteSettings,
 });
-const staticShellRootId = "public-terms-route-shell";
 ---
 
 <PublicLayout
@@ -19,7 +17,7 @@ const staticShellRootId = "public-terms-route-shell";
   image={meta.image}
   imageAlt={meta.imageAlt}
 >
-  <section id={staticShellRootId} class="mx-auto max-w-3xl px-6 pb-20 pt-16 md:px-8 md:pt-24">
+  <section class="mx-auto max-w-3xl px-6 pb-20 pt-16 md:px-8 md:pt-24">
     <div class="space-y-10 rounded-3xl border border-border/60 bg-card/75 p-6 shadow-sm md:p-8">
       <header class="space-y-3">
         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
@@ -82,13 +80,4 @@ const staticShellRootId = "public-terms-route-shell";
       </section>
     </div>
   </section>
-  <PublicSiteIslandApp
-    client:load
-    initialPath={`${Astro.url.pathname}${Astro.url.search}`}
-    initialCurrentUser={locals?.currentUser ?? null}
-    initialPublicBootstrap={locals?.publicBootstrap || null}
-    initialPublicRoutePayload={locals?.routePayload || null}
-    initialSettings={locals?.siteSettings || null}
-    staticShellRootId={staticShellRootId}
-  />
 </PublicLayout>

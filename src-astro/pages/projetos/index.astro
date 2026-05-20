@@ -1,5 +1,5 @@
 ---
-import PublicSiteIslandApp from "../../components/react/PublicSiteIslandApp";
+import PublicProjectsIsland from "../../components/react/PublicProjectsIsland";
 import PublicLayout from "../../layouts/PublicLayout.astro";
 import { resolveProjectsPageMeta } from "../../lib/public-phase3-meta";
 
@@ -22,8 +22,8 @@ const _meta = resolveProjectsPageMeta({
   structuredData={_meta.structuredData}
   title={_meta.title}
 >
-  <PublicSiteIslandApp
-    client:load
+  <PublicProjectsIsland
+    client:idle
     initialPath={`${Astro.url.pathname}${Astro.url.search}`}
     initialCurrentUser={locals?.currentUser ?? null}
     initialPublicBootstrap={publicBootstrap}
