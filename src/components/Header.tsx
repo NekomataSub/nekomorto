@@ -6,6 +6,7 @@ import ThemeModeSwitcher from "@/components/ThemeModeSwitcher";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { floatingSurfaceShadowClassName } from "@/components/ui/floating-surface";
+import { toast } from "@/components/ui/use-toast";
 import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePublicCurrentUser } from "@/hooks/use-public-current-user";
@@ -60,17 +61,7 @@ const loadHeaderActionMenusModule = () => {
 const HeaderActionMenus = lazy(() =>
   loadHeaderActionMenusModule().then((module) => ({ default: module.default })),
 );
-let toastModulePromise: Promise<typeof import("@/components/ui/use-toast")> | null = null;
-
-const loadToastModule = () => {
-  if (!toastModulePromise) {
-    toastModulePromise = import("@/components/ui/use-toast");
-  }
-  return toastModulePromise;
-};
-
-const notifyToast = async (payload: HeaderToastPayload) => {
-  const { toast } = await loadToastModule();
+const notifyToast = (payload: HeaderToastPayload) => {
   toast(payload);
 };
 
