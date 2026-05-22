@@ -1,3 +1,14 @@
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronRight,
+  ExternalLink,
+  FileArchive,
+  Loader2,
+  Plus,
+  Search,
+} from "lucide-react";
+import { memo, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
 import { Combobox, Input } from "@/components/dashboard/dashboard-form-controls";
 import {
@@ -15,27 +26,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { ComboboxOption } from "@/components/ui/combobox";
 import {
-  chapterHasContent,
-  chapterStatusLabel,
   type ChapterFilterMode,
   type ChapterStructureGroup,
+  chapterHasContent,
+  chapterStatusLabel,
 } from "@/lib/dashboard-project-chapter";
 import {
   buildDashboardProjectChapterEditorHref,
   buildProjectPublicReadingHref,
 } from "@/lib/project-editor-routes";
 import { buildEpisodeKey } from "@/lib/project-episode-key";
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronRight,
-  ExternalLink,
-  FileArchive,
-  Loader2,
-  Plus,
-  Search,
-} from "lucide-react";
-import { memo, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   normalizeProjectEpisodeContentFormat,
   normalizeProjectEpisodePages,
@@ -530,9 +530,12 @@ export const ChapterEditorStructureSection = memo(
                                                 }
                                               >
                                                 {isReorderingEpisodeUp ? (
-                                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                                  <Loader2
+                                                    className="h-4 w-4 animate-spin"
+                                                    aria-hidden="true"
+                                                  />
                                                 ) : (
-                                                  <ArrowUp className="h-4 w-4" />
+                                                  <ArrowUp className="h-4 w-4" aria-hidden="true" />
                                                 )}
                                               </DashboardActionButton>
                                               <DashboardActionButton
@@ -555,9 +558,15 @@ export const ChapterEditorStructureSection = memo(
                                                 }
                                               >
                                                 {isReorderingEpisodeDown ? (
-                                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                                  <Loader2
+                                                    className="h-4 w-4 animate-spin"
+                                                    aria-hidden="true"
+                                                  />
                                                 ) : (
-                                                  <ArrowDown className="h-4 w-4" />
+                                                  <ArrowDown
+                                                    className="h-4 w-4"
+                                                    aria-hidden="true"
+                                                  />
                                                 )}
                                               </DashboardActionButton>
                                             </>
@@ -575,7 +584,10 @@ export const ChapterEditorStructureSection = memo(
                                                 handleOpenReadingPage();
                                               }}
                                             >
-                                              <ExternalLink className="h-4 w-4" />
+                                              <ExternalLink
+                                                className="h-4 w-4"
+                                                aria-hidden="true"
+                                              />
                                             </DashboardActionButton>
                                           ) : null}
                                         </div>
