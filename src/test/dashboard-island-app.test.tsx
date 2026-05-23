@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import DashboardIslandApp from "./DashboardIslandApp";
+import DashboardIslandApp from "../../src-astro/components/react/DashboardIslandApp";
 
 const useRevealMock = vi.hoisted(() => vi.fn());
 const initRouteMotionMock = vi.hoisted(() => vi.fn(() => undefined));
@@ -52,8 +52,6 @@ describe("DashboardIslandApp", () => {
   });
 
   it("mantem atalhos globais roteados dentro do island da dashboard", async () => {
-    window.history.replaceState({}, "", "/dashboard");
-
     render(<DashboardIslandApp />);
 
     expect(await screen.findByText("dashboard-route-content")).toBeInTheDocument();

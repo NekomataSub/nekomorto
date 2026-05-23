@@ -1,7 +1,7 @@
 import AppLoadingFallback from "@/components/AppLoadingFallback";
 import { AppProviders } from "@/components/AppProviders";
 import ScrollToTop from "@/components/ScrollToTop";
-import { GlobalShortcutsProvider } from "@/hooks/global-shortcuts-provider";
+import { RoutedGlobalShortcutsProvider } from "@/hooks/global-shortcuts-provider";
 import { useReveal } from "@/hooks/use-reveal";
 import { scheduleOnBrowserLoadIdle } from "@/lib/browser-idle";
 import { initRouteMotion } from "@/lib/route-motion";
@@ -123,10 +123,10 @@ const App = ({
     <AppProviders initialSettings={initialSettings} initiallyLoaded={initiallyLoaded}>
       <DeferredToaster />
       <BrowserRouter>
-        <GlobalShortcutsProvider>
+        <RoutedGlobalShortcutsProvider>
           <ScrollToTop />
           <RouterShell />
-        </GlobalShortcutsProvider>
+        </RoutedGlobalShortcutsProvider>
       </BrowserRouter>
     </AppProviders>
   );

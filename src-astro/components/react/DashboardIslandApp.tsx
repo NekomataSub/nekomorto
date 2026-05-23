@@ -1,5 +1,6 @@
 import { AppProviders } from "@/components/AppProviders";
 import ScrollToTop from "@/components/ScrollToTop";
+import { RoutedGlobalShortcutsProvider } from "@/hooks/global-shortcuts-provider";
 import { useReveal } from "@/hooks/use-reveal";
 import { initRouteMotion } from "@/lib/route-motion";
 import DashboardRoutes from "@/routes/DashboardRoutes";
@@ -55,7 +56,9 @@ const DashboardIslandApp = ({ initialCurrentUser, initialSettings }: DashboardIs
     initiallyLoaded={Boolean(initialSettings)}
   >
     <BrowserRouter>
-      <DashboardRouterShell />
+      <RoutedGlobalShortcutsProvider>
+        <DashboardRouterShell />
+      </RoutedGlobalShortcutsProvider>
     </BrowserRouter>
   </AppProviders>
 );

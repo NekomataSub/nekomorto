@@ -1,4 +1,7 @@
-import { GlobalShortcutsProvider } from "@/hooks/global-shortcuts-provider";
+import {
+  GlobalShortcutsProvider,
+  RoutedGlobalShortcutsProvider,
+} from "@/hooks/global-shortcuts-provider";
 import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
@@ -29,8 +32,17 @@ const ShortcutHarness = ({ dashboardHref = "/dashboard/posts" }: { dashboardHref
 const renderHarness = (dashboardHref?: string) =>
   render(
     <MemoryRouter initialEntries={["/"]}>
-      <GlobalShortcutsProvider>
+      <RoutedGlobalShortcutsProvider>
         <ShortcutHarness dashboardHref={dashboardHref} />
+      </RoutedGlobalShortcutsProvider>
+    </MemoryRouter>,
+  );
+
+const renderDocumentNavigationHarness = (navigateToHref: (href: string) => void) =>
+  render(
+    <MemoryRouter initialEntries={["/"]}>
+      <GlobalShortcutsProvider navigateToHref={navigateToHref}>
+        <ShortcutHarness dashboardHref="/dashboard/analytics" />
       </GlobalShortcutsProvider>
     </MemoryRouter>,
   );
@@ -71,6 +83,17 @@ describe("GlobalShortcutsProvider", () => {
     fireEvent.keyDown(window, { key: "d" });
 
     expect(screen.getByTestId("pathname")).toHaveTextContent("/dashboard/analytics");
+  });
+
+  it("permite trocar a estrategia de navegacao do provider base", () => {
+    const navigateToHref = vi.fn();
+    renderDocumentNavigationHarness(navigateToHref);
+
+    fireEvent.keyDown(window, { key: "g" });
+    fireEvent.keyDown(window, { key: "d" });
+
+    expect(navigateToHref).toHaveBeenCalledWith("/dashboard/analytics");
+    expect(screen.getByTestId("pathname")).toHaveTextContent("/");
   });
 
   it("cancela o chord quando expira ou quando a segunda tecla é inválida", () => {

@@ -5,12 +5,31 @@ import { useNavigate } from "react-router-dom";
 
 const DASHBOARD_CHORD_TIMEOUT_MS = 800;
 
-export const GlobalShortcutsProvider = ({ children }: { children: ReactNode }) => {
-  const navigate = useNavigate();
+type GlobalShortcutsProviderProps = {
+  children: ReactNode;
+  navigateToHref?: (href: string) => void;
+};
+
+const navigateWithDocument = (href: string) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.location.assign(href);
+};
+
+export const GlobalShortcutsProvider = ({
+  children,
+  navigateToHref = navigateWithDocument,
+}: GlobalShortcutsProviderProps) => {
+  const navigateToHrefRef = useRef(navigateToHref);
   const openSearchActionRef = useRef<(() => void) | null>(null);
   const dashboardHrefResolverRef = useRef<(() => string) | null>(null);
   const isDashboardChordArmedRef = useRef(false);
   const dashboardChordTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    navigateToHrefRef.current = navigateToHref;
+  }, [navigateToHref]);
 
   const clearDashboardChord = useCallback(() => {
     isDashboardChordArmedRef.current = false;
@@ -78,7 +97,7 @@ export const GlobalShortcutsProvider = ({ children }: { children: ReactNode }) =
         event.preventDefault();
         const href = dashboardHrefResolverRef.current?.() || "/dashboard";
         clearDashboardChord();
-        navigate(href);
+        navigateToHrefRef.current(href);
         return;
       }
 
@@ -98,7 +117,7 @@ export const GlobalShortcutsProvider = ({ children }: { children: ReactNode }) =
       window.removeEventListener("blur", handleWindowBlur);
       clearDashboardChord();
     };
-  }, [armDashboardChord, clearDashboardChord, navigate]);
+  }, [armDashboardChord, clearDashboardChord]);
 
   const value = useMemo(
     () => ({
@@ -110,6 +129,20 @@ export const GlobalShortcutsProvider = ({ children }: { children: ReactNode }) =
 
   return (
     <GlobalShortcutsContext.Provider value={value}>{children}</GlobalShortcutsContext.Provider>
+  );
+};
+
+export const RoutedGlobalShortcutsProvider = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
+  const navigateToHref = useCallback(
+    (href: string) => {
+      navigate(href);
+    },
+    [navigate],
+  );
+
+  return (
+    <GlobalShortcutsProvider navigateToHref={navigateToHref}>{children}</GlobalShortcutsProvider>
   );
 };
 

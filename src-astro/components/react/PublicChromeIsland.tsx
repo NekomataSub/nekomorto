@@ -1,6 +1,7 @@
 import { AppProviders } from "@/components/AppProviders";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import { GlobalShortcutsProvider } from "@/hooks/global-shortcuts-provider";
 import type { PublicBootstrapPayload, PublicRoutePayload } from "@/types/public-bootstrap";
 import type { SiteSettings } from "@/types/site-settings";
 
@@ -11,6 +12,7 @@ interface PublicChromeIslandProps {
   initialSettings?: SiteSettings | null;
   kind: "footer" | "header";
   location: string;
+  navigateToHref?: (href: string) => void;
 }
 
 const PublicChromeIsland = ({
@@ -20,8 +22,16 @@ const PublicChromeIsland = ({
   initialSettings,
   kind,
   location,
+  navigateToHref,
 }: PublicChromeIslandProps) => {
-  const chrome = kind === "header" ? <Header variant="fixed" locationPath={location} /> : <Footer />;
+  const chrome =
+    kind === "header" ? <Header variant="fixed" locationPath={location} /> : <Footer />;
+  const shortcutAwareChrome =
+    kind === "header" ? (
+      <GlobalShortcutsProvider navigateToHref={navigateToHref}>{chrome}</GlobalShortcutsProvider>
+    ) : (
+      chrome
+    );
   const content = (
     <AppProviders
       initialCurrentUser={initialCurrentUser}
@@ -30,7 +40,7 @@ const PublicChromeIsland = ({
       initialSettings={initialSettings ?? initialPublicBootstrap?.settings}
       initiallyLoaded={Boolean(initialSettings ?? initialPublicBootstrap?.settings)}
     >
-      {chrome}
+      {shortcutAwareChrome}
     </AppProviders>
   );
 
