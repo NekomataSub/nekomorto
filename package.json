@@ -64,7 +64,11 @@
     "typecheck:ts7-preview": "npm exec --package=@typescript/native-preview@7.0.0-dev.20260401.1 -- tsgo -b --pretty false",
     "test": "vitest run",
     "test:a11y": "vitest run --config vitest.a11y.config.ts",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:local:up": "node scripts/local-postgres.mjs up",
+    "db:local:down": "node scripts/local-postgres.mjs down",
+    "db:local:ps": "node scripts/local-postgres.mjs ps",
+    "db:local:logs": "node scripts/local-postgres.mjs logs"
   },
   "dependencies": {
     "@astrojs/react": "4.4.1",

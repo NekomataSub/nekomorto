@@ -69,6 +69,25 @@ describe("SidebarMenuButton tooltip mounting", () => {
     expect(screen.getByRole("button", { name: "Posts" })).toBeInTheDocument();
   });
 
+  it("mantem o mesmo peso de texto no botao ativo da sidebar", () => {
+    mockMatchMedia(false);
+    clearSidebarCookie();
+
+    render(
+      <SidebarProvider open>
+        <SidebarMenuButton isActive tooltip="Posts">
+          Posts
+        </SidebarMenuButton>
+      </SidebarProvider>,
+    );
+
+    const button = screen.getByRole("button", { name: "Posts" });
+
+    expect(button).toHaveAttribute("data-active", "true");
+    expect(button).toHaveClass("font-semibold");
+    expect(button.className).not.toContain("data-[active=true]:font-medium");
+  });
+
   it("nao monta tooltip em mobile mesmo com a sidebar colapsada", () => {
     mockMatchMedia(true);
     clearSidebarCookie();
