@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { defaultSettings, mergeSettings } from "@/hooks/site-settings-context";
 import { useDashboardRefreshToast } from "@/hooks/use-dashboard-refresh-toast";
@@ -6,8 +7,8 @@ import {
   readDashboardSettingsCache,
   writeDashboardSettingsCache,
 } from "@/lib/dashboard-settings-cache";
+import { compareEn } from "@/lib/search-ranking";
 import type { SiteSettings } from "@/types/site-settings";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { type LinkTypeItem, normalizeDefaultShareImageSettings } from "./shared";
 
 type UseDashboardSettingsLoadingOptions = {
@@ -156,9 +157,9 @@ export const useDashboardSettingsLoading = ({
               });
             }
           });
-          nextKnownTags = Array.from(tags).sort((a, b) => a.localeCompare(b, "en"));
-          nextKnownGenres = Array.from(genres).sort((a, b) => a.localeCompare(b, "en"));
-          nextKnownStaffRoles = Array.from(staffRoles).sort((a, b) => a.localeCompare(b, "en"));
+          nextKnownTags = Array.from(tags).sort(compareEn);
+          nextKnownGenres = Array.from(genres).sort(compareEn);
+          nextKnownStaffRoles = Array.from(staffRoles).sort(compareEn);
         }
         setKnownTags(nextKnownTags);
         setKnownGenres(nextKnownGenres);
