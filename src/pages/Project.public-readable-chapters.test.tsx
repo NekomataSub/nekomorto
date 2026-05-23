@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ProjectPage from "@/pages/Project";
+import { clearPublicRoutePreloadCacheForTests } from "@/routes/public-preload";
 
 const apiFetchMock = vi.hoisted(() => vi.fn());
 const useSiteSettingsMock = vi.hoisted(() => vi.fn());
@@ -163,6 +164,7 @@ const setupApiMock = (project: Record<string, unknown>) => {
 
 describe("Project public readable chapters", () => {
   beforeEach(() => {
+    clearPublicRoutePreloadCacheForTests();
     apiFetchMock.mockReset();
     useSiteSettingsMock.mockReset();
     useSiteSettingsMock.mockReturnValue({

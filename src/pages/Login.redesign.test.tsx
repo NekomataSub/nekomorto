@@ -14,6 +14,19 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
+vi.mock("@/lib/public-document-navigation", () => ({
+  navigatePublicDocument: (href: string, options?: unknown) => navigateMock(href, options),
+  usePublicDocumentLocation: () => {
+    const parsed = new URL(locationHref, "http://localhost");
+    return {
+      hash: parsed.hash,
+      href: `${parsed.pathname}${parsed.search}${parsed.hash}`,
+      pathname: parsed.pathname,
+      search: parsed.search,
+    };
+  },
+}));
+
 vi.mock("@/hooks/use-page-meta", () => ({
   usePageMeta: () => undefined,
 }));
@@ -38,6 +51,21 @@ const installLocationMock = () => {
     set href(value: string) {
       locationHref = value;
     },
+    get hash() {
+      return new URL(locationHref, "http://localhost").hash;
+    },
+    get origin() {
+      return new URL(locationHref, "http://localhost").origin;
+    },
+    get pathname() {
+      return new URL(locationHref, "http://localhost").pathname;
+    },
+    get search() {
+      return new URL(locationHref, "http://localhost").search;
+    },
+    assign(value: string) {
+      locationHref = value;
+    },
   } as unknown as Location;
 
   Object.defineProperty(window, "location", {
@@ -53,6 +81,7 @@ const mockResponse = (ok: boolean) =>
   }) as Response;
 
 const renderLogin = async (route = "/login") => {
+  locationHref = `http://localhost${route}`;
   const utils = render(
     <MemoryRouter initialEntries={[route]}>
       <Login />

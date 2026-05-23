@@ -5,8 +5,8 @@ import { SiteSettingsProvider } from "@/hooks/site-settings-provider";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 
 const apiFetchMock = vi.hoisted(() => vi.fn());
-const useResolvedPublicBootstrapMock = vi.hoisted(
-  () => vi.fn<() => Record<string, unknown> | null>(() => null),
+const useResolvedPublicBootstrapMock = vi.hoisted(() =>
+  vi.fn<() => Record<string, unknown> | null>(() => null),
 );
 
 vi.mock("@/lib/api-base", () => ({

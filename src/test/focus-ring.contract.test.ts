@@ -257,8 +257,8 @@ describe("focus ring contract", () => {
     expect(muiFieldsSource).toContain("displayTimeToCanonical");
     expect(muiFieldsSource).toContain("baseInputClassName");
     expect(muiFieldsSource).toContain("dashboardFilterInputClassName");
-    expect(muiFieldsSource).toContain("placeholder=\"dd/mm/aaaa\"");
-    expect(muiFieldsSource).toContain("placeholder=\"hh:mm\"");
+    expect(muiFieldsSource).toContain('placeholder="dd/mm/aaaa"');
+    expect(muiFieldsSource).toContain('placeholder="hh:mm"');
     expect(muiFieldsSource).not.toContain("@mui/x-date-pickers");
     expect(muiFieldsSource).not.toContain("LocalizationProvider");
   });

@@ -7,10 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import { useResolvedPublicBootstrap } from "@/hooks/public-bootstrap-provider";
 import { resolveAboutIcon } from "@/lib/institutional-page-icons";
-import {
-  Flame,
-  Sparkles,
-} from "lucide-react";
+import { Flame, Sparkles } from "lucide-react";
 import { useMemo } from "react";
 import {
   buildInstitutionalOgImageAlt,

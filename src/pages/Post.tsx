@@ -1,5 +1,6 @@
 import { CalendarDays, Clock, User } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 
 import CommentsSection from "@/components/CommentsSection";
 import PublicLink from "@/components/PublicLink";
@@ -184,7 +185,8 @@ const resolvePostSlugFromPath = (pathname: string) => {
 
 const Post = ({ slug: slugProp }: { slug?: string }) => {
   const location = usePublicDocumentLocation();
-  const slug = slugProp || resolvePostSlugFromPath(location.pathname);
+  const params = useParams();
+  const slug = slugProp || resolvePostSlugFromPath(location.pathname) || params.slug;
   const apiBase = getApiBase();
   const resolvedBootstrap = useResolvedPublicBootstrap();
   const [bootstrapData] = useState<PublicBootstrapPayload | null>(() => resolvedBootstrap);

@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ProjectPage from "@/pages/Project";
+import { clearPublicRoutePreloadCacheForTests } from "@/routes/public-preload";
 
 const apiFetchMock = vi.hoisted(() => vi.fn());
 const useSiteSettingsMock = vi.hoisted(() => vi.fn());
@@ -55,6 +56,7 @@ const findAncestor = (
 
 describe("Project mobile download card layout", () => {
   beforeEach(() => {
+    clearPublicRoutePreloadCacheForTests();
     apiFetchMock.mockReset();
     useSiteSettingsMock.mockReset();
 

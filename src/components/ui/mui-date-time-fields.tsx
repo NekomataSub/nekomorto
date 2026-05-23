@@ -29,8 +29,7 @@ const muiDateTimeFieldEditorClassName = "mui-date-time-field--editor";
 const muiDateTimeFieldDashboardFilterClassName = "mui-date-time-field--dashboard-filter";
 const baseInputClassName =
   "h-10 min-w-0 rounded-[calc(var(--radius)-2px)] border-input bg-background text-base md:text-sm";
-const dashboardFilterInputClassName =
-  "h-11 rounded-xl border-border/60 bg-background/60";
+const dashboardFilterInputClassName = "h-11 rounded-xl border-border/60 bg-background/60";
 
 const parseDisplayDateToDate = (value: string, previousValue: Date | null) => {
   const iso = displayDateToIso(value);
@@ -47,7 +46,9 @@ const parseDisplayDateToDate = (value: string, previousValue: Date | null) => {
 const parseDisplayTimeToDate = (value: string, previousValue: Date | null) => {
   const trimmed = String(value || "").trim();
   const matched = trimmed.match(/^(\d{1,2}):(\d{2})$/);
-  const canonical = matched ? `${matched[1].padStart(2, "0")}:${matched[2]}:00` : displayTimeToCanonical(trimmed);
+  const canonical = matched
+    ? `${matched[1].padStart(2, "0")}:${matched[2]}:00`
+    : displayTimeToCanonical(trimmed);
   if (!canonical) {
     return null;
   }
@@ -65,7 +66,8 @@ const parseDisplayTimeToDate = (value: string, previousValue: Date | null) => {
   return normalizeDate(next);
 };
 
-const formatDateValue = (value: Date | null) => (value ? isoToDisplayDate(value.toISOString()) : "");
+const formatDateValue = (value: Date | null) =>
+  value ? isoToDisplayDate(value.toISOString()) : "";
 
 const formatTimeValue = (value: Date | null) =>
   value

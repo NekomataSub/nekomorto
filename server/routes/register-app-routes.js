@@ -1,10 +1,6 @@
 import { isReservedPublicPath } from "../../shared/public-paths.js";
 
-export const registerAppRoutes = ({
-  app,
-  sendHtml,
-  getIndexHtml,
-} = {}) => {
+export const registerAppRoutes = ({ app, sendHtml, getIndexHtml } = {}) => {
   app.get("/{*path}", async (req, res) => {
     if (req.path.startsWith("/api") || req.path.startsWith("/auth")) {
       return res.status(404).json({ error: "not_found" });

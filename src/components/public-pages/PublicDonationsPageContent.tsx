@@ -272,7 +272,8 @@ const PublicDonationsPageContent = ({
   const hasMultipleCryptoServices = visibleCryptoServices.length > 1;
   const activeCryptoService =
     visibleCryptoServices[activeCryptoIndex] || visibleCryptoServices[0] || null;
-  const activeCryptoRouteQrUrl = (routePayload?.cryptoQrCodeUrls || {})[String(activeCryptoIndex)] || "";
+  const activeCryptoRouteQrUrl =
+    (routePayload?.cryptoQrCodeUrls || {})[String(activeCryptoIndex)] || "";
   const fallbackActiveCryptoQrUrl = useTextQrCode({
     value:
       activeCryptoRouteQrUrl || !activeCryptoService

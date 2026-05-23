@@ -722,7 +722,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
   const [searchParams] = useSearchParams();
   const initialAutosaveEnabledRef = useRef(
     autosaveRuntimeConfig.enabledByDefault &&
-    readAutosavePreference(autosaveStorageKeys.pages, true),
+      readAutosavePreference(autosaveStorageKeys.pages, true),
   );
   const initialCacheRef = useRef(readDashboardPagesCache());
   const [pages, setPages] = useState<PagesConfig>(() =>
@@ -1124,7 +1124,8 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
     dragOverState.index === index;
 
   const getReorderableSurfaceClassName = (list: string, index: number, paddingClassName: string) =>
-    `${dashboardPagesReorderableSurfaceClassName} ${paddingClassName} ${isDragOverTarget(list, index) ? "border-primary/40 bg-primary/5" : ""
+    `${dashboardPagesReorderableSurfaceClassName} ${paddingClassName} ${
+      isDragOverTarget(list, index) ? "border-primary/40 bg-primary/5" : ""
     }`;
 
   const handleMainBlurCapture = useCallback(

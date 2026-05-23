@@ -45,6 +45,22 @@ vi.mock("@/lib/browser-idle", () => ({
       }
     };
   },
+  scheduleOnBrowserLoadIdle: (callback: (deadline: IdleDeadline) => void) => {
+    const deadline = {
+      didTimeout: false,
+      timeRemaining: () => 16,
+    } as IdleDeadline;
+    browserIdleState.callbacks.push(callback);
+    if (browserIdleState.autoRun) {
+      callback(deadline);
+    }
+    return () => {
+      const callbackIndex = browserIdleState.callbacks.indexOf(callback);
+      if (callbackIndex >= 0) {
+        browserIdleState.callbacks.splice(callbackIndex, 1);
+      }
+    };
+  },
 }));
 
 vi.mock("@/components/ui/carousel", () => {

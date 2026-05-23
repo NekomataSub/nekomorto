@@ -333,12 +333,12 @@ export const createSiteSettingsRuntimeHelpers = ({ primaryAppOrigin } = {}) => {
     };
     const navbarLinks = Array.isArray(merged?.navbar?.links)
       ? merged.navbar.links
-        .map((link) => ({
-          label: String(link?.label || "").trim(),
-          href: sanitizePublicHref(String(link?.href || "").trim()) || "",
-          icon: resolveNavbarIcon(link?.label, link?.href, link?.icon),
-        }))
-        .filter((link) => link.label && link.href)
+          .map((link) => ({
+            label: String(link?.label || "").trim(),
+            href: sanitizePublicHref(String(link?.href || "").trim()) || "",
+            icon: resolveNavbarIcon(link?.label, link?.href, link?.icon),
+          }))
+          .filter((link) => link.label && link.href)
       : [];
     const normalizedNavbarLinks = Array.isArray(merged?.navbar?.links)
       ? navbarLinks
@@ -364,9 +364,9 @@ export const createSiteSettingsRuntimeHelpers = ({ primaryAppOrigin } = {}) => {
       payload?.branding && typeof payload.branding === "object" ? payload.branding : null;
     const hasAnyNewBrandingInput = Boolean(
       payloadBranding &&
-      (typeof payloadBranding.assets === "object" ||
-        typeof payloadBranding.overrides === "object" ||
-        typeof payloadBranding.display === "object"),
+        (typeof payloadBranding.assets === "object" ||
+          typeof payloadBranding.overrides === "object" ||
+          typeof payloadBranding.display === "object"),
     );
 
     const rawBrandAssets =
@@ -389,40 +389,40 @@ export const createSiteSettingsRuntimeHelpers = ({ primaryAppOrigin } = {}) => {
     const wordmarkAssetUrl =
       sanitizeAssetUrl(
         rawBrandAssets.wordmarkUrl ||
-        (!hasAnyNewBrandingInput
-          ? legacyWordmarkUrl || legacyWordmarkUrlNavbar || legacyWordmarkUrlFooter
-          : "") ||
-        "",
+          (!hasAnyNewBrandingInput
+            ? legacyWordmarkUrl || legacyWordmarkUrlNavbar || legacyWordmarkUrlFooter
+            : "") ||
+          "",
       ) || "";
 
     const navbarSymbolOverride = sanitizeAssetUrl(rawBrandOverrides.navbarSymbolUrl || "") || "";
     const footerSymbolOverride =
       sanitizeAssetUrl(
         rawBrandOverrides.footerSymbolUrl ||
-        (!hasAnyNewBrandingInput ? legacyFooterSymbol : "") ||
-        "",
+          (!hasAnyNewBrandingInput ? legacyFooterSymbol : "") ||
+          "",
       ) || "";
     const navbarWordmarkOverride =
       sanitizeAssetUrl(
         rawBrandOverrides.navbarWordmarkUrl ||
-        (!hasAnyNewBrandingInput ? legacyWordmarkUrlNavbar : "") ||
-        "",
+          (!hasAnyNewBrandingInput ? legacyWordmarkUrlNavbar : "") ||
+          "",
       ) || "";
     const footerWordmarkOverride =
       sanitizeAssetUrl(
         rawBrandOverrides.footerWordmarkUrl ||
-        (!hasAnyNewBrandingInput ? legacyWordmarkUrlFooter : "") ||
-        "",
+          (!hasAnyNewBrandingInput ? legacyWordmarkUrlFooter : "") ||
+          "",
       ) || "";
 
     const legacyNavbarMode =
       legacyWordmarkEnabled &&
-        (normalizedLegacyPlacement === "navbar" || normalizedLegacyPlacement === "both")
+      (normalizedLegacyPlacement === "navbar" || normalizedLegacyPlacement === "both")
         ? "wordmark"
         : "symbol-text";
     const legacyFooterMode =
       legacyWordmarkEnabled &&
-        (normalizedLegacyPlacement === "footer" || normalizedLegacyPlacement === "both")
+      (normalizedLegacyPlacement === "footer" || normalizedLegacyPlacement === "both")
         ? "wordmark"
         : "symbol-text";
 

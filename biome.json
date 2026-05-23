@@ -5,11 +5,13 @@
       "**",
       "!**/.claude/worktrees/**",
       "!**/.codex-test-hidden/**",
+      "!**/.astro/**",
       "!**/.vscode/**",
       "!**/.lighthouse/**",
       "!**/backups/**",
       "!**/dev-dist/**",
       "!**/dist/**",
+      "!**/dist-astro/**",
       "!**/node_modules/**",
       "!**/output/**",
       "!**/public/uploads/**",
@@ -38,6 +40,18 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["src-astro/**/*.astro"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off"
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "double",

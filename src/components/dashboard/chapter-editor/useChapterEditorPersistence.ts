@@ -177,13 +177,9 @@ export const useChapterEditorPersistence = ({
         const data = await response.json().catch(() => null);
         const errorCode = String(data?.error || "").trim();
         if (errorCode === "duplicate_episode_key") {
-          setIdentityError(
-            "Já existe um capítulo com essa combinação de capítulo e volume.",
-          );
+          setIdentityError("Já existe um capítulo com essa combinação de capítulo e volume.");
         } else if (errorCode === "volume_required") {
-          setIdentityError(
-            "Informe o volume para salvar um capítulo com capítulo ambíguo.",
-          );
+          setIdentityError("Informe o volume para salvar um capítulo com capítulo ambíguo.");
         } else if (
           errorCode === "image_pages_required_for_publication" ||
           errorCode === "reader_content_or_download_required_for_publication" ||

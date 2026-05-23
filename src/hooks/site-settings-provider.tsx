@@ -99,7 +99,9 @@ export const SiteSettingsProvider = ({
   const bootstrapPayload = useResolvedPublicBootstrap();
   const bootstrapSettings = bootstrapPayload?.settings;
   const resolvedInitialSettings = initialSettings || bootstrapSettings;
-  const hasFreshFullBootstrap = Boolean(bootstrapPayload && bootstrapPayload.payloadMode === "full");
+  const hasFreshFullBootstrap = Boolean(
+    bootstrapPayload && bootstrapPayload.payloadMode === "full",
+  );
   const [settings, setSettings] = useState<SiteSettings>(
     mergeSettings(defaultSettings, resolvedInitialSettings || {}),
   );

@@ -318,8 +318,7 @@ export const useDashboardProjectsEditorPersistence = ({
             code,
           );
           toast({
-            title:
-              publicationFailure?.title || "Não foi possível publicar o episódio",
+            title: publicationFailure?.title || "Não foi possível publicar o episódio",
             description:
               publicationFailure?.description ||
               "Revise o episódio antes de tentar salvar novamente.",

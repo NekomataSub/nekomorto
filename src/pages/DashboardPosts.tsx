@@ -2704,7 +2704,7 @@ const DashboardPosts = () => {
                                 <span className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap">
                                   <Eye className="h-4 w-4" />
                                   {post.views}
-                                  {"?"}
+                                  {` ${post.views === 1 ? "visualização" : "visualizações"}`}
                                 </span>
                                 <span className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap">
                                   <MessageSquare className="h-4 w-4" />

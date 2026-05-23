@@ -109,9 +109,7 @@ const Donations = () => {
       <PublicPageHero
         title={shouldShowHydrationState ? "Doações" : donations.heroTitle}
         subtitle={
-          shouldShowHydrationState
-            ? "Carregando informações de apoio..."
-            : donations.heroSubtitle
+          shouldShowHydrationState ? "Carregando informações de apoio..." : donations.heroSubtitle
         }
       />
       <PublicDonationsPageContent

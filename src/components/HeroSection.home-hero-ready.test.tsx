@@ -27,6 +27,7 @@ vi.mock("@/hooks/use-theme-mode", () => ({
 
 vi.mock("@/lib/browser-idle", () => ({
   scheduleOnBrowserIdle: () => () => undefined,
+  scheduleOnBrowserLoadIdle: () => () => undefined,
 }));
 
 vi.mock("@/components/ui/carousel", () => {

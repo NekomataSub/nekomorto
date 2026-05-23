@@ -1,34 +1,26 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import PublicLink from "@/components/PublicLink";
 
 describe("PublicLink", () => {
-  afterEach(() => {
-    window.history.replaceState(null, "", "/");
-  });
-
-  it("intercepta clique simples entre / e /projetos", () => {
-    window.history.replaceState(null, "", "/");
-
+  it("renderiza href interno publico com prefetch Astro", () => {
     render(<PublicLink href="/projetos">Projetos</PublicLink>);
 
-    fireEvent.click(screen.getByRole("link", { name: "Projetos" }));
-
-    expect(window.location.pathname).toBe("/projetos");
+    const link = screen.getByRole("link", { name: "Projetos" });
+    expect(link).toHaveAttribute("href", "/projetos");
+    expect(link).toHaveAttribute("data-astro-prefetch", "hover");
   });
 
-  it("intercepta clique simples para outras rotas publicas Astro", () => {
-    window.history.replaceState(null, "", "/projetos");
-
+  it("preserva outras rotas publicas Astro como links normais", () => {
     render(<PublicLink href="/equipe">Equipe</PublicLink>);
 
-    fireEvent.click(screen.getByRole("link", { name: "Equipe" }));
-
-    expect(window.location.pathname).toBe("/equipe");
+    const link = screen.getByRole("link", { name: "Equipe" });
+    expect(link).toHaveAttribute("href", "/equipe");
+    expect(link).toHaveAttribute("data-astro-prefetch", "hover");
   });
 
-  it("nao intercepta clique com modificador", () => {
+  it("mantem a navegacao nativa em clique com modificador", () => {
     window.history.replaceState(null, "", "/");
 
     render(<PublicLink href="/projetos">Projetos</PublicLink>);

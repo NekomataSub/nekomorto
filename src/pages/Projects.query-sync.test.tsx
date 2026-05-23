@@ -127,10 +127,13 @@ const MemoryRouter = ({
     window.history.replaceState(null, "", String(initialEntries[0] || "/"));
     hasSyncedInitialEntryRef.current = true;
   }
-  return <ReactRouterMemoryRouter initialEntries={initialEntries}>{children}</ReactRouterMemoryRouter>;
+  return (
+    <ReactRouterMemoryRouter initialEntries={initialEntries}>{children}</ReactRouterMemoryRouter>
+  );
 };
 
-const getSearchParams = () => new URLSearchParams(String(window.location.search || "").replace(/^\?/, ""));
+const getSearchParams = () =>
+  new URLSearchParams(String(window.location.search || "").replace(/^\?/, ""));
 
 const getRenderedProjectCards = (container: HTMLElement) =>
   Array.from(container.querySelectorAll("a.projects-public-card"));

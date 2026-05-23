@@ -30,6 +30,7 @@ vi.mock("@/hooks/accessibility-announcer", () => ({
 
 vi.mock("@/hooks/global-shortcuts-provider", () => ({
   GlobalShortcutsProvider: ({ children }: { children: unknown }) => <>{children}</>,
+  RoutedGlobalShortcutsProvider: ({ children }: { children: unknown }) => <>{children}</>,
 }));
 
 vi.mock("@/components/Header", () => ({

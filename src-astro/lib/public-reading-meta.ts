@@ -1,5 +1,8 @@
 import { createSlug } from "../../src/lib/post-content";
-import type { PublicBootstrapPayload, PublicBootstrapProject } from "../../src/types/public-bootstrap";
+import type {
+  PublicBootstrapPayload,
+  PublicBootstrapProject,
+} from "../../src/types/public-bootstrap";
 import type { SiteSettings } from "../../src/types/site-settings";
 import {
   buildProjectReadingOgImagePath,

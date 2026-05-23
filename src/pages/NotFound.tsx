@@ -31,8 +31,8 @@ const NotFound = () => {
                 Página não encontrada
               </h1>
               <p className="text-sm text-muted-foreground md:text-base">
-                Não conseguimos localizar o endereço solicitado. Verifique se o link está
-                correto ou volte para a página inicial.
+                Não conseguimos localizar o endereço solicitado. Verifique se o link está correto ou
+                volte para a página inicial.
               </p>
               <div className="w-fit rounded-full border border-border/60 bg-background/70 px-4 py-2 text-xs text-muted-foreground">
                 {requestedPath || "/"}

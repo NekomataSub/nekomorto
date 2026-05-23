@@ -11,7 +11,10 @@ type PublicLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
 const isPreloadableInternalHref = (href: string) => href.startsWith("/") && !href.startsWith("//");
 
 const PublicLink = forwardRef<HTMLAnchorElement, PublicLinkProps>(
-  ({ children, href, preload = true, target, "data-astro-prefetch": astroPrefetch, ...props }, ref) => {
+  (
+    { children, href, preload = true, target, "data-astro-prefetch": astroPrefetch, ...props },
+    ref,
+  ) => {
     const safeHref = String(href || "").trim() || "#";
     const resolvedAstroPrefetch =
       astroPrefetch ??

@@ -137,7 +137,10 @@ const HeaderSearchPopover = ({
                     href={item.href}
                     className="group flex h-36 items-stretch overflow-hidden rounded-xl border border-border/60 bg-card/60 transition hover:border-primary/60 hover:bg-card/70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/45"
                   >
-                    <div className="h-full shrink-0 overflow-hidden bg-secondary" style={{ aspectRatio: "9 / 14" }}>
+                    <div
+                      className="h-full shrink-0 overflow-hidden bg-secondary"
+                      style={{ aspectRatio: "9 / 14" }}
+                    >
                       <UploadPicture
                         src={item.image || "/placeholder.svg"}
                         alt={item.label}

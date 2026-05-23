@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Project, ProjectEpisode } from "@/data/projects";
 import ProjectPage from "@/pages/Project";
+import { clearPublicRoutePreloadCacheForTests } from "@/routes/public-preload";
 
 const apiFetchMock = vi.hoisted(() => vi.fn());
 
@@ -215,6 +216,7 @@ const setupApiMock = (
   translations: TaxonomyTranslationsPayload = {},
   mockOptions: SetupApiMockOptions = {},
 ) => {
+  clearPublicRoutePreloadCacheForTests();
   apiFetchMock.mockReset();
   apiFetchMock.mockImplementation(
     async (_apiBase: string, endpoint: string, options?: RequestInit) => {

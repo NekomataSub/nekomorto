@@ -52,8 +52,7 @@ export const canUsePublicAstroClientNavigation = ({
 }: {
   currentPath: string;
   targetPath: string;
-}) =>
-  isPublicAstroClientRoutePath(currentPath) && isPublicAstroClientRoutePath(targetPath);
+}) => isPublicAstroClientRoutePath(currentPath) && isPublicAstroClientRoutePath(targetPath);
 
 export const navigatePublicDocument = (
   href: string,

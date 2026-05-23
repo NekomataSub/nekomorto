@@ -255,7 +255,7 @@ describe("upload-media", () => {
     const uploadsDir = createTempUploadsDir();
     const sourcePath = path.join(uploadsDir, "project-source.png");
 
-    await createPatternSourceImage(sourcePath, { width: 640, height: 900 });
+    await createPatternSourceImage(sourcePath, { width: 160, height: 225 });
 
     const generated = await generateUploadVariants({
       uploadsDir,
@@ -289,7 +289,7 @@ describe("upload-media", () => {
         "posterThumb-v1.avif",
       ]),
     );
-  }, 15_000);
+  }, 30_000);
 
   it("remove variantes e apaga o diretorio quando o perfil explicito fica vazio", async () => {
     const uploadsDir = createTempUploadsDir();

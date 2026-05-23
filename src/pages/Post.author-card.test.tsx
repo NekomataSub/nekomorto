@@ -29,6 +29,25 @@ vi.mock("@/hooks/use-page-meta", () => ({
   usePageMeta: () => undefined,
 }));
 
+vi.mock("@/lib/public-document-navigation", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/public-document-navigation")>(
+    "@/lib/public-document-navigation",
+  );
+  const router = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  return {
+    ...actual,
+    usePublicDocumentLocation: () => {
+      const location = router.useLocation();
+      return {
+        hash: location.hash,
+        href: `${location.pathname}${location.search}${location.hash}`,
+        pathname: location.pathname,
+        search: location.search,
+      };
+    },
+  };
+});
+
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return {

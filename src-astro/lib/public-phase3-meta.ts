@@ -4,7 +4,11 @@ import {
   buildVersionedInstitutionalOgImagePath,
   resolveInstitutionalOgSupportText,
 } from "../../shared/institutional-og-seo.js";
-import { buildPostOgImageAlt, buildPostOgRevision, buildVersionedPostOgImagePath } from "../../shared/post-og-seo.js";
+import {
+  buildPostOgImageAlt,
+  buildPostOgRevision,
+  buildVersionedPostOgImagePath,
+} from "../../shared/post-og-seo.js";
 import { buildVersionedProjectOgImagePath } from "../../server/lib/project-og-delivery.js";
 import { buildSchemaOrgPayload } from "../../server/lib/schema-org.js";
 import { extractFirstImageFromPostContent } from "../../server/lib/post-cover.js";
@@ -142,7 +146,11 @@ export const resolveProjectPageMeta = ({
         projectId: project.id,
         revision: routePayload?.revision || "",
       })
-    : project?.banner || project?.heroImageUrl || project?.cover || siteSettings?.site?.defaultShareImage || "";
+    : project?.banner ||
+      project?.heroImageUrl ||
+      project?.cover ||
+      siteSettings?.site?.defaultShareImage ||
+      "";
   return {
     canonicalUrl,
     description:

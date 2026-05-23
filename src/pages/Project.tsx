@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 
 import CommentsSection from "@/components/CommentsSection";
 import PublicLink from "@/components/PublicLink";
@@ -266,9 +267,24 @@ const resolveProjectRoutePayloadForSlug = (
   return resolveBootstrapProject(projectListBootstrap, slug) ? payload : null;
 };
 
-const ProjectPage = ({ renderHero = true, slug: slugProp }: { renderHero?: boolean; slug?: string }) => {
+const hasProjectRoutePayloadTranslations = (payload: PublicRouteProjectDetailPayload | null) =>
+  Boolean(
+    payload?.tagTranslations &&
+      (Object.keys(payload.tagTranslations.tags || {}).length > 0 ||
+        Object.keys(payload.tagTranslations.genres || {}).length > 0 ||
+        Object.keys(payload.tagTranslations.staffRoles || {}).length > 0),
+  );
+
+const ProjectPage = ({
+  renderHero = true,
+  slug: slugProp,
+}: {
+  renderHero?: boolean;
+  slug?: string;
+}) => {
   const location = usePublicDocumentLocation();
-  const slug = slugProp || resolveProjectSlugFromPath(location.pathname);
+  const params = useParams();
+  const slug = slugProp || resolveProjectSlugFromPath(location.pathname) || params.slug;
   const apiBase = getApiBase();
   const bootstrapData = useResolvedPublicBootstrap();
   const routePayload = useResolvedPublicRoutePayload();
@@ -283,9 +299,13 @@ const ProjectPage = ({ renderHero = true, slug: slugProp }: { renderHero?: boole
   );
   const preloadedProjectRoutePayload = useMemo(() => {
     const payload = peekPreloadedPublicRoutePayload(canonicalProjectPath);
-    return payload?.kind === "project-detail" ? resolveProjectRoutePayloadForSlug(payload, slug) : null;
+    return payload?.kind === "project-detail"
+      ? resolveProjectRoutePayloadForSlug(payload, slug)
+      : null;
   }, [canonicalProjectPath, slug]);
-  const routeProject = projectRoutePayload?.project ? (projectRoutePayload.project as Project) : null;
+  const routeProject = projectRoutePayload?.project
+    ? (projectRoutePayload.project as Project)
+    : null;
   const preloadedProject = preloadedProjectRoutePayload?.project
     ? (preloadedProjectRoutePayload.project as Project)
     : null;
@@ -325,9 +345,14 @@ const ProjectPage = ({ renderHero = true, slug: slugProp }: { renderHero?: boole
       (hasFullBootstrap ? bootstrapData?.tagTranslations?.staffRoles || {} : {}),
   );
   const [hasLoadedTaxonomyTranslations, setHasLoadedTaxonomyTranslations] = useState(
-    () => Boolean(projectRoutePayload || preloadedProjectRoutePayload) || hasFullBootstrap,
+    () =>
+      hasProjectRoutePayloadTranslations(projectRoutePayload) ||
+      hasProjectRoutePayloadTranslations(preloadedProjectRoutePayload) ||
+      hasFullBootstrap,
   );
-  const shouldHydrateProjectMetaFromApi = !projectRoutePayload && !hasFullBootstrap;
+  const shouldHydrateProjectMetaFromApi =
+    !hasFullBootstrap &&
+    (!projectRoutePayload || !hasProjectRoutePayloadTranslations(projectRoutePayload));
   const { status: bootstrapStatus } = usePublicBootstrap();
   const isHydratingProject = !project && !hasLoaded;
   const hasHydrationError = isHydratingProject && bootstrapStatus === "error";
@@ -371,10 +396,12 @@ const ProjectPage = ({ renderHero = true, slug: slugProp }: { renderHero?: boole
       setProjectRevision(payload.revision || "");
       setMediaVariants(payload.mediaVariants || {});
       setRelationProjectLookup(payload.relationProjectLookup || {});
-      setTagTranslations(payload.tagTranslations?.tags || {});
-      setGenreTranslations(payload.tagTranslations?.genres || {});
-      setStaffRoleTranslations(payload.tagTranslations?.staffRoles || {});
-      setHasLoadedTaxonomyTranslations(true);
+      if (hasProjectRoutePayloadTranslations(payload)) {
+        setTagTranslations(payload.tagTranslations?.tags || {});
+        setGenreTranslations(payload.tagTranslations?.genres || {});
+        setStaffRoleTranslations(payload.tagTranslations?.staffRoles || {});
+        setHasLoadedTaxonomyTranslations(true);
+      }
       setHasLoaded(Boolean(payload.project));
       if (options?.publish) {
         publishPublicRoutePayload(payload);
@@ -1342,139 +1369,141 @@ const ProjectPage = ({ renderHero = true, slug: slugProp }: { renderHero?: boole
       <main>
         {renderHero ? (
           <section data-testid="project-hero" className="relative overflow-hidden">
-          <UploadPicture
-            src={heroBannerSrc}
-            alt={heroBannerAlt}
-            preset="hero"
-            mediaVariants={mediaVariants}
-            applyFocalObjectPosition
-            className="absolute inset-0 h-full w-full"
-            imgClassName="h-full w-full object-cover object-center"
-            loading="eager"
-            decoding="async"
-            fetchPriority="high"
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-background/20 backdrop-blur-[1.5px]" />
-          <div className="absolute inset-0 bg-linear-to-r from-background/76 via-background/48 to-background/74 md:from-background/66 md:via-background/44 md:to-background/80" />
-          <div className="absolute inset-0 bg-linear-to-t from-background via-background/70 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-b from-transparent via-background/80 to-background" />
+            <UploadPicture
+              src={heroBannerSrc}
+              alt={heroBannerAlt}
+              preset="hero"
+              mediaVariants={mediaVariants}
+              applyFocalObjectPosition
+              className="absolute inset-0 h-full w-full"
+              imgClassName="h-full w-full object-cover object-center"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-background/20 backdrop-blur-[1.5px]" />
+            <div className="absolute inset-0 bg-linear-to-r from-background/76 via-background/48 to-background/74 md:from-background/66 md:via-background/44 md:to-background/80" />
+            <div className="absolute inset-0 bg-linear-to-t from-background via-background/70 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-b from-transparent via-background/80 to-background" />
 
-          <div
-            className={`${publicPageLayoutTokens.sectionBase} relative max-w-6xl pb-14 pt-24 md:pb-16 lg:pt-28 lg:pb-20`}
-          >
             <div
-              data-testid="project-hero-layout"
-              className="grid items-start gap-10 lg:gap-12 reveal md:items-stretch md:grid-cols-[320px_minmax(0,1fr)] lg:grid-cols-[340px_minmax(0,1fr)]"
-              data-reveal
+              className={`${publicPageLayoutTokens.sectionBase} relative max-w-6xl pb-14 pt-24 md:pb-16 lg:pt-28 lg:pb-20`}
             >
               <div
-                data-testid="project-hero-cover-shell"
-                className="order-1 mx-auto w-64 self-start md:mx-0 md:w-[320px] lg:w-[340px]"
+                data-testid="project-hero-layout"
+                className="grid items-start gap-10 lg:gap-12 reveal md:items-stretch md:grid-cols-[320px_minmax(0,1fr)] lg:grid-cols-[340px_minmax(0,1fr)]"
+                data-reveal
               >
                 <div
-                  data-testid="project-hero-cover-frame"
-                  className="overflow-hidden rounded-2xl border border-border/70 bg-secondary/90 shadow-project-cover-card animate-slide-up"
-                  style={{ aspectRatio: PROJECT_COVER_ASPECT_RATIO }}
+                  data-testid="project-hero-cover-shell"
+                  className="order-1 mx-auto w-64 self-start md:mx-0 md:w-[320px] lg:w-[340px]"
                 >
-                  <UploadPicture
-                    src={heroCoverSrc}
-                    alt={project.title || "Capa do projeto"}
-                    preset="posterThumb"
-                    mediaVariants={mediaVariants}
-                    className="block h-full w-full"
-                    imgClassName="block h-full w-full object-cover object-center"
-                    loading="eager"
-                    decoding="async"
-                    fetchPriority="high"
-                    sizes="(max-width: 767px) 256px, (max-width: 1023px) 320px, 340px"
-                  />
-                </div>
-              </div>
-              <div
-                data-testid="project-hero-info-panel"
-                className="order-2 flex w-full flex-1 flex-col items-center gap-4 px-2 py-3 text-center md:h-full md:items-start md:px-0 md:py-2 md:text-left"
-              >
-                <div className="flex w-full flex-wrap items-center justify-center gap-3 text-center text-xs uppercase tracking-[0.2em] text-primary/80 animate-fade-in md:w-auto md:justify-start md:text-left">
-                  <span>{project.type}</span>
-                  <span className="text-muted-foreground">•</span>
-                  <span>{project.status}</span>
-                </div>
-                <h1 className="text-center text-3xl font-semibold text-foreground md:text-left md:text-4xl lg:text-5xl animate-slide-up">
-                  {project.title}
-                </h1>
-                <p
-                  className="max-w-2xl whitespace-pre-wrap text-center text-sm text-muted-foreground md:text-left md:text-base animate-slide-up"
-                  style={{ animationDelay: "0.2s" }}
-                >
-                  {project.synopsis}
-                </p>
-                {project.tags?.length ? (
                   <div
-                    className="flex w-full flex-wrap justify-center gap-2 animate-slide-up md:justify-start"
-                    style={{ animationDelay: "0.3s" }}
+                    data-testid="project-hero-cover-frame"
+                    className="overflow-hidden rounded-2xl border border-border/70 bg-secondary/90 shadow-project-cover-card animate-slide-up"
+                    style={{ aspectRatio: PROJECT_COVER_ASPECT_RATIO }}
                   >
-                    {hasLoadedTaxonomyTranslations
-                      ? sortedTags.map((tag) => (
-                          <ProjectFilterPillLink
-                            key={tag}
-                            tone="secondary"
-                            to={`/projetos?tag=${encodeURIComponent(tag)}`}
-                            label={translateTag(tag, tagTranslationMap)}
-                          />
-                        ))
-                      : Array.from({ length: Math.min(project.tags.length, 4) }).map((_, i) => (
-                          <div
-                            key={i}
-                            className="h-6 w-16 animate-pulse rounded-full bg-muted"
-                            aria-hidden="true"
-                          />
-                        ))}
+                    <UploadPicture
+                      src={heroCoverSrc}
+                      alt={project.title || "Capa do projeto"}
+                      preset="posterThumb"
+                      mediaVariants={mediaVariants}
+                      className="block h-full w-full"
+                      imgClassName="block h-full w-full object-cover object-center"
+                      loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
+                      sizes="(max-width: 767px) 256px, (max-width: 1023px) 320px, 340px"
+                    />
                   </div>
-                ) : null}
+                </div>
                 <div
-                  data-testid="project-hero-actions-row"
-                  className="flex w-full flex-wrap justify-center gap-3 animate-slide-up md:mt-auto md:justify-start"
-                  style={{ animationDelay: "0.4s" }}
+                  data-testid="project-hero-info-panel"
+                  className="order-2 flex w-full flex-1 flex-col items-center gap-4 px-2 py-3 text-center md:h-full md:items-start md:px-0 md:py-2 md:text-left"
                 >
-                  <Button asChild className="gap-2">
-                    <a href="#downloads">
-                      <Download className="h-4 w-4" />
-                      {isChapterBased ? "Ver capítulos" : "Ver episódios"}
-                    </a>
-                  </Button>
-                  {project.trailerUrl ? (
-                    <Button asChild variant="outline" className="gap-2">
-                      <a href={project.trailerUrl} target="_blank" rel="noreferrer">
-                        <PlayCircle className="h-4 w-4" />
-                        Assistir trailer
+                  <div className="flex w-full flex-wrap items-center justify-center gap-3 text-center text-xs uppercase tracking-[0.2em] text-primary/80 animate-fade-in md:w-auto md:justify-start md:text-left">
+                    <span>{project.type}</span>
+                    <span className="text-muted-foreground">•</span>
+                    <span>{project.status}</span>
+                  </div>
+                  <h1 className="text-center text-3xl font-semibold text-foreground md:text-left md:text-4xl lg:text-5xl animate-slide-up">
+                    {project.title}
+                  </h1>
+                  <p
+                    className="max-w-2xl whitespace-pre-wrap text-center text-sm text-muted-foreground md:text-left md:text-base animate-slide-up"
+                    style={{ animationDelay: "0.2s" }}
+                  >
+                    {project.synopsis}
+                  </p>
+                  {project.tags?.length ? (
+                    <div
+                      className="flex w-full flex-wrap justify-center gap-2 animate-slide-up md:justify-start"
+                      style={{ animationDelay: "0.3s" }}
+                    >
+                      {hasLoadedTaxonomyTranslations
+                        ? sortedTags.map((tag) => (
+                            <ProjectFilterPillLink
+                              key={tag}
+                              tone="secondary"
+                              to={`/projetos?tag=${encodeURIComponent(tag)}`}
+                              label={translateTag(tag, tagTranslationMap)}
+                            />
+                          ))
+                        : Array.from({ length: Math.min(project.tags.length, 4) }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="h-6 w-16 animate-pulse rounded-full bg-muted"
+                              aria-hidden="true"
+                            />
+                          ))}
+                    </div>
+                  ) : null}
+                  <div
+                    data-testid="project-hero-actions-row"
+                    className="flex w-full flex-wrap justify-center gap-3 animate-slide-up md:mt-auto md:justify-start"
+                    style={{ animationDelay: "0.4s" }}
+                  >
+                    <Button asChild className="gap-2">
+                      <a href="#downloads">
+                        <Download className="h-4 w-4" />
+                        {isChapterBased ? "Ver capítulos" : "Ver episódios"}
                       </a>
                     </Button>
-                  ) : null}
-                  {canEditProject ? (
-                    <Button asChild variant="secondary" className="gap-2">
-                      <PublicLink href={`/dashboard/projetos?edit=${encodeURIComponent(project.id)}`}>
-                        Editar projeto
-                      </PublicLink>
-                    </Button>
-                  ) : null}
-                  {isChapterBased && firstReadableChapter ? (
-                    <Button asChild variant="outline" className="gap-2 order-last">
-                      <PublicLink
-                        href={buildProjectPublicReadingHref(
-                          project.id,
-                          firstReadableChapter.number,
-                          firstReadableChapter.volume,
-                        )}
-                      >
-                        Começar leitura
-                      </PublicLink>
-                    </Button>
-                  ) : null}
+                    {project.trailerUrl ? (
+                      <Button asChild variant="outline" className="gap-2">
+                        <a href={project.trailerUrl} target="_blank" rel="noreferrer">
+                          <PlayCircle className="h-4 w-4" />
+                          Assistir trailer
+                        </a>
+                      </Button>
+                    ) : null}
+                    {canEditProject ? (
+                      <Button asChild variant="secondary" className="gap-2">
+                        <PublicLink
+                          href={`/dashboard/projetos?edit=${encodeURIComponent(project.id)}`}
+                        >
+                          Editar projeto
+                        </PublicLink>
+                      </Button>
+                    ) : null}
+                    {isChapterBased && firstReadableChapter ? (
+                      <Button asChild variant="outline" className="gap-2 order-last">
+                        <PublicLink
+                          href={buildProjectPublicReadingHref(
+                            project.id,
+                            firstReadableChapter.number,
+                            firstReadableChapter.volume,
+                          )}
+                        >
+                          Começar leitura
+                        </PublicLink>
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
           </section>
         ) : null}
 

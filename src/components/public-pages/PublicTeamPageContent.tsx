@@ -81,9 +81,7 @@ const PublicTeamPageContent = ({
     members.filter((member) => ["retired", "aposentado"].includes(normalizeStatus(member.status))),
   );
   const activeMembers = sortMembersByOrder(
-    members.filter(
-      (member) => !["retired", "aposentado"].includes(normalizeStatus(member.status)),
-    ),
+    members.filter((member) => !["retired", "aposentado"].includes(normalizeStatus(member.status))),
   );
   const prioritizedMemberId = activeMembers[0]?.id || retiredMembers[0]?.id || "";
 

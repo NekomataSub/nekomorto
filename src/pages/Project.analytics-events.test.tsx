@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PUBLIC_ANALYTICS_INGEST_PATH } from "@/lib/public-analytics";
 import ProjectPage from "@/pages/Project";
+import { clearPublicRoutePreloadCacheForTests } from "@/routes/public-preload";
 
 const apiFetchMock = vi.hoisted(() => vi.fn());
 const useSiteSettingsMock = vi.hoisted(() => vi.fn());
@@ -50,6 +51,7 @@ const mockJsonResponse = (ok: boolean, payload: unknown, status = ok ? 200 : 500
 
 describe("Project analytics events", () => {
   beforeEach(() => {
+    clearPublicRoutePreloadCacheForTests();
     apiFetchMock.mockReset();
     useSiteSettingsMock.mockReset();
 

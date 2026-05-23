@@ -41,7 +41,8 @@ const ProjectHero = ({
   tagItems = [],
   tagSkeletonCount = 0,
 }: ProjectHeroProps) => {
-  const heroBannerSrc = project.banner || project.heroImageUrl || project.cover || "/placeholder.svg";
+  const heroBannerSrc =
+    project.banner || project.heroImageUrl || project.cover || "/placeholder.svg";
   const heroCoverSrc = project.cover || project.banner || "/placeholder.svg";
   const heroBannerAlt = `Banner do projeto ${project.title}`;
   const hasTagItems = tagItems.length > 0;

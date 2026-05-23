@@ -57,7 +57,9 @@ describe("institutional Astro hero shell", () => {
   it("keeps the project hero in the Astro page shell and disables the duplicate island hero", () => {
     const source = readPageSource("projeto/[slug].astro");
 
-    expect(source).toContain('import ProjectHero from "../../../src/components/project/ProjectHero"');
+    expect(source).toContain(
+      'import ProjectHero from "../../../src/components/project/ProjectHero"',
+    );
     expect(source).toContain("<ProjectHero");
     expect(source).toContain("renderHero={!renderAstroHero}");
   });

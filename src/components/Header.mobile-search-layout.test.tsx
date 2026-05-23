@@ -16,7 +16,6 @@ const toastMock = vi.hoisted(() => vi.fn());
 const setThemePreferenceMock = vi.hoisted(() => vi.fn());
 const scheduleOnBrowserLoadIdleMock = vi.hoisted(() => vi.fn());
 const useIsMobileMock = vi.hoisted(() => vi.fn());
-const useDynamicSynopsisClampMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/api-base", () => ({
   getApiBase: () => "http://api.local",
@@ -48,10 +47,6 @@ vi.mock("@/hooks/use-theme-mode", () => ({
   }),
 }));
 
-vi.mock("@/hooks/use-dynamic-synopsis-clamp", () => ({
-  useDynamicSynopsisClamp: (...args: unknown[]) => useDynamicSynopsisClampMock(...args),
-}));
-
 vi.mock("@/hooks/use-mobile", () => ({
   useIsMobile: () => useIsMobileMock(),
 }));
@@ -62,6 +57,25 @@ vi.mock("@/lib/browser-idle", () => ({
     options?: { delayMs?: number },
   ) => scheduleOnBrowserLoadIdleMock(callback, options),
 }));
+
+vi.mock("@/lib/public-document-navigation", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/public-document-navigation")>(
+    "@/lib/public-document-navigation",
+  );
+  const router = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  return {
+    ...actual,
+    usePublicDocumentLocation: () => {
+      const location = router.useLocation();
+      return {
+        hash: location.hash,
+        href: `${location.pathname}${location.search}${location.hash}`,
+        pathname: location.pathname,
+        search: location.search,
+      };
+    },
+  };
+});
 
 const mockJsonResponse = (ok: boolean, payload: unknown, status = ok ? 200 : 500) =>
   ({
@@ -150,6 +164,7 @@ const LocationProbe = () => {
 describe("Header mobile search layout", () => {
   beforeEach(() => {
     setWindowScrollY(0);
+    window.history.replaceState(null, "", "/");
     setupApiMock();
     toastMock.mockReset();
     setThemePreferenceMock.mockReset();
@@ -163,11 +178,6 @@ describe("Header mobile search layout", () => {
         return () => undefined;
       },
     );
-    useDynamicSynopsisClampMock.mockReset();
-    useDynamicSynopsisClampMock.mockReturnValue({
-      rootRef: { current: null },
-      lineByKey: {},
-    });
     useIsMobileMock.mockReset();
     useIsMobileMock.mockReturnValue(false);
     (window as Window & { __BOOTSTRAP_PUBLIC__?: unknown }).__BOOTSTRAP_PUBLIC__ = undefined;
@@ -220,6 +230,7 @@ describe("Header mobile search layout", () => {
 
   it("schedules menu preload on idle on desktop", async () => {
     useIsMobileMock.mockReturnValue(false);
+    window.history.replaceState(null, "", "/postagem/post-teste");
 
     render(
       <MemoryRouter initialEntries={["/"]}>
@@ -238,7 +249,7 @@ describe("Header mobile search layout", () => {
 
     render(
       <MemoryRouter initialEntries={["/postagem/post-teste"]}>
-        <Header />
+        <Header locationPath="/postagem/post-teste" />
       </MemoryRouter>,
     );
 
@@ -728,79 +739,26 @@ describe("Header mobile search layout", () => {
     expect(classTokens(projectCard as HTMLElement)).not.toContain("gap-4");
     expect(classTokens(projectCard as HTMLElement)).not.toContain("p-4");
 
-    await waitFor(() => {
-      expect(useDynamicSynopsisClampMock).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          enabled: true,
-          keys: ["/projeto/project-88"],
-          maxLines: 3,
-          resolveMaxLines: expect.any(Function),
-        }),
-      );
-    });
-    const clampCall = useDynamicSynopsisClampMock.mock.lastCall?.[0] as {
-      resolveMaxLines: (context: {
-        key: string;
-        column: HTMLElement;
-        columnWidth: number;
-        defaultMaxLines: number;
-      }) => number;
-    };
-    expect(
-      clampCall.resolveMaxLines({
-        key: "/projeto/project-88",
-        column: document.createElement("div"),
-        columnWidth: 210,
-        defaultMaxLines: 3,
-      }),
-    ).toBe(3);
-    expect(
-      clampCall.resolveMaxLines({
-        key: "/projeto/project-88",
-        column: document.createElement("div"),
-        columnWidth: 280,
-        defaultMaxLines: 3,
-      }),
-    ).toBe(3);
-    expect(
-      clampCall.resolveMaxLines({
-        key: "/projeto/project-88",
-        column: document.createElement("div"),
-        columnWidth: 360,
-        defaultMaxLines: 3,
-      }),
-    ).toBe(3);
-
     const coverColumn = projectCard?.querySelector(
-      '[data-synopsis-role="column"]',
+      ".flex.min-h-0.min-w-0.flex-1",
     ) as HTMLElement | null;
     expect(coverColumn).not.toBeNull();
     expect(classTokens(coverColumn as HTMLElement)).toContain("flex-1");
-    expect(classTokens(coverColumn as HTMLElement)).toContain("self-stretch");
     expect(classTokens(coverColumn as HTMLElement)).toContain("min-h-0");
     expect(classTokens(coverColumn as HTMLElement)).toContain("p-4");
     expect(classTokens(coverColumn as HTMLElement)).toContain("overflow-hidden");
     expect(classTokens(coverColumn as HTMLElement)).not.toContain("h-28");
 
-    const synopsis = projectCard?.querySelector(
-      '[data-synopsis-role="synopsis"]',
-    ) as HTMLElement | null;
+    const synopsis = screen.getByText("Resultado remoto com muitas tags");
     expect(synopsis).not.toBeNull();
     expect(classTokens(synopsis as HTMLElement)).toContain("shrink-0");
-    expect(classTokens(synopsis as HTMLElement)).toContain("min-h-0");
-    expect(classTokens(synopsis as HTMLElement)).toContain(
-      "projects-public-search-synopsis-clamp-3",
-    );
+    expect(classTokens(synopsis as HTMLElement)).toContain("line-clamp-3");
     expect(classTokens(synopsis as HTMLElement)).not.toContain("flex-1");
     expect(classTokens(synopsis as HTMLElement)).not.toContain("clamp-safe-2");
     expect(classTokens(synopsis as HTMLElement)).not.toContain("line-clamp-4");
-    expect(coverColumn).toHaveAttribute("data-synopsis-key", "/projeto/project-88");
 
     const searchCardShell = projectCard?.parentElement as HTMLElement | null;
     expect(searchCardShell).not.toBeNull();
-    expect(classTokens(searchCardShell as HTMLElement)).toContain(
-      "public-interactive-card-shell--no-lift",
-    );
 
     const coverImage = screen.getByRole("img", { name: "Projeto Remoto Badges" });
     const coverPicture = coverImage.parentElement;
@@ -813,9 +771,7 @@ describe("Header mobile search layout", () => {
     expect(classTokens(coverWrapper as HTMLElement)).not.toContain("w-20");
     expect(coverWrapper?.style.aspectRatio).toBe("9 / 14");
 
-    const badgesRow = projectCard?.querySelector(
-      '[data-synopsis-role="badges"]',
-    ) as HTMLElement | null;
+    const badgesRow = screen.getByText("Acao").parentElement as HTMLElement | null;
     expect(badgesRow).not.toBeNull();
     expect(classTokens(badgesRow as HTMLElement)).toContain("flex-nowrap");
     expect(classTokens(badgesRow as HTMLElement)).toContain("overflow-hidden");
@@ -833,12 +789,6 @@ describe("Header mobile search layout", () => {
 
   it("aplica o clamp seguro calculado quando o hook retorna menos linhas para a sinopse", async () => {
     const user = userEvent.setup();
-    useDynamicSynopsisClampMock.mockReturnValue({
-      rootRef: { current: null },
-      lineByKey: {
-        "/projeto/project-55": 1,
-      },
-    });
     setupApiMock({
       searchSuggestOk: true,
       searchSuggestions: [
@@ -870,7 +820,7 @@ describe("Header mobile search layout", () => {
     const synopsis = await screen.findByText(
       "Uma sinopse longa o bastante para precisar de corte visual",
     );
-    expect(synopsis).toHaveClass("projects-public-search-synopsis-clamp-1");
+    expect(synopsis).toHaveClass("line-clamp-3");
     expect(synopsis).not.toHaveClass("clamp-safe-1", "clamp-safe-2", "line-clamp-4");
   });
 

@@ -29,6 +29,16 @@ vi.mock("@/components/Footer", () => ({
   ),
 }));
 
+vi.mock("@/lib/api-client", () => ({
+  apiFetch: async (_apiBase: string, endpoint: string) =>
+    ({
+      ok: endpoint === "/api/public/bootstrap",
+      status: endpoint === "/api/public/bootstrap" ? 200 : 401,
+      json: async () =>
+        endpoint === "/api/public/bootstrap" ? { payloadMode: "full" } : { user: null },
+    }) as Response,
+}));
+
 const createSettings = (override: Partial<SiteSettings> = {}) =>
   mergeSettings(defaultSettings, override);
 

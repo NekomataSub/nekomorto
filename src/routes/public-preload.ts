@@ -180,15 +180,15 @@ const buildTeamRoutePayload = ({
   mediaVariants: unknown;
   teamMembers: unknown;
 }): PublicRoutePayload => ({
-    kind: "team",
-    generatedAt,
-    mediaVariants:
-      mediaVariants && typeof mediaVariants === "object"
-        ? (mediaVariants as UploadMediaVariantsMap)
-        : {},
-    teamLinkTypes: Array.isArray(linkTypes) ? linkTypes : [],
-    teamMembers: Array.isArray(teamMembers) ? teamMembers : [],
-  });
+  kind: "team",
+  generatedAt,
+  mediaVariants:
+    mediaVariants && typeof mediaVariants === "object"
+      ? (mediaVariants as UploadMediaVariantsMap)
+      : {},
+  teamLinkTypes: Array.isArray(linkTypes) ? linkTypes : [],
+  teamMembers: Array.isArray(teamMembers) ? teamMembers : [],
+});
 
 const preloadProjectDetailPayload = async (path: string): Promise<PublicRoutePayload | null> => {
   const cacheKey = resolvePreloadCacheKey(path);
@@ -214,9 +214,13 @@ const preloadProjectDetailPayload = async (path: string): Promise<PublicRoutePay
       if (!projectId) {
         return null;
       }
-      const response = await apiFetch(getApiBase(), `/api/public/projects/${encodeURIComponent(projectId)}`, {
-        cache: "force-cache",
-      });
+      const response = await apiFetch(
+        getApiBase(),
+        `/api/public/projects/${encodeURIComponent(projectId)}`,
+        {
+          cache: "force-cache",
+        },
+      );
       if (!response.ok) {
         return null;
       }
@@ -303,15 +307,21 @@ const preloadPostDetailPayload = async (path: string) => {
   }
   const requestPromise = (async () => {
     try {
-      const response = await apiFetch(getApiBase(), `/api/public/posts/${encodeURIComponent(slug)}`, {
-        cache: "force-cache",
-      });
+      const response = await apiFetch(
+        getApiBase(),
+        `/api/public/posts/${encodeURIComponent(slug)}`,
+        {
+          cache: "force-cache",
+        },
+      );
       if (!response.ok) {
         return null;
       }
       const data = await response.json();
       const post =
-        data?.post && typeof data.post === "object" ? storePreloadedPublicPostDetail(data.post) : null;
+        data?.post && typeof data.post === "object"
+          ? storePreloadedPublicPostDetail(data.post)
+          : null;
       if (post?.coverImageUrl) {
         prewarmImage(String(post.coverImageUrl));
       }
@@ -389,7 +399,7 @@ export const preloadPublicRoute = async (path: string) => {
         ? preloadTeamRoutePayload(normalizedPath)
         : routeKind === PUBLIC_ROUTE_KIND_POST
           ? preloadPostDetailPayload(normalizedPath).then(() => null)
-      : Promise.resolve(null);
+          : Promise.resolve(null);
   const [, payload] = await Promise.all([codePreloadPromise, payloadPreloadPromise]);
   return payload;
 };
@@ -425,10 +435,7 @@ export const getPublicRoutePreloadHandlers = (path: string) => {
   };
 };
 
-export const schedulePublicRouteIdlePreload = (
-  paths: string[],
-  options?: { delayMs?: number },
-) => {
+export const schedulePublicRouteIdlePreload = (paths: string[], options?: { delayMs?: number }) => {
   const normalizedPaths = paths
     .map((path) => normalizePathname(path))
     .filter(Boolean)

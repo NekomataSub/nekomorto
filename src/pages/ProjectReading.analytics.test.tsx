@@ -1420,7 +1420,7 @@ describe("ProjectReading analytics", () => {
 
     await waitFor(() => {
       expect(window.scrollTo).toHaveBeenCalledWith({
-        top: 280,
+        top: 216,
         behavior: "auto",
       });
     });
