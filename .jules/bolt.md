@@ -11,3 +11,7 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+
+## 2024-05-18 - Optimize English string sorting using Intl.Collator
+**Learning:** In the project, `localeCompare` was being used repeatedly inside array sorting comparators (e.g., `(a, b) => a.localeCompare(b, "en")`), which incurs massive overhead because the internal collator object has to be initialized thousands of times in large lists.
+**Action:** Always prefer initializing a persistent `Intl.Collator` instance outside the loop/comparator and using its `.compare` method. A `compareEn` helper is now available alongside `comparePtBr` in `src/lib/search-ranking.ts`.
