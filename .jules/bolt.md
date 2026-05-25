@@ -11,3 +11,6 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+## 2024-05-18 - Optimize Dashboard Posts Sorting
+**Learning:** React `useMemo` hooks that sort large lists inside dashboard components are prone to severe lag if the `.sort()` comparator executes complex mapping logic (like joining tags and mapping projects). Repeated inline `.localeCompare` calls also compound this issue.
+**Action:** Always implement a Schwartzian transform (decorate-sort-undecorate) when sorting by computed data. Extract expensive computations (string joining, dictionary lookups) into an initial $O(N)$ map step *before* sorting, and utilize pre-instantiated collators (like `comparePtBr` from `src/lib/search-ranking.ts`) rather than inline `localeCompare`.
