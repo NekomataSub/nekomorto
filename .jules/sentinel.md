@@ -12,3 +12,7 @@
 **Vulnerability:** Raw HTML strings were assigned to `innerHTML` sinks without sanitization within `src/lexical-playground/nodes/ImageNode.tsx` and `src/lexical-playground/hooks/useReport.ts`.
 **Learning:** Even within an encapsulated rich-text editor setup or helper hooks, directly passing HTML strings to `innerHTML` exposes an XSS risk if those strings can be populated with user content.
 **Prevention:** Always sanitize strings with `DOMPurify.sanitize` (using strict profiles like `{ USE_PROFILES: { html: true } }` where appropriate) before rendering them via `innerHTML` or `dangerouslySetInnerHTML`.
+## 2026-04-20 - [Host Header Injection] Bypassing Express trust proxy
+**Vulnerability:** The application manually parsed `x-forwarded-host` headers to determine the request hostname. This bypasses Express's built-in `trust proxy` mechanism and allows attackers to spoof the host header.
+**Learning:** When an application is behind a reverse proxy and configured with `app.set("trust proxy", 1)`, Express securely resolves the correct client IP and hostname. Manually reading `req.headers["x-forwarded-host"]` ignores this security and trusts potentially malicious input.
+**Prevention:** Rely entirely on framework-level properties like `req.hostname` to resolve hostnames, which securely factors in proxy configuration, rather than reading raw forwarded headers.
