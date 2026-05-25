@@ -1,3 +1,6 @@
 ## $(date +%Y-%m-%d) - Added ARIA labels to Settings Dashboard Trash Buttons
 **Learning:** Found several icon-only action buttons (e.g. Delete/Trash) in the dashboard settings layout missing `aria-label`s, indicating this might be a pattern across internal dashboard components where functionality is prioritized over a11y.
 **Action:** Always verify icon-only buttons (`DashboardActionButton` using Lucide icons) have appropriate `aria-label`s, especially in complex list/array configuration forms. Keep them in Portuguese to match the app's language context.
+## 2026-05-25 - Added ARIA labels to Dashboard Action Buttons in loops and links
+**Learning:** Discovered that icon-only `DashboardActionButton`s inside loops (like the widget reorder arrows in Dashboard) and links (like the 'view post' eye icon in DashboardPosts) are frequently missing `aria-label`s and have unhidden SVG children. Also, when using Radix UI's `asChild` pattern, the `aria-label` must be applied to the parent wrapper.
+**Action:** Always verify icon-only buttons have dynamic, descriptive `aria-label`s (in Portuguese) and explicitly hide their inner icons with `aria-hidden="true"`. Apply accessibility props directly to the wrapper when using `asChild`.

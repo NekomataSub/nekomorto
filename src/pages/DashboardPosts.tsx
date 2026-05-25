@@ -1,6 +1,26 @@
+import {
+  CalendarDays,
+  Copy,
+  Eye,
+  List as ListIcon,
+  MessageSquare,
+  Plus,
+  RotateCcw,
+  Trash2,
+  UserRound,
+} from "lucide-react";
+import {
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import DashboardShell from "@/components/DashboardShell";
-import ProjectEmbedCard from "@/components/ProjectEmbedCard";
-import UploadPicture from "@/components/UploadPicture";
 import DashboardActionButton, {
   default as Button,
 } from "@/components/dashboard/DashboardActionButton";
@@ -36,6 +56,8 @@ import {
 import LazyImageLibraryDialog from "@/components/lazy/LazyImageLibraryDialog";
 import type { LexicalEditorHandle } from "@/components/lexical/LexicalEditor";
 import LexicalEditorSurface from "@/components/lexical/LexicalEditorSurface";
+import ProjectEmbedCard from "@/components/ProjectEmbedCard";
+import UploadPicture from "@/components/UploadPicture";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import AsyncState from "@/components/ui/async-state";
 import { Badge } from "@/components/ui/badge";
@@ -97,28 +119,6 @@ import { getImageFileNameFromUrl, resolvePostCoverPreview } from "@/lib/post-cov
 import { buildTranslationMap, sortByTranslatedLabel, translateTag } from "@/lib/project-taxonomy";
 import { normalizeUploadVariantUrlKey, type UploadMediaVariantsMap } from "@/lib/upload-variants";
 import type { ContentVersion, EditorialCalendarItem } from "@/types/editorial";
-import {
-  CalendarDays,
-  Copy,
-  Eye,
-  List as ListIcon,
-  MessageSquare,
-  Plus,
-  RotateCcw,
-  Trash2,
-  UserRound,
-} from "lucide-react";
-import {
-  type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 const POST_EDITOR_TOOLBAR_STICKY_OFFSET_PX = 5;
 
@@ -2124,7 +2124,12 @@ const DashboardPosts = () => {
                             </DashboardActionButton>
                           ) : null}
                           {editorPublicHref ? (
-                            <DashboardActionButton type="button" size="icon" asChild>
+                            <DashboardActionButton
+                              type="button"
+                              size="icon"
+                              asChild
+                              aria-label="Visualizar postagem"
+                            >
                               <Link target="_blank" rel="noreferrer" to={editorPublicHref}>
                                 <Eye className="h-4 w-4" aria-hidden="true" />
                               </Link>
