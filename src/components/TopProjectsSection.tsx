@@ -10,6 +10,7 @@ import { Combobox } from "@/components/public-form-controls";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePublicBootstrap } from "@/hooks/use-public-bootstrap";
+import { comparePtBr } from "@/lib/search-ranking";
 
 const TOP_PROJECTS_LIMIT = 10;
 const TOP_PROJECTS_LAST_7_DAYS = 7;
@@ -128,7 +129,8 @@ const TopProjectsSection = () => {
         if (right.viewsAll !== left.viewsAll) {
           return right.viewsAll - left.viewsAll;
         }
-        return left.title.localeCompare(right.title, "pt-BR");
+        // Optimization: Use pre-instantiated Intl.Collator (comparePtBr) instead of inline localeCompare inside O(N log N) sort
+        return comparePtBr(left.title, right.title);
       })
       .slice(0, TOP_PROJECTS_LIMIT);
   }, [mode, projects, referenceDate]);
