@@ -1,14 +1,14 @@
-import { Combobox, Input, Textarea } from "@/components/dashboard/dashboard-form-controls";
+import { GripVertical, Link2, Plus, Trash2 } from "lucide-react";
+import { useMemo } from "react";
 import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
 import DashboardFieldStack from "@/components/dashboard/DashboardFieldStack";
+import { Combobox, Input, Textarea } from "@/components/dashboard/dashboard-form-controls";
 import ReorderControls from "@/components/ReorderControls";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ComboboxOption } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { TabsContent } from "@/components/ui/tabs";
 import { navbarIconOptions } from "@/lib/navbar-icons";
-import { GripVertical, Link2, Plus, Trash2 } from "lucide-react";
-import { useMemo } from "react";
 import { useDashboardSettingsContext } from "./dashboard-settings-context";
 import {
   dashboardSettingsCardClassName,
@@ -152,7 +152,7 @@ export const DashboardSettingsLayoutTab = () => {
                   type="button"
                   size="icon"
                   className={responsiveCompactRowDeleteButtonClass}
-                  aria-label="Remover link da navbar"
+                  aria-label={`Remover link da navbar ${link.label || index + 1}`}
                   onClick={() =>
                     setSettings((prev) => ({
                       ...prev,
@@ -163,7 +163,7 @@ export const DashboardSettingsLayoutTab = () => {
                     }))
                   }
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </DashboardActionButton>
               </div>
             ))}
@@ -252,7 +252,7 @@ export const DashboardSettingsLayoutTab = () => {
                     type="button"
                     size="icon"
                     className={responsiveCompactSelfEndDeleteButtonClass}
-                    aria-label="Remover coluna do footer"
+                    aria-label={`Remover coluna ${column.title || columnIndex + 1} do footer`}
                     onClick={() =>
                       setSettings((prev) => ({
                         ...prev,
@@ -263,7 +263,7 @@ export const DashboardSettingsLayoutTab = () => {
                       }))
                     }
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </DashboardActionButton>
                 </div>
                 <div className="grid gap-3">
@@ -320,7 +320,7 @@ export const DashboardSettingsLayoutTab = () => {
                         type="button"
                         size="icon"
                         className={responsiveCompactRowDeleteButtonClass}
-                        aria-label="Remover link da coluna do footer"
+                        aria-label={`Remover link ${link.label || linkIndex + 1} da coluna do footer`}
                         onClick={() =>
                           setSettings((prev) => {
                             const nextColumns = [...prev.footer.columns];
@@ -338,7 +338,7 @@ export const DashboardSettingsLayoutTab = () => {
                           })
                         }
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </DashboardActionButton>
                     </div>
                   ))}
@@ -449,7 +449,7 @@ export const DashboardSettingsLayoutTab = () => {
                         }))
                       }
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </DashboardActionButton>
                   </div>
                   <Combobox
@@ -511,7 +511,7 @@ export const DashboardSettingsLayoutTab = () => {
                       }))
                     }
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </DashboardActionButton>
                 </div>
               </div>
@@ -550,7 +550,7 @@ export const DashboardSettingsLayoutTab = () => {
                       type="button"
                       size="icon"
                       className={responsiveCompactRowDeleteButtonClass}
-                      aria-label="Remover parágrafo do aviso legal"
+                      aria-label={`Remover parágrafo ${index + 1} do aviso legal`}
                       onClick={() =>
                         setSettings((prev) => ({
                           ...prev,
@@ -561,7 +561,7 @@ export const DashboardSettingsLayoutTab = () => {
                         }))
                       }
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </DashboardActionButton>
                   </div>
                 ))}

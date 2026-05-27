@@ -1,8 +1,8 @@
+import { ChevronDown, ChevronUp } from "lucide-react";
+import type { KeyboardEvent } from "react";
 import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
 import { useAccessibilityAnnouncer } from "@/hooks/accessibility-announcer";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import type { KeyboardEvent } from "react";
 
 type ReorderControlsProps = {
   label: string;
