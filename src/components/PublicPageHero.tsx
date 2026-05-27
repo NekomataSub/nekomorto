@@ -41,12 +41,12 @@ const PublicPageHero = ({ badge, title, subtitle, badges = [], children }: Publi
               {badgeLabel}
             </Badge>
           ) : null}
-          <h1 className="text-3xl font-semibold text-foreground md:text-5xl animate-slide-up">
+          <h1 className="max-w-4xl text-3xl font-semibold leading-tight text-foreground [text-wrap:balance] md:text-5xl animate-slide-up">
             {title}
           </h1>
           {subtitle ? (
             <p
-              className="whitespace-pre-wrap text-sm text-muted-foreground md:text-base animate-slide-up"
+              className="max-w-2xl whitespace-pre-wrap text-sm leading-6 text-muted-foreground [text-wrap:pretty] md:text-base md:leading-7 animate-slide-up"
               style={subtitleAnimationDelay}
             >
               {subtitle}

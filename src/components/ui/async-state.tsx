@@ -46,12 +46,19 @@ export const AsyncState = ({
       role={role}
       aria-live="polite"
       className={cn(
-        "rounded-2xl border border-border/60 bg-card/60 px-6 py-10 text-center text-sm text-muted-foreground",
+        "relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 px-6 py-10 text-center text-sm text-muted-foreground",
+        effectiveKind === "loading" ? "bg-card/50" : "",
         effectiveKind === "empty" ? "border-dashed bg-card/40" : "",
         effectiveKind === "error" ? "border-destructive/40 bg-destructive/5 text-destructive" : "",
         className,
       )}
     >
+      {effectiveKind === "loading" ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/45 to-transparent"
+        />
+      ) : null}
       <div className="mx-auto flex max-w-xl flex-col items-center gap-3">
         <span
           className={cn(
@@ -66,6 +73,12 @@ export const AsyncState = ({
         <p className="font-medium text-foreground">{title}</p>
         {description ? (
           <p className="max-w-lg text-xs text-muted-foreground">{description}</p>
+        ) : null}
+        {effectiveKind === "loading" ? (
+          <div className="mt-2 flex w-full max-w-xs flex-col items-center gap-2" aria-hidden="true">
+            <span className="h-2 w-3/4 rounded-full bg-muted/70 animate-pulse" />
+            <span className="h-2 w-1/2 rounded-full bg-muted/50 animate-pulse" />
+          </div>
         ) : null}
         {action ? <div className="pt-1">{action}</div> : null}
       </div>

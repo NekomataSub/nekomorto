@@ -6,7 +6,7 @@
 @source not "./**/*.test.tsx";
 
 @theme inline {
-  --font-sans: "Geist", "Inter", sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -348,7 +348,8 @@
 
   body {
     @apply bg-background text-foreground font-sans subpixel-antialiased;
-    font-family: "Inter", sans-serif;
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
   }
 
   body :where([class*="border-"]) {
@@ -562,6 +563,18 @@
     color: hsl(var(--accent-foreground));
   }
 
+  :where(p, li, blockquote) {
+    text-wrap: pretty;
+  }
+
+  :where(h1, h2, h3) {
+    text-wrap: balance;
+  }
+
+  :where(time, table, [data-tabular-nums="true"]) {
+    font-variant-numeric: tabular-nums;
+  }
+
   .a11y-focus-target {
     scroll-margin-top: 6rem;
   }
@@ -772,6 +785,12 @@
     transition-duration: var(--interactive-duration-fast);
     transition-timing-function: var(--interactive-ease-standard);
     will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .interactive-control-transition:active {
+      transform: translateY(1px);
+    }
   }
 
   .interactive-content-transition {

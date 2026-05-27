@@ -24,10 +24,14 @@ const badgeItems = (Array.isArray(badges) ? badges : [])
           {badgeLabel}
         </p>
       ) : null}
-      <h1 class="text-3xl font-semibold text-foreground md:text-5xl animate-slide-up">{title}</h1>
+      <h1
+        class="max-w-4xl text-3xl font-semibold leading-tight text-foreground [text-wrap:balance] md:text-5xl animate-slide-up"
+      >
+        {title}
+      </h1>
       {subtitle ? (
         <p
-          class="whitespace-pre-wrap text-sm text-muted-foreground md:text-base animate-slide-up"
+          class="max-w-2xl whitespace-pre-wrap text-sm leading-6 text-muted-foreground [text-wrap:pretty] md:text-base md:leading-7 animate-slide-up"
           style="animation-delay:0.2s"
         >
           {subtitle}
