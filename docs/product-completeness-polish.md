@@ -67,3 +67,11 @@ O trabalho restante e de acabamento, robustez e consistencia:
 - Trocar estados vazios manuais da home por `AsyncState`, mantendo mensagens
   especificas para posts e ranking de projetos.
 - Adicionar cobertura focada para o 404 publico e preservar os contratos de rota.
+
+## Terceiro ciclo aplicado
+
+- Refinar estados de carregamento, erro e conteudo indisponivel no reader textual.
+- Remover estados manuais duplicados do reader e centralizar a apresentacao em
+  `AsyncState`.
+- Adicionar acao de recuperacao segura para voltar ao projeto quando o capitulo
+  nao carrega ou ainda nao possui conteudo publicado.

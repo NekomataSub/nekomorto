@@ -12,6 +12,7 @@ import LightNovelReadingHeader, {
 import ProjectReadingInfoBar from "@/components/project-reader/ProjectReadingInfoBar";
 import PublicProjectReader from "@/components/project-reader/PublicProjectReader";
 import { useProjectReaderPreferences } from "@/components/project-reader/use-project-reader-preferences";
+import AsyncState from "@/components/ui/async-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Project } from "@/data/projects";
@@ -53,10 +54,40 @@ import {
 import NotFound from "./NotFound";
 
 const LexicalViewerFallback = () => (
-  <div className="min-h-80 w-full rounded-xl border border-border/60 bg-background/60 p-6 text-sm text-muted-foreground">
-    Carregando conteúdo...
-  </div>
+  <AsyncState
+    kind="loading"
+    title="Carregando conteúdo"
+    description="Estamos preparando o capítulo para leitura."
+    className="min-h-80 bg-background/60"
+  />
 );
+
+type ReaderContentStateProps = {
+  kind: "empty" | "error";
+  backHref: string;
+};
+
+const ReaderContentState = ({ kind, backHref }: ReaderContentStateProps) => {
+  const isError = kind === "error";
+
+  return (
+    <AsyncState
+      kind={kind}
+      title={isError ? "Não foi possível carregar este capítulo" : "Conteúdo ainda não disponível"}
+      description={
+        isError
+          ? "Tente recarregar a página. Se o problema continuar, volte para o projeto e escolha outro capítulo."
+          : "Este capítulo já existe no catálogo, mas ainda não tem conteúdo de leitura publicado."
+      }
+      action={
+        <Button asChild variant="outline" size="sm">
+          <Link to={backHref}>Voltar ao projeto</Link>
+        </Button>
+      }
+      className="min-h-64 bg-background/60"
+    />
+  );
+};
 
 type ReadingProject = Project | PublicBootstrapProject;
 
@@ -1020,15 +1051,9 @@ const ProjectReading = () => {
                       ) : !hasLoadedChapter ? (
                         <LexicalViewerFallback />
                       ) : chapterLoadError ? (
-                        <div className="rounded-xl border border-dashed border-border/60 bg-background/60 p-6 text-center text-sm text-muted-foreground">
-                          {
-                            "O conte\u00fado do cap\u00edtulo n\u00e3o p\u00f4de ser carregado agora."
-                          }
-                        </div>
+                        <ReaderContentState kind="error" backHref={backHref} />
                       ) : (
-                        <div className="rounded-xl border border-dashed border-border/60 bg-background/60 p-6 text-center text-sm text-muted-foreground">
-                          {"Conte\u00fado ainda n\u00e3o dispon\u00edvel."}
-                        </div>
+                        <ReaderContentState kind="empty" backHref={backHref} />
                       )}
                     </CardContent>
                   </Card>
@@ -1136,13 +1161,9 @@ const ProjectReading = () => {
                   ) : !hasLoadedChapter ? (
                     <LexicalViewerFallback />
                   ) : chapterLoadError ? (
-                    <div className="rounded-xl border border-dashed border-border/60 bg-background/60 p-6 text-center text-sm text-muted-foreground">
-                      O conteúdo do capítulo não pôde ser carregado agora.
-                    </div>
+                    <ReaderContentState kind="error" backHref={backHref} />
                   ) : (
-                    <div className="rounded-xl border border-dashed border-border/60 bg-background/60 p-6 text-center text-sm text-muted-foreground">
-                      Conteúdo ainda não disponível.
-                    </div>
+                    <ReaderContentState kind="empty" backHref={backHref} />
                   )}
                 </div>
               </div>
