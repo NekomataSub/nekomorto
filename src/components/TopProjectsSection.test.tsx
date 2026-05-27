@@ -323,6 +323,11 @@ describe("TopProjectsSection", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/sem dados de visualiza/i)).toBeInTheDocument();
+    expect(screen.getByText("Sem visualizações suficientes")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Os projetos mais acessados aparecem aqui depois que houver dados de leitura.",
+      ),
+    ).toBeInTheDocument();
   });
 });

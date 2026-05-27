@@ -7,6 +7,7 @@ import PublicProjectCard, {
   resolvePublicProjectCardResponsiveMaxLines,
 } from "@/components/project/PublicProjectCard";
 import { Combobox } from "@/components/public-form-controls";
+import AsyncState from "@/components/ui/async-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePublicBootstrap } from "@/hooks/use-public-bootstrap";
@@ -194,9 +195,12 @@ const TopProjectsSection = () => {
             ))}
           </div>
         ) : topProjects.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/60 bg-background/50 p-4 text-xs text-muted-foreground">
-            Ainda sem dados de visualizacao.
-          </div>
+          <AsyncState
+            kind="empty"
+            title="Sem visualizações suficientes"
+            description="Os projetos mais acessados aparecem aqui depois que houver dados de leitura."
+            className="rounded-xl px-4 py-8"
+          />
         ) : (
           <div className="top-projects-viewport">
             <div

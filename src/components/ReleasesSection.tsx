@@ -1,5 +1,6 @@
 import PublicLink from "@/components/PublicLink";
 import CompactPagination from "@/components/ui/compact-pagination";
+import AsyncState from "@/components/ui/async-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePublicBootstrap } from "@/hooks/use-public-bootstrap";
@@ -119,9 +120,12 @@ const ReleasesSection = () => {
                 ))}
               </div>
             ) : pagedReleases.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/60 bg-card/60 px-6 py-10 text-sm text-muted-foreground">
-                Nenhuma postagem publicada ainda.
-              </div>
+              <AsyncState
+                kind="empty"
+                title="Nenhuma postagem publicada ainda"
+                description="Quando uma novidade for publicada, ela aparece aqui com capa, resumo e link de leitura."
+                className="min-h-64 justify-center"
+              />
             ) : (
               <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
                 {pagedReleases.map((release, index) => {

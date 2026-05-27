@@ -59,3 +59,11 @@ O trabalho restante e de acabamento, robustez e consistencia:
 - Melhorar hero publico compartilhado entre Astro e React.
 - Refinar `AsyncState` para loading, vazio e erro com melhor hierarquia visual.
 - Manter contratos, rotas, APIs, schema e dependencias inalterados.
+
+## Segundo ciclo aplicado
+
+- Refinar a pagina 404 publica para usar o mesmo sistema visual das paginas
+  publicas, sem decoracao pesada ou card generico.
+- Trocar estados vazios manuais da home por `AsyncState`, mantendo mensagens
+  especificas para posts e ranking de projetos.
+- Adicionar cobertura focada para o 404 publico e preservar os contratos de rota.
