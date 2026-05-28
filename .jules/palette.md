@@ -1,3 +1,6 @@
 ## $(date +%Y-%m-%d) - Added ARIA labels to Settings Dashboard Trash Buttons
 **Learning:** Found several icon-only action buttons (e.g. Delete/Trash) in the dashboard settings layout missing `aria-label`s, indicating this might be a pattern across internal dashboard components where functionality is prioritized over a11y.
 **Action:** Always verify icon-only buttons (`DashboardActionButton` using Lucide icons) have appropriate `aria-label`s, especially in complex list/array configuration forms. Keep them in Portuguese to match the app's language context.
+## $(date +%Y-%m-%d) - Added ARIA labels to Dashboard Widget Reordering Buttons
+**Learning:** Icon-only buttons used for reordering elements (like `ArrowUp` and `ArrowDown`) often miss contextual `aria-label`s. In dynamic lists, these labels must include the specific item name to provide meaningful context to screen reader users. Redundant screen reader announcements for the icons themselves can be prevented with `aria-hidden="true"`.
+**Action:** When adding or updating icon-only action buttons in mapped lists, always generate dynamic `aria-label`s based on the specific item context and explicitly set `aria-hidden="true"` on the nested `lucide-react` icon elements.
