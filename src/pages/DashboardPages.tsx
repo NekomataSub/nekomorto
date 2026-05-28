@@ -1,3 +1,59 @@
+import {
+  BadgeDollarSign,
+  Banknote,
+  Bitcoin,
+  CircleDollarSign,
+  Coins,
+  DollarSign,
+  Flame,
+  GripVertical,
+  HandCoins,
+  Heart,
+  HeartHandshake,
+  HelpCircle,
+  Info,
+  Landmark,
+  Languages,
+  Layers,
+  Paintbrush,
+  PenTool,
+  PiggyBank,
+  Plus,
+  QrCode,
+  Rocket,
+  ScanText,
+  Server,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Timer,
+  Trash2,
+  Users,
+  Video,
+  Wallet,
+  Wallet2,
+  WalletCards,
+  WalletMinimal,
+  Wand2,
+  Zap,
+} from "lucide-react";
+import {
+  type DragEvent,
+  type FocusEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import DashboardAutosaveStatus from "@/components/DashboardAutosaveStatus";
+import DashboardShell from "@/components/DashboardShell";
+import DashboardActionButton, {
+  default as Button,
+} from "@/components/dashboard/DashboardActionButton";
+import DashboardFieldStack from "@/components/dashboard/DashboardFieldStack";
+import DashboardPageBadge from "@/components/dashboard/DashboardPageBadge";
 import { Combobox, Input, Textarea } from "@/components/dashboard/dashboard-form-controls";
 import {
   dashboardAnimationDelay,
@@ -7,13 +63,6 @@ import {
   dashboardPageLayoutTokens,
   dashboardSubtleSurfaceHoverClassName,
 } from "@/components/dashboard/dashboard-page-tokens";
-import DashboardActionButton, {
-  default as Button,
-} from "@/components/dashboard/DashboardActionButton";
-import DashboardFieldStack from "@/components/dashboard/DashboardFieldStack";
-import DashboardPageBadge from "@/components/dashboard/DashboardPageBadge";
-import DashboardAutosaveStatus from "@/components/DashboardAutosaveStatus";
-import DashboardShell from "@/components/DashboardShell";
 import LazyImageLibraryDialog from "@/components/lazy/LazyImageLibraryDialog";
 import ReorderControls from "@/components/ReorderControls";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -52,56 +101,8 @@ import {
 } from "@/lib/donations-monthly-goal";
 import { getShareImageAltFallback, resolveAssetAltText } from "@/lib/image-alt";
 import { filterImageLibraryFoldersByAccess } from "@/lib/image-library-scope";
+import { comparePtBr } from "@/lib/search-ranking";
 import type { DonationsCryptoService } from "@/types/public-pages";
-import {
-  BadgeDollarSign,
-  Banknote,
-  Bitcoin,
-  CircleDollarSign,
-  Coins,
-  DollarSign,
-  Flame,
-  GripVertical,
-  Heart,
-  HeartHandshake,
-  HandCoins,
-  HelpCircle,
-  Info,
-  Landmark,
-  Languages,
-  Layers,
-  Paintbrush,
-  PenTool,
-  PiggyBank,
-  Plus,
-  QrCode,
-  Rocket,
-  ScanText,
-  Server,
-  Shield,
-  ShieldCheck,
-  Sparkles,
-  Timer,
-  Trash2,
-  Users,
-  Video,
-  Wallet,
-  Wallet2,
-  WalletCards,
-  WalletMinimal,
-  Wand2,
-  Zap,
-} from "lucide-react";
-import {
-  type DragEvent,
-  type FocusEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 type AboutHighlight = DashboardPagesEditorRecord & { label: string; text: string; icon: string };
 type AboutValue = DashboardPagesEditorRecord & { title: string; description: string; icon: string };
@@ -468,7 +469,7 @@ const pageLabels: Record<PublicPageKey, string> = {
 
 const orderedPageTabs = [
   ...(Object.entries(pageLabels) as Array<[PublicPageKey, string]>)
-    .sort(([, labelA], [, labelB]) => labelA.localeCompare(labelB, "pt-BR"))
+    .sort(([, labelA], [, labelB]) => comparePtBr(labelA, labelB))
     .map(([key, label]) => ({ key, label })),
   { key: "preview", label: "Prévia" },
 ] as const satisfies Array<{ key: DashboardPagesTabKey; label: string }>;

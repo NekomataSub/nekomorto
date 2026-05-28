@@ -1,8 +1,8 @@
+import { type DragEvent, useCallback, useMemo, useState } from "react";
 import { useDashboardSettingsAutosave } from "@/components/dashboard/settings/use-dashboard-settings-autosave";
 import { useDashboardSettingsLoading } from "@/components/dashboard/settings/use-dashboard-settings-loading";
 import { useDashboardSettingsQuerySync } from "@/components/dashboard/settings/use-dashboard-settings-query-sync";
 import type { SiteSettings } from "@/types/site-settings";
-import { type DragEvent, useCallback, useMemo, useState } from "react";
 import {
   getProjectReaderPresetByType,
   mergeProjectReaderConfig,
@@ -139,9 +139,10 @@ export const useDashboardSettingsResource = ({
     const allTags = Array.from(
       new Set([...loading.knownTags, ...Object.keys(loading.tagTranslations)]),
     );
+    const collator = new Intl.Collator("en");
     return allTags
       .filter((tag) => !query || tag.toLowerCase().includes(query))
-      .sort((a, b) => a.localeCompare(b, "en"));
+      .sort(collator.compare);
   }, [loading.knownTags, loading.tagTranslations, tagQuery]);
 
   const filteredGenres = useMemo(() => {
@@ -149,9 +150,10 @@ export const useDashboardSettingsResource = ({
     const allGenres = Array.from(
       new Set([...loading.knownGenres, ...Object.keys(loading.genreTranslations)]),
     );
+    const collator = new Intl.Collator("en");
     return allGenres
       .filter((genre) => !query || genre.toLowerCase().includes(query))
-      .sort((a, b) => a.localeCompare(b, "en"));
+      .sort(collator.compare);
   }, [genreQuery, loading.genreTranslations, loading.knownGenres]);
 
   const filteredStaffRoles = useMemo(() => {
@@ -159,9 +161,10 @@ export const useDashboardSettingsResource = ({
     const allRoles = Array.from(
       new Set([...loading.knownStaffRoles, ...Object.keys(loading.staffRoleTranslations)]),
     );
+    const collator = new Intl.Collator("en");
     return allRoles
       .filter((role) => !query || role.toLowerCase().includes(query))
-      .sort((a, b) => a.localeCompare(b, "en"));
+      .sort(collator.compare);
   }, [loading.knownStaffRoles, loading.staffRoleTranslations, staffRoleQuery]);
 
   const readerPresets = useMemo(
