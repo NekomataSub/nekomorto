@@ -55,7 +55,9 @@ import { createSiteConfigRuntimeBundle } from "./bootstrap/create-site-config-ru
 import { createSiteRenderingRuntimeBundle } from "./bootstrap/create-site-rendering-runtime-bundle.js";
 import { createUserRuntimeBundle } from "./bootstrap/create-user-runtime-bundle.js";
 import { createWebhookRuntimeBundle } from "./bootstrap/create-webhook-runtime-bundle.js";
-import { registerRootServerRoutes } from "./bootstrap/register-root-server-routes.js";
+import { registerDirectServerRoutes } from "./bootstrap/register-direct-server-routes.js";
+import { createRootServerRouteContexts } from "./bootstrap/register-root-server-routes.js";
+import { registerServerRoutes } from "./bootstrap/register-server-routes.js";
 import { startServerJobs } from "./bootstrap/start-server-jobs.js";
 import { createAdminExportRuntime } from "./lib/admin-export-runtime.js";
 import * as adminExports from "./lib/admin-exports.js";
@@ -1952,13 +1954,6 @@ if (isAstroPublicRuntimeEnabled && fs.existsSync(ASTRO_CLIENT_ASSETS_DIR)) {
   );
 }
 
-if (isAstroPublicRuntimeEnabled) {
-  registerAstroRoutes({
-    app,
-    handleAstroPublicRequest: astroPublicRequestHandler,
-  });
-}
-
 const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   adminExports,
   authzLib,
@@ -2277,7 +2272,18 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   writeUsers,
 });
 
-registerRootServerRoutes(rootRouteRegistrationDependencies);
+const rootRouteContexts = createRootServerRouteContexts(rootRouteRegistrationDependencies);
+
+registerDirectServerRoutes(rootRouteContexts.directRouteDependencies);
+
+if (isAstroPublicRuntimeEnabled) {
+  registerAstroRoutes({
+    app,
+    handleAstroPublicRequest: astroPublicRequestHandler,
+  });
+}
+
+registerServerRoutes(rootRouteContexts.serverRouteDependencies);
 app.use(createGlobalErrorHandler());
 
 const listenPort = Number(PORT);

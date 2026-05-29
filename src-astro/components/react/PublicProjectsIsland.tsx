@@ -26,7 +26,7 @@ const PublicProjectsIsland = ({
     initialSettings={initialSettings}
   >
     <PublicScrollToTop initialPath={initialPath} />
-    <Projects />
+    <Projects initialPath={initialPath} />
   </PublicHydratedPage>
 );
 

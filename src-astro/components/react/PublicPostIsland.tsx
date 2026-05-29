@@ -26,7 +26,7 @@ const PublicPostIsland = ({
     initialSettings={initialSettings}
   >
     <PublicScrollToTop initialPath={initialPath} />
-    <Post />
+    <Post initialPath={initialPath} />
   </PublicHydratedPage>
 );
 

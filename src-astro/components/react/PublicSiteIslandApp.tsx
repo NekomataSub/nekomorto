@@ -137,11 +137,15 @@ const PublicSiteIslandApp = ({
       {shouldUseStaticShell ? null : routeKind === PUBLIC_ROUTE_KIND_HOME ? (
         <Index />
       ) : routeKind === PUBLIC_ROUTE_KIND_PROJECTS_LIST ? (
-        <Projects />
+        <Projects initialPath={currentRouteKey} />
       ) : routeKind === PUBLIC_ROUTE_KIND_PROJECT_DETAIL ? (
-        <Project renderHero={!shouldUseStaticProjectHero} slug={currentProjectSlug} />
+        <Project
+          initialPath={currentRouteKey}
+          renderHero={!shouldUseStaticProjectHero}
+          slug={currentProjectSlug}
+        />
       ) : routeKind === PUBLIC_ROUTE_KIND_POST ? (
-        <Post />
+        <Post initialPath={currentRouteKey} />
       ) : routeKind === PUBLIC_ROUTE_KIND_TEAM ? (
         <Team />
       ) : routeKind === PUBLIC_ROUTE_KIND_ABOUT ? (

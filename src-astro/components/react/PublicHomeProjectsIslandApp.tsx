@@ -7,6 +7,7 @@ import PublicHydratedPage from "./PublicHydratedPage";
 
 interface PublicHomeProjectsIslandAppProps {
   initialCurrentUser?: unknown;
+  initialPath?: string;
   initialPublicBootstrap: PublicBootstrapPayload | null;
   initialPublicRoutePayload?: PublicRoutePayload | null;
   initialSettings?: SiteSettings | null;
@@ -14,11 +15,12 @@ interface PublicHomeProjectsIslandAppProps {
 
 const PublicHomeProjectsIslandApp = ({
   initialCurrentUser,
+  initialPath = "/",
   initialPublicBootstrap,
   initialPublicRoutePayload,
   initialSettings,
 }: PublicHomeProjectsIslandAppProps) => {
-  const location = usePublicDocumentLocation("/");
+  const location = usePublicDocumentLocation(initialPath);
 
   return (
     <PublicHydratedPage
@@ -27,7 +29,11 @@ const PublicHomeProjectsIslandApp = ({
       initialPublicRoutePayload={initialPublicRoutePayload}
       initialSettings={initialSettings}
     >
-      {location.pathname === "/projetos" ? <Projects /> : <Index />}
+      {location.pathname === "/projetos" ? (
+        <Projects initialPath={`${location.pathname}${location.search || ""}`} />
+      ) : (
+        <Index />
+      )}
     </PublicHydratedPage>
   );
 };

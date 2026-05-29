@@ -8,11 +8,13 @@ interface PostIslandAppProps {
   initialPublicBootstrap: PublicBootstrapPayload | null;
   initialPublicRoutePayload?: PublicRoutePayload | null;
   initialSettings?: SiteSettings | null;
+  initialPath?: string;
   slug?: string;
 }
 
 const PostIslandApp = ({
   initialCurrentUser,
+  initialPath = "/",
   initialPublicBootstrap,
   initialPublicRoutePayload,
   initialSettings,
@@ -24,7 +26,7 @@ const PostIslandApp = ({
     initialPublicRoutePayload={initialPublicRoutePayload}
     initialSettings={initialSettings}
   >
-    <Post slug={slug} />
+    <Post initialPath={initialPath} slug={slug} />
   </PublicHydratedPage>
 );
 

@@ -31,14 +31,15 @@ type PublicBootstrapContextValue = {
 
 const PublicBootstrapContext = createContext<PublicBootstrapContextValue | null>(null);
 
-const normalizeInitialBootstrap = (value: unknown) =>
-  asPublicBootstrapPayload(value) || readWindowPublicBootstrap();
+const normalizeInitialBootstrap = (value: unknown, options: { includeWindow?: boolean } = {}) =>
+  asPublicBootstrapPayload(value) || (options.includeWindow ? readWindowPublicBootstrap() : null);
 
-const normalizeInitialRoutePayload = (value: unknown) =>
-  asPublicRoutePayload(value) || readWindowPublicRoutePayload();
+const normalizeInitialRoutePayload = (value: unknown, options: { includeWindow?: boolean } = {}) =>
+  asPublicRoutePayload(value) || (options.includeWindow ? readWindowPublicRoutePayload() : null);
 
-const normalizeInitialCurrentUser = (value: unknown) =>
-  asPublicBootstrapCurrentUser(value) || readWindowPublicBootstrapCurrentUser();
+const normalizeInitialCurrentUser = (value: unknown, options: { includeWindow?: boolean } = {}) =>
+  asPublicBootstrapCurrentUser(value) ||
+  (options.includeWindow ? readWindowPublicBootstrapCurrentUser() : null);
 
 const buildInitialContextValue = ({
   initialCurrentUser,
@@ -49,6 +50,8 @@ const buildInitialContextValue = ({
   initialPublicBootstrap?: unknown;
   initialPublicRoutePayload?: unknown;
 }) => ({
+  // Keep the initial render derived only from serialized props. Reading window
+  // globals here can make hydrated Astro islands render different HTML.
   currentUser: normalizeInitialCurrentUser(initialCurrentUser),
   publicBootstrap: normalizeInitialBootstrap(initialPublicBootstrap),
   publicRoutePayload: normalizeInitialRoutePayload(initialPublicRoutePayload),
@@ -74,15 +77,20 @@ export const PublicBootstrapProvider = ({
   );
 
   useEffect(() => {
-    const initialBootstrap = normalizeInitialBootstrap(initialPublicBootstrap);
+    const initialBootstrap = normalizeInitialBootstrap(initialPublicBootstrap, {
+      includeWindow: true,
+    });
     if (initialBootstrap) {
       primePublicBootstrapCache(initialBootstrap);
     }
     setState((current) => ({
-      currentUser: normalizeInitialCurrentUser(initialCurrentUser) || current.currentUser,
+      currentUser:
+        normalizeInitialCurrentUser(initialCurrentUser, { includeWindow: true }) ||
+        current.currentUser,
       publicBootstrap: initialBootstrap || current.publicBootstrap,
       publicRoutePayload:
-        normalizeInitialRoutePayload(initialPublicRoutePayload) || current.publicRoutePayload,
+        normalizeInitialRoutePayload(initialPublicRoutePayload, { includeWindow: true }) ||
+        current.publicRoutePayload,
     }));
   }, [initialCurrentUser, initialPublicBootstrap, initialPublicRoutePayload]);
 
@@ -151,18 +159,20 @@ export const PublicBootstrapProvider = ({
 
 export const useResolvedPublicBootstrap = () => {
   const context = useContext(PublicBootstrapContext);
-  return context?.publicBootstrap || readWindowPublicBootstrap();
+  return context ? context.publicBootstrap : readWindowPublicBootstrap();
 };
 
 export const useResolvedPublicRoutePayload = () => {
   const context = useContext(PublicBootstrapContext);
-  return context?.publicRoutePayload || readWindowPublicRoutePayload();
+  return context ? context.publicRoutePayload : readWindowPublicRoutePayload();
 };
 
 export const useResolvedPublicBootstrapCurrentUser = () => {
   const context = useContext(PublicBootstrapContext);
-  return context?.currentUser || readWindowPublicBootstrapCurrentUser();
+  return context ? context.currentUser : readWindowPublicBootstrapCurrentUser();
 };
+
+export const useHasPublicBootstrapProvider = () => useContext(PublicBootstrapContext) !== null;
 
 export const usePublishResolvedPublicSnapshots = () => {
   const context = useContext(PublicBootstrapContext);

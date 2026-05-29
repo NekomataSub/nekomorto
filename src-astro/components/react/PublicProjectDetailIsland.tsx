@@ -28,7 +28,7 @@ const PublicProjectDetailIsland = ({
     initialSettings={initialSettings}
   >
     <PublicScrollToTop initialPath={initialPath} />
-    <Project renderHero={false} slug={slug} />
+    <Project initialPath={initialPath} renderHero={false} slug={slug} />
   </PublicHydratedPage>
 );
 

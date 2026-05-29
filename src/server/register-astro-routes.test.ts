@@ -5,11 +5,14 @@ import { afterEach, describe, expect, it } from "vitest";
 import { registerAstroRoutes } from "../../server/routes/register-astro-routes.js";
 
 const createTestServer = async ({
+  registerBeforeAstro,
   handleAstroPublicRequest,
 }: {
+  registerBeforeAstro?: (app: express.Express) => void;
   handleAstroPublicRequest?: Parameters<typeof registerAstroRoutes>[0]["handleAstroPublicRequest"];
 } = {}) => {
   const app = express();
+  registerBeforeAstro?.(app);
   registerAstroRoutes({
     app,
     handleAstroPublicRequest,
@@ -110,5 +113,36 @@ describe("registerAstroRoutes", () => {
 
     expect(response.status).toBe(200);
     expect(body).toContain("legacy");
+  });
+
+  it("lets an earlier OAuth callback route consume /login callback params before Astro", async () => {
+    const started = await createTestServer({
+      registerBeforeAstro: (app) => {
+        app.get("/login", (req, res, next) => {
+          const hasCallbackParams = Boolean(
+            (typeof req.query.code === "string" && req.query.code.trim()) ||
+              (typeof req.query.state === "string" && req.query.state.trim()),
+          );
+          if (!hasCallbackParams) {
+            return next("route");
+          }
+          return res.type("text").send("oauth-callback");
+        });
+      },
+      handleAstroPublicRequest: async (_req, res) => {
+        res.type("html").send("<!doctype html><html><body>astro</body></html>");
+      },
+    });
+    activeServer = started.server;
+
+    const callbackResponse = await fetch(`${started.baseUrl}/login?code=abc&state=def`);
+    const callbackBody = await callbackResponse.text();
+    const pageResponse = await fetch(`${started.baseUrl}/login`);
+    const pageBody = await pageResponse.text();
+
+    expect(callbackResponse.status).toBe(200);
+    expect(callbackBody).toBe("oauth-callback");
+    expect(pageResponse.status).toBe(200);
+    expect(pageBody).toContain("astro");
   });
 });

@@ -70,9 +70,13 @@ const PublicPhase3IslandApp = ({
       initialSettings={initialSettings}
     >
       {isProjectRoute ? (
-        <Project renderHero={!shouldUseStaticProjectHero} slug={currentProjectSlug} />
+        <Project
+          initialPath={`${pathname}${location.search || ""}`}
+          renderHero={!shouldUseStaticProjectHero}
+          slug={currentProjectSlug}
+        />
       ) : isProjectsRoute ? (
-        <Projects />
+        <Projects initialPath={`${pathname}${location.search || ""}`} />
       ) : (
         <Index />
       )}

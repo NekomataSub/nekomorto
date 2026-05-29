@@ -606,13 +606,13 @@ const ProjectsGrid = memo(
 
 ProjectsGrid.displayName = "ProjectsGrid";
 
-const Projects = () => {
+const Projects = ({ initialPath = "/projetos" }: { initialPath?: string }) => {
   const apiBase = getApiBase();
   const isMobile = useIsMobile();
   const bootstrap = useResolvedPublicBootstrap();
   const routePayload = useResolvedPublicRoutePayload();
   const { publishPublicRoutePayload } = usePublishResolvedPublicSnapshots();
-  const location = usePublicDocumentLocation();
+  const location = usePublicDocumentLocation(initialPath);
   const hasFullBootstrap = Boolean(bootstrap && bootstrap.payloadMode !== "critical-home");
   const projectsRoutePayload = routePayload?.kind === "projects-list" ? routePayload : null;
   const bootstrapProjects = hasFullBootstrap ? ((bootstrap?.projects || []) as Project[]) : [];

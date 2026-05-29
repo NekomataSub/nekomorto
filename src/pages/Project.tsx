@@ -276,13 +276,15 @@ const hasProjectRoutePayloadTranslations = (payload: PublicRouteProjectDetailPay
   );
 
 const ProjectPage = ({
+  initialPath = "/",
   renderHero = true,
   slug: slugProp,
 }: {
+  initialPath?: string;
   renderHero?: boolean;
   slug?: string;
 }) => {
-  const location = usePublicDocumentLocation();
+  const location = usePublicDocumentLocation(initialPath);
   const params = useParams();
   const slug = slugProp || resolveProjectSlugFromPath(location.pathname) || params.slug;
   const apiBase = getApiBase();

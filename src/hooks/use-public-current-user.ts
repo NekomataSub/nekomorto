@@ -2,6 +2,10 @@ import { getApiBase } from "@/lib/api-base";
 import { apiFetch } from "@/lib/api-client";
 import { scheduleOnBrowserLoadIdle } from "@/lib/browser-idle";
 import {
+  useHasPublicBootstrapProvider,
+  useResolvedPublicBootstrapCurrentUser,
+} from "@/hooks/public-bootstrap-provider";
+import {
   asPublicBootstrapCurrentUser,
   type PublicBootstrapCurrentUser,
   readWindowPublicBootstrapCurrentUser,
@@ -31,8 +35,9 @@ const listeners = new Set<() => void>();
 
 const PUBLIC_CURRENT_USER_STALE_TIME_MS = 60_000;
 
-const createPublicCurrentUserCache = (): PublicCurrentUserCache => {
-  const bootstrapUser = readWindowPublicBootstrapCurrentUser();
+const createPublicCurrentUserCache = (
+  bootstrapUser: PublicBootstrapCurrentUser | null = null,
+): PublicCurrentUserCache => {
   return {
     currentUser: bootstrapUser,
     error: null,
@@ -54,26 +59,52 @@ const emitSnapshot = () => {
   });
 };
 
+const primePublicCurrentUserCache = (value: PublicBootstrapCurrentUser | null) => {
+  if (!value) {
+    return false;
+  }
+  publicCurrentUserCache.currentUser = value;
+  publicCurrentUserCache.error = null;
+  publicCurrentUserCache.status = "success";
+  publicCurrentUserCache.lastFetchedAt = Date.now();
+  return true;
+};
+
+const resetPublicCurrentUserCache = () => {
+  const inFlightPromise = publicCurrentUserCache.inFlightPromise;
+  publicCurrentUserCache = createPublicCurrentUserCache();
+  publicCurrentUserCache.inFlightPromise = inFlightPromise;
+  if (inFlightPromise) {
+    publicCurrentUserCache.status = "loading";
+  }
+};
+
 const syncCacheFromBootstrapWhenIdle = () => {
   if (listeners.size > 0 || publicCurrentUserCache.inFlightPromise) {
     return;
   }
-  publicCurrentUserCache = createPublicCurrentUserCache();
+  publicCurrentUserCache = createPublicCurrentUserCache(readWindowPublicBootstrapCurrentUser());
 };
 
-const buildSnapshot = (): PublicCurrentUserSnapshot => {
-  syncCacheFromBootstrapWhenIdle();
+const buildSnapshot = (
+  bootstrapUser: PublicBootstrapCurrentUser | null = null,
+  options: { allowCache?: boolean } = {},
+): PublicCurrentUserSnapshot => {
+  const currentUser =
+    bootstrapUser || (options.allowCache === false ? null : publicCurrentUserCache.currentUser);
   return {
-    currentUser: publicCurrentUserCache.currentUser,
+    currentUser,
     error: publicCurrentUserCache.error,
-    hasResolved: Boolean(publicCurrentUserCache.currentUser) || publicCurrentUserCache.hasFetched,
+    hasResolved: Boolean(currentUser) || publicCurrentUserCache.hasFetched,
     isRefreshing: publicCurrentUserCache.status === "loading",
-    status: publicCurrentUserCache.status,
+    status:
+      currentUser && publicCurrentUserCache.status === "idle"
+        ? "success"
+        : publicCurrentUserCache.status,
   };
 };
 
 const subscribeSnapshot = (listener: () => void) => {
-  syncCacheFromBootstrapWhenIdle();
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
@@ -145,9 +176,45 @@ const requestPublicCurrentUser = async (apiBase: string, options: { force?: bool
 
 export const usePublicCurrentUser = () => {
   const apiBase = getApiBase();
-  const [snapshot, setSnapshot] = useState<PublicCurrentUserSnapshot>(() => buildSnapshot());
+  const hasBootstrapProvider = useHasPublicBootstrapProvider();
+  const bootstrapCurrentUser = useResolvedPublicBootstrapCurrentUser();
+  const [snapshot, setSnapshot] = useState<PublicCurrentUserSnapshot>(() =>
+    buildSnapshot(bootstrapCurrentUser, {
+      allowCache: Boolean(bootstrapCurrentUser),
+    }),
+  );
 
-  useEffect(() => subscribeSnapshot(() => setSnapshot(buildSnapshot())), []);
+  useEffect(
+    () =>
+      subscribeSnapshot(() =>
+        setSnapshot(
+          buildSnapshot(bootstrapCurrentUser, {
+            allowCache: true,
+          }),
+        ),
+      ),
+    [bootstrapCurrentUser],
+  );
+
+  useEffect(() => {
+    const didPrimeFromProvider = primePublicCurrentUserCache(bootstrapCurrentUser);
+    if (!didPrimeFromProvider && hasBootstrapProvider) {
+      resetPublicCurrentUserCache();
+      setSnapshot(buildSnapshot(null, { allowCache: false }));
+      return;
+    }
+    if (!didPrimeFromProvider) {
+      const windowBootstrapUser = readWindowPublicBootstrapCurrentUser();
+      const didPrimeFromWindow = primePublicCurrentUserCache(windowBootstrapUser);
+      if (!didPrimeFromWindow) {
+        resetPublicCurrentUserCache();
+        syncCacheFromBootstrapWhenIdle();
+        setSnapshot(buildSnapshot(null, { allowCache: false }));
+        return;
+      }
+    }
+    setSnapshot(buildSnapshot(bootstrapCurrentUser, { allowCache: true }));
+  }, [bootstrapCurrentUser, hasBootstrapProvider]);
 
   useEffect(() => {
     if (!shouldFetchPublicCurrentUser()) {

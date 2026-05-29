@@ -183,8 +183,8 @@ const resolvePostSlugFromPath = (pathname: string) => {
   return match?.[1] ? decodeURIComponent(match[1]) : undefined;
 };
 
-const Post = ({ slug: slugProp }: { slug?: string }) => {
-  const location = usePublicDocumentLocation();
+const Post = ({ initialPath = "/", slug: slugProp }: { initialPath?: string; slug?: string }) => {
+  const location = usePublicDocumentLocation(initialPath);
   const params = useParams();
   const slug = slugProp || resolvePostSlugFromPath(location.pathname) || params.slug;
   const apiBase = getApiBase();
