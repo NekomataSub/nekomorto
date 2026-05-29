@@ -765,6 +765,8 @@ describe("Project mobile hero layout", () => {
     expect(classTokens(relatedItem)).toContain("border");
     expect(classTokens(relatedItem)).toContain("border-border/50");
     expect(classTokens(relatedItem)).toContain("hover:border-primary/60");
+    expect(classTokens(relatedItem)).toContain("related-project-link");
+    expect(screen.getByAltText("Projeto Relacionado")).toHaveClass("home-card-media-transition");
   });
 
   it("renderiza CTA de leitura para light novel com capitulo publicado", async () => {

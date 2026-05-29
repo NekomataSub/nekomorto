@@ -610,7 +610,7 @@ const PublicProjectCard = ({
           href={model.href}
           {...preloadHandlers}
           className={cn(
-            "group flex overflow-hidden rounded-xl border border-border/50 bg-background/60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/45 hover:border-primary/60 hover:bg-background/80",
+            "related-project-link group flex overflow-hidden rounded-xl border border-border/50 bg-background/60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/45 hover:border-primary/60 hover:bg-background/80",
             linkClassName,
           )}
         >
@@ -627,7 +627,7 @@ const PublicProjectCard = ({
               preset="posterThumb"
               mediaVariants={model.mediaVariants || {}}
               className="block h-full w-full"
-              imgClassName="interactive-media-transition h-full w-full object-cover object-center group-hover:scale-105 group-focus-visible:scale-105"
+              imgClassName="home-card-media-transition h-full w-full object-cover object-center"
               sizes={imageSizes}
               loading={imageLoading}
               fetchPriority={imageFetchPriority}

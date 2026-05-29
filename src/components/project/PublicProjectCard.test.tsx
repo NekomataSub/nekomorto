@@ -210,6 +210,40 @@ describe("PublicProjectCard", () => {
     expect(screen.getByText("Sinopse lateral")).toHaveClass("clamp-safe-2");
   });
 
+  it("usa a animacao de zoom da home na variante related", () => {
+    render(
+      <MemoryRouter>
+        <PublicProjectCard
+          variant="related"
+          model={{
+            href: "/projeto/project-related",
+            title: "Projeto Relacionado",
+            coverSrc: "/placeholder.svg",
+            coverAlt: "Projeto Relacionado",
+            eyebrow: "Sequencia",
+            supportingText: "TV • Em andamento",
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    const cardLink = screen.getByRole("link", { name: /Projeto Relacionado/i });
+    const coverImage = screen.getByAltText("Projeto Relacionado");
+
+    expect(cardLink).toHaveClass(
+      "related-project-link",
+      "border",
+      "border-border/50",
+      "hover:border-primary/60",
+    );
+    expect(coverImage).toHaveClass("home-card-media-transition");
+    expect(coverImage).not.toHaveClass(
+      "interactive-media-transition",
+      "group-hover:scale-105",
+      "group-focus-visible:scale-105",
+    );
+  });
+
   it("preserva a estrutura esperada da variante embed", () => {
     render(
       <MemoryRouter>

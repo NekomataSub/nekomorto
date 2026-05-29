@@ -889,7 +889,10 @@
     .top-projects-link:focus-within .home-card-media-transition,
     .recent-updates-item:hover .home-card-media-transition,
     .recent-updates-item:focus-visible .home-card-media-transition,
-    .recent-updates-item:focus-within .home-card-media-transition {
+    .recent-updates-item:focus-within .home-card-media-transition,
+    .related-project-link:hover .home-card-media-transition,
+    .related-project-link:focus-visible .home-card-media-transition,
+    .related-project-link:focus-within .home-card-media-transition {
       transform: scale(1.025);
     }
   }
@@ -904,7 +907,10 @@
     .top-projects-link:focus-within .home-card-media-transition,
     .recent-updates-item:hover .home-card-media-transition,
     .recent-updates-item:focus-visible .home-card-media-transition,
-    .recent-updates-item:focus-within .home-card-media-transition {
+    .recent-updates-item:focus-within .home-card-media-transition,
+    .related-project-link:hover .home-card-media-transition,
+    .related-project-link:focus-visible .home-card-media-transition,
+    .related-project-link:focus-within .home-card-media-transition {
       transform: none;
     }
   }
