@@ -10,7 +10,15 @@ import {
 } from "@/hooks/theme-mode-context";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { resolveThemeColor } from "@/lib/theme-color";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 const normalizeMode = (value: unknown): ThemeMode => (value === "light" ? "light" : "dark");
 const normalizePreference = (value: unknown): ThemeModePreference => {
@@ -98,6 +106,7 @@ const THEME_MODE_TRANSITION_DISABLE_SELECTOR = [
   `*:not([${THEME_MODE_PRESERVE_MOTION_ATTRIBUTE}="true"], [${THEME_MODE_PRESERVE_MOTION_ATTRIBUTE}="true"] *)::before`,
   `*:not([${THEME_MODE_PRESERVE_MOTION_ATTRIBUTE}="true"], [${THEME_MODE_PRESERVE_MOTION_ATTRIBUTE}="true"] *)::after`,
 ].join(",");
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const applyThemeToDocument = (mode: ThemeMode, accentHex: unknown) => {
   if (typeof document === "undefined") {
@@ -183,7 +192,7 @@ export const ThemeModeProvider = ({ children }: { children: ReactNode }) => {
     setPreferenceState(normalizePreference(next));
   }, []);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const storedPreference = readStoredPreference();
     setPreferenceState((current) => (current === storedPreference ? current : storedPreference));
     setHasSyncedStoredPreference(true);
@@ -204,7 +213,7 @@ export const ThemeModeProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [hasSyncedStoredPreference, preference]);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (typeof window !== "undefined" && !hasSyncedStoredPreference) {
       return;
     }

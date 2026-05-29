@@ -1,6 +1,10 @@
 ---
 import "../../src/index.css";
 import "../../src/styles/fonts.css";
+import {
+  buildThemeModeBootstrapScript,
+  getThemeModeDocumentAttributes,
+} from "../../src/lib/theme-mode-bootstrap";
 import type { SiteSettings } from "../../src/types/site-settings";
 
 interface Props {
@@ -19,10 +23,17 @@ const siteSettings = (locals?.siteSettings ?? {}) as Partial<SiteSettings>;
 const siteName = String(siteSettings.site?.name || "Nekomata").trim() || "Nekomata";
 const separator = siteSettings.site?.titleSeparator || " | ";
 const pageTitle = _title ? `${_title}${separator}${siteName}` : siteName;
+const themeModeDocument = getThemeModeDocumentAttributes(siteSettings);
+const themeModeBootstrapScript = buildThemeModeBootstrapScript(siteSettings);
 ---
 
 <!doctype html>
-<html lang="pt-BR">
+<html
+  lang="pt-BR"
+  data-theme-mode={themeModeDocument.mode}
+  class={themeModeDocument.className}
+  style={themeModeDocument.style}
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -30,6 +41,7 @@ const pageTitle = _title ? `${_title}${separator}${siteName}` : siteName;
     <meta name="description" content={_description} />
     <meta name="robots" content={_robots} />
     <meta name="theme-color" content="hsl(var(--background))" />
+    <script is:inline set:html={themeModeBootstrapScript} />
   </head>
   <body class="min-h-screen bg-background text-foreground">
     <slot />

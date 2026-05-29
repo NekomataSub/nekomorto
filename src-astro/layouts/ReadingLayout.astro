@@ -1,6 +1,10 @@
 ---
 import "../../src/index.css";
 import "../../src/styles/fonts.css";
+import {
+  buildThemeModeBootstrapScript,
+  getThemeModeDocumentAttributes,
+} from "../../src/lib/theme-mode-bootstrap";
 
 interface Props {
   canonicalUrl?: string;
@@ -30,10 +34,19 @@ const canonicalUrl =
     locals?.primaryAppOrigin || Astro.url.origin || "https://nekomata.moe",
   ).toString();
 const absoluteImage = _image ? new URL(_image, canonicalUrl).toString() : "";
+const themeModeDocument = getThemeModeDocumentAttributes(locals?.siteSettings);
+const themeModeBootstrapScript = buildThemeModeBootstrapScript(locals?.siteSettings);
 ---
 
 <!doctype html>
-<html lang="pt-BR" data-page-meta="true" data-page-owner="astro">
+<html
+  lang="pt-BR"
+  data-page-meta="true"
+  data-page-owner="astro"
+  data-theme-mode={themeModeDocument.mode}
+  class={themeModeDocument.className}
+  style={themeModeDocument.style}
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -55,6 +68,7 @@ const absoluteImage = _image ? new URL(_image, canonicalUrl).toString() : "";
     {absoluteImage ? <meta name="twitter:image" content={absoluteImage} /> : null}
     {_imageAlt ? <meta name="twitter:image:alt" content={_imageAlt} /> : null}
     <link rel="canonical" href={canonicalUrl} />
+    <script is:inline set:html={themeModeBootstrapScript} />
   </head>
   <body class="min-h-screen bg-background text-foreground">
     <slot />

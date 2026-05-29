@@ -3,6 +3,10 @@ import "../../src/index.css";
 import "../../src/styles/fonts.css";
 import { ClientRouter } from "astro:transitions";
 import { serializeSchemaOrgEntry } from "../../server/lib/schema-org.js";
+import {
+  buildThemeModeBootstrapScript,
+  getThemeModeDocumentAttributes,
+} from "../../src/lib/theme-mode-bootstrap";
 import type { SiteSettings } from "../../src/types/site-settings";
 import PublicChromeIsland from "../components/react/PublicChromeIsland";
 import { buildPublicChromeModel } from "../lib/public-layout";
@@ -89,7 +93,10 @@ const fallbackSettings: SiteSettings = {
     },
   },
 };
-const chrome = buildPublicChromeModel(locals?.siteSettings ?? fallbackSettings);
+const siteSettings = locals?.siteSettings ?? fallbackSettings;
+const chrome = buildPublicChromeModel(siteSettings);
+const themeModeDocument = getThemeModeDocumentAttributes(siteSettings);
+const themeModeBootstrapScript = buildThemeModeBootstrapScript(siteSettings);
 const separator = locals?.siteSettings?.site?.titleSeparator || " | ";
 const _pageTitle = _title ? `${_title}${separator}${chrome.siteName}` : chrome.siteName;
 const _canonicalUrl =
@@ -107,7 +114,14 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
 ---
 
 <!doctype html>
-<html lang="pt-BR" data-page-meta="true" data-page-owner="astro">
+<html
+  lang="pt-BR"
+  data-page-meta="true"
+  data-page-owner="astro"
+  data-theme-mode={themeModeDocument.mode}
+  class={themeModeDocument.className}
+  style={themeModeDocument.style}
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -130,6 +144,7 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
     {_imageAlt ? <meta name="twitter:image:alt" content={_imageAlt} /> : null}
     <link rel="canonical" href={_canonicalUrl} />
     {_absoluteFavicon ? <link rel="icon" href={_absoluteFavicon} /> : null}
+    <script is:inline set:html={themeModeBootstrapScript} />
     <ClientRouter />
     {
       Array.isArray(_structuredData)
