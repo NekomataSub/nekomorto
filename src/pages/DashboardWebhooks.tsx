@@ -3078,12 +3078,13 @@ const DashboardWebhooks = () => {
                     <Skeleton className="h-28 rounded-xl" />
                   </div>
                 ) : deliveries.length === 0 ? (
-                  <div
-                    className={`${dashboardPageLayoutTokens.surfaceInset} rounded-xl p-4 text-sm text-muted-foreground`}
+                  <AsyncState
+                    kind="empty"
+                    title="Nenhuma entrega encontrada"
+                    description="Novas entregas aparecem aqui conforme os webhooks forem disparados."
+                    className="rounded-xl"
                     data-testid="dashboard-webhooks-deliveries-empty"
-                  >
-                    Nenhuma entrega encontrada para os filtros atuais.
-                  </div>
+                  />
                 ) : (
                   <div className="space-y-3" data-testid="dashboard-webhooks-deliveries-list">
                     {deliveries.map((delivery) => {

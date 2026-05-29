@@ -11,6 +11,7 @@ type AsyncStateProps = {
   description?: string;
   action?: ReactNode;
   className?: string;
+  "data-testid"?: string;
 };
 
 const iconByKind = {
@@ -26,6 +27,7 @@ export const AsyncState = ({
   description,
   action,
   className,
+  "data-testid": dataTestId,
 }: AsyncStateProps) => {
   const effectiveKind: AsyncStateKind = kind ?? (loading ? "loading" : "error");
 
@@ -45,6 +47,7 @@ export const AsyncState = ({
     <div
       role={role}
       aria-live="polite"
+      data-testid={dataTestId}
       className={cn(
         "relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 px-6 py-10 text-center text-sm text-muted-foreground",
         effectiveKind === "loading" ? "bg-card/50" : "",

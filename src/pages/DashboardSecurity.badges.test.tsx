@@ -268,4 +268,44 @@ describe("DashboardSecurity semantic badges", () => {
     expect(screen.queryByText(/Total ativo:/i)).not.toBeInTheDocument();
     expect(toastMock).not.toHaveBeenCalled();
   });
+
+  it("exibe erro bloqueante com acao de nova tentativa", async () => {
+    apiFetchMock.mockImplementation(async (_base: string, path: string, options?: RequestInit) => {
+      const method = String(options?.method || "GET").toUpperCase();
+      if (path === "/api/me" && method === "GET") {
+        return mockJsonResponse(true, { id: "1", name: "Admin", username: "admin" });
+      }
+      if (String(path).startsWith("/api/admin/sessions/active?") && method === "GET") {
+        return mockJsonResponse(false, { error: "load_failed" }, 500);
+      }
+      return mockJsonResponse(false, { error: "not_found" }, 404);
+    });
+
+    render(<DashboardSecurity />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível carregar as sessões",
+    );
+    expect(screen.getByRole("button", { name: "Tentar novamente" })).toBeInTheDocument();
+  });
+
+  it("exibe estado vazio quando nao ha sessoes ativas", async () => {
+    apiFetchMock.mockImplementation(async (_base: string, path: string, options?: RequestInit) => {
+      const method = String(options?.method || "GET").toUpperCase();
+      if (path === "/api/me" && method === "GET") {
+        return mockJsonResponse(true, { id: "1", name: "Admin", username: "admin" });
+      }
+      if (String(path).startsWith("/api/admin/sessions/active?") && method === "GET") {
+        return mockJsonResponse(true, { sessions: [], total: 0 });
+      }
+      return mockJsonResponse(false, { error: "not_found" }, 404);
+    });
+
+    render(<DashboardSecurity />);
+
+    expect(await screen.findByText("Nenhuma sessão ativa")).toBeInTheDocument();
+    expect(
+      screen.getByText("Sessões autenticadas aparecem aqui quando houver usuários conectados."),
+    ).toBeInTheDocument();
+  });
 });

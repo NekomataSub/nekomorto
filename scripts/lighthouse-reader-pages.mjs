@@ -21,7 +21,7 @@ const defaultPostUrl =
   process.env.LIGHTHOUSE_READER_POST_URL || "http://127.0.0.1:8080/postagem/post-teste";
 const defaultChapterUrl =
   process.env.LIGHTHOUSE_READER_CHAPTER_URL ||
-  "http://127.0.0.1:8080/projeto/projeto-teste/leitura/1?volume=2";
+  "http://127.0.0.1:8080/projeto/nekomata-eclipse/leitura/1";
 const defaultRuns = 3;
 const categoryIds = PUBLIC_SURFACE_CATEGORY_IDS;
 const reportedMetricAuditIds = PUBLIC_SURFACE_METRIC_AUDIT_IDS;

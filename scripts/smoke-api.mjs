@@ -30,6 +30,7 @@ const withTimeout = async (resource, options = {}) => {
       signal: controller.signal,
       headers: {
         accept: "application/json, application/xml, application/rss+xml, text/xml;q=0.9, */*;q=0.8",
+        "x-forwarded-for": "203.0.113.10",
         ...(options.headers || {}),
       },
     });

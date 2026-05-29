@@ -1,4 +1,5 @@
 import { DashboardShellRoot } from "@/components/DashboardShell";
+import AsyncState from "@/components/ui/async-state";
 import { DashboardPreferencesProvider } from "@/hooks/dashboard-preferences-provider";
 import { DashboardSessionProvider } from "@/hooks/dashboard-session-provider";
 import "@/styles/project-editor.css";
@@ -30,14 +31,14 @@ const PageTransition = ({ children }: { children: ReactNode }) => (
 
 const DashboardRouteContentFallback = () => (
   <PageTransition>
-    <div
-      aria-busy="true"
-      aria-live="polite"
-      role="status"
-      className="mx-auto flex min-h-[45vh] w-full max-w-7xl items-center justify-center px-4 py-6 text-sm text-muted-foreground sm:px-6 lg:px-8"
-    >
-      Carregando seção...
-    </div>
+    <main className="mx-auto flex min-h-[45vh] w-full max-w-7xl items-center justify-center px-4 py-6 sm:px-6 lg:px-8">
+      <AsyncState
+        kind="loading"
+        title="Carregando seção"
+        description="Preparando o painel solicitado."
+        className="w-full max-w-2xl"
+      />
+    </main>
   </PageTransition>
 );
 

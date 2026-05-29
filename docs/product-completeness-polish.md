@@ -75,3 +75,32 @@ O trabalho restante e de acabamento, robustez e consistencia:
   `AsyncState`.
 - Adicionar acao de recuperacao segura para voltar ao projeto quando o capitulo
   nao carrega ou ainda nao possui conteudo publicado.
+
+## Quarto ciclo aplicado
+
+- Refinar a tela de Seguranca do dashboard.
+- Trocar estados manuais de erro bloqueante e lista vazia de sessoes por
+  `AsyncState`, com acao de tentativa nova no erro.
+- Preservar contratos de API, permissao e revogacao de sessao.
+
+## Quinto ciclo aplicado
+
+- Refinar o fallback de carregamento das rotas autenticadas do dashboard.
+- Trocar estados manuais restantes em Uploads e Webhooks por `AsyncState`, mantendo
+  tabelas, filtros, permissoes e acoes existentes.
+- Corrigir as rotas seeded usadas pelo Lighthouse publico para medir paginas reais
+  do catalogo local.
+- Ajustar o smoke publico local para simular trafego externo via `x-forwarded-for`
+  e validar que health publico nao exponha metadados detalhados.
+- Manter o fechamento como criterio shippable: polish consistente, validacoes
+  completas e pendencias dependentes de ambiente documentadas.
+
+## Pendencias para producao real
+
+- Resolver a integridade dos uploads locais antes de deploy: o check fast encontrou
+  73 problemas, sendo 6 `missing_source_file` e 67 `missing_variant_file`.
+- Aceitar ou revisar o primeiro baseline completo de Lighthouse publico em ambiente
+  com backend/dados reais; no preview local sem backend as rotas dinamicas seguem
+  aparecendo como `noindex`.
+- Fazer QA manual com dados reais de midia, posts, projetos, capitulos e usuarios
+  administrativos antes de publicar.

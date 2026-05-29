@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import AsyncState from "@/components/ui/async-state";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
@@ -816,14 +817,22 @@ const DashboardUploads = () => {
                       ))
                     ) : hasSummaryBlockingError ? (
                       <tr className="border-t border-border/50">
-                        <td colSpan={5} className="px-4 py-10 text-sm text-foreground/70">
-                          Não foi possível carregar os dados de storage.
+                        <td colSpan={5} className="px-4 py-6">
+                          <AsyncState
+                            kind="error"
+                            title="Não foi possível carregar o storage"
+                            description="Atualize a página ou tente novamente em alguns instantes."
+                          />
                         </td>
                       </tr>
                     ) : summary.areas.length === 0 ? (
                       <tr className="border-t border-border/50">
-                        <td colSpan={5} className="px-4 py-10 text-sm text-foreground/70">
-                          Nenhuma área encontrada no inventário.
+                        <td colSpan={5} className="px-4 py-6">
+                          <AsyncState
+                            kind="empty"
+                            title="Nenhuma área encontrada"
+                            description="O inventário aparece aqui quando houver arquivos mapeados no storage."
+                          />
                         </td>
                       </tr>
                     ) : (
@@ -1034,13 +1043,19 @@ const DashboardUploads = () => {
                       </table>
                     </div>
                   ) : (
-                    <div
-                      className={`${dashboardPageLayoutTokens.surfaceInset} px-4 py-6 text-sm text-foreground/70`}
-                    >
-                      {hasCleanupBlockingError
-                        ? "A análise de limpeza ainda não está disponível."
-                        : "Nenhum arquivo elegível para limpeza."}
-                    </div>
+                    <AsyncState
+                      kind={hasCleanupBlockingError ? "error" : "empty"}
+                      title={
+                        hasCleanupBlockingError
+                          ? "Análise de limpeza indisponível"
+                          : "Nenhum arquivo elegível para limpeza."
+                      }
+                      description={
+                        hasCleanupBlockingError
+                          ? "Tente atualizar o painel antes de executar uma limpeza."
+                          : "Arquivos sem uso, variantes órfãs e quarentena vencida aparecerão aqui."
+                      }
+                    />
                   )}
                 </div>
               )}

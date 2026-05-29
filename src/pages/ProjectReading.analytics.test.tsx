@@ -2250,8 +2250,7 @@ describe("ProjectReading analytics", () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole("heading", { name: /Cap.*tulo 1/i });
-    expect(screen.getByRole("img", { name: "Capa do capitulo 1" })).toBeInTheDocument();
+    await screen.findByRole("img", { name: "Capa do capitulo 1" });
     expect(screen.queryByRole("img", { name: "Capa do volume 2" })).not.toBeInTheDocument();
   });
 

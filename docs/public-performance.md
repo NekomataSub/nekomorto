@@ -10,12 +10,12 @@ The public-surface audit always covers these routes:
 
 - `home-mobile`: `/`
 - `projects-mobile`: `/projetos`
-- `project-detail-mobile`: `/projeto/projeto-teste`
+- `project-detail-mobile`: `/projeto/aurora-no-horizonte`
 - `team-mobile`: `/equipe`
 - `donations-mobile`: `/doacoes`
 - `projects-desktop`: `/projetos`
 - `reader-post-mobile`: `/postagem/post-teste`
-- `reader-chapter-mobile`: `/projeto/projeto-teste/leitura/1?volume=2`
+- `reader-chapter-mobile`: `/projeto/nekomata-eclipse/leitura/1`
 
 ## Commands
 
@@ -68,7 +68,7 @@ Use a production build and capture one export per flow:
 5. Donations load on `/doacoes`
 6. Projects interaction on `/projetos`
 7. Post load on `/postagem/post-teste`
-8. Reader load and chapter navigation on `/projeto/projeto-teste/leitura/1?volume=2`
+8. Reader load and chapter navigation on `/projeto/nekomata-eclipse/leitura/1`
 
 For the `Projects` interaction flow, include:
 

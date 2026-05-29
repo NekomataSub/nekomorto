@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import AsyncState from "@/components/ui/async-state";
 import CompactPagination from "@/components/ui/compact-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
@@ -423,23 +424,36 @@ const DashboardSecurity = () => {
               <span className="sr-only">Carregando sessões...</span>
             </div>
           ) : hasBlockingLoadError ? (
-            <p
-              className="text-sm text-amber-300 animate-slide-up"
+            <div
+              className="animate-slide-up"
               style={dashboardAnimationDelay(
                 dashboardMotionDelays.sectionLeadMs + dashboardMotionDelays.sectionStepMs * 2,
               )}
             >
-              Não foi possível carregar a lista de sessões ativas.
-            </p>
+              <AsyncState
+                kind="error"
+                title="Não foi possível carregar as sessões"
+                description="Tente atualizar a lista em alguns instantes."
+                action={
+                  <DashboardActionButton size="sm" onClick={() => void load({ background: false })}>
+                    Tentar novamente
+                  </DashboardActionButton>
+                }
+              />
+            </div>
           ) : sessions.length === 0 ? (
-            <p
-              className="text-sm text-foreground/70 animate-slide-up"
+            <div
+              className="animate-slide-up"
               style={dashboardAnimationDelay(
                 dashboardMotionDelays.sectionLeadMs + dashboardMotionDelays.sectionStepMs * 2,
               )}
             >
-              Nenhuma sessão ativa encontrada.
-            </p>
+              <AsyncState
+                kind="empty"
+                title="Nenhuma sessão ativa"
+                description="Sessões autenticadas aparecem aqui quando houver usuários conectados."
+              />
+            </div>
           ) : (
             <div className="space-y-3">
               {sessions.map((session, index) => {

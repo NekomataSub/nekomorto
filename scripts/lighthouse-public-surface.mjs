@@ -17,14 +17,14 @@ const defaultRuns = 3;
 const defaultHomeUrl = process.env.LIGHTHOUSE_HOME_URL || "http://127.0.0.1:4173/";
 const defaultProjectsUrl = process.env.LIGHTHOUSE_PROJECTS_URL || "http://127.0.0.1:4173/projetos";
 const defaultProjectDetailUrl =
-  process.env.LIGHTHOUSE_PROJECT_DETAIL_URL || "http://127.0.0.1:4173/projeto/projeto-teste";
+  process.env.LIGHTHOUSE_PROJECT_DETAIL_URL || "http://127.0.0.1:4173/projeto/aurora-no-horizonte";
 const defaultTeamUrl = process.env.LIGHTHOUSE_TEAM_URL || "http://127.0.0.1:4173/equipe";
 const defaultDonationsUrl = process.env.LIGHTHOUSE_DONATIONS_URL || "http://127.0.0.1:4173/doacoes";
 const defaultPostUrl =
   process.env.LIGHTHOUSE_READER_POST_URL || "http://127.0.0.1:4173/postagem/post-teste";
 const defaultChapterUrl =
   process.env.LIGHTHOUSE_READER_CHAPTER_URL ||
-  "http://127.0.0.1:4173/projeto/projeto-teste/leitura/1?volume=2";
+  "http://127.0.0.1:4173/projeto/nekomata-eclipse/leitura/1";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
