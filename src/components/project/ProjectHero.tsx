@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import PublicLink from "@/components/PublicLink";
 import { publicPageLayoutTokens } from "@/components/public-page-tokens";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { PillButton } from "@/components/ui/pill-button";
 import UploadPicture from "@/components/UploadPicture";
 import { PROJECT_COVER_ASPECT_RATIO } from "@/lib/project-card-layout";
 import type { UploadMediaVariantsMap } from "@/lib/upload-variants";
@@ -23,6 +24,9 @@ type ProjectHeroActionItem = {
   className?: string;
   external?: boolean;
 };
+
+const projectHeroTagPillClassName =
+  "h-6 min-h-6 min-w-6 gap-0 rounded-full px-2 py-0 text-[10px] uppercase leading-none";
 
 interface ProjectHeroProps {
   children?: ReactNode;
@@ -125,13 +129,14 @@ const ProjectHero = ({
                 style={{ animationDelay: "0.3s" }}
               >
                 {tagItems.map((tag) => (
-                  <PublicLink
+                  <PillButton
                     key={tag.key}
-                    href={tag.href}
-                    className="inline-flex h-6 min-h-6 min-w-6 items-center justify-center rounded-full border border-transparent bg-secondary px-2 py-0 text-[10px] uppercase leading-none text-secondary-foreground shadow-xs transition-all hover:bg-secondary/80"
+                    asChild
+                    tone="secondary"
+                    className={projectHeroTagPillClassName}
                   >
-                    {tag.label}
-                  </PublicLink>
+                    <PublicLink href={tag.href}>{tag.label}</PublicLink>
+                  </PillButton>
                 ))}
               </div>
             ) : null}

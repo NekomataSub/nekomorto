@@ -16,6 +16,21 @@ export const ASTRO_PUBLIC_ROUTE_PATHS = Object.freeze([
 
 export const ASTRO_DASHBOARD_ROUTE_PATHS = Object.freeze(["/dashboard", "/dashboard/{*path}"]);
 
+export const ASTRO_CLIENT_ROUTER_PUBLIC_ROUTE_PATHS = Object.freeze([
+  "/",
+  "/projetos",
+  "/projeto/:id",
+  "/postagem/:slug",
+  "/sobre",
+  "/faq",
+  "/equipe",
+  "/doacoes",
+  "/recrutamento",
+  "/termos-de-uso",
+  "/politica-de-privacidade",
+  "/login",
+]);
+
 const normalizePathname = (value) => {
   const pathname = String(value || "").trim();
   if (!pathname) {
@@ -31,6 +46,15 @@ export const isAstroPublicRoute = (pathname) => {
     ASTRO_PUBLIC_ROUTE_PATHS.includes(normalized) ||
     /^\/dashboard(?:\/.*)?$/.test(normalized) ||
     /^\/projeto\/[^/]+\/leitura\/[^/]+$/.test(normalized) ||
+    /^\/projeto\/[^/]+$/.test(normalized) ||
+    /^\/postagem\/[^/]+$/.test(normalized)
+  );
+};
+
+export const isAstroClientRouterPublicRoute = (pathname) => {
+  const normalized = normalizePathname(pathname);
+  return (
+    ASTRO_CLIENT_ROUTER_PUBLIC_ROUTE_PATHS.includes(normalized) ||
     /^\/projeto\/[^/]+$/.test(normalized) ||
     /^\/postagem\/[^/]+$/.test(normalized)
   );

@@ -150,6 +150,7 @@ const createResponse = () => ({
   body: null as unknown,
   ended: false,
   headers: new Map<string, string>(),
+  locals: {} as Record<string, unknown>,
   redirectedTo: "",
   statusCode: 200,
   end() {
@@ -271,6 +272,48 @@ const expectCodeQlVisibleAssetLimiterBeforeCustomLimiter = (args: unknown[]) => 
   expect(String(args[0])).toContain("Promise.resolve(fn");
   expect(String(args[1])).toContain("PUBLIC_ASSET_RATE_LIMIT_STATE");
 };
+
+describe("registerRuntimeMiddleware security headers", () => {
+  it("permite scripts inline somente em rotas publicas Astro com ClientRouter", async () => {
+    const { entries } = createRuntimeDependencies();
+    const securityMiddleware = entries.find(
+      (entry) => entry.method === "use" && typeof entry.args[0] === "function",
+    )?.args[0];
+
+    const result = await invokeMiddlewareStack([securityMiddleware], {
+      headers: {},
+      method: "GET",
+      originalUrl: "/projetos",
+      path: "/projetos",
+    });
+
+    expect(result.next).toHaveBeenCalledTimes(1);
+    expect(result.res.headers.get("content-security-policy")).toContain(
+      "script-src 'self' 'unsafe-inline' https://platform.twitter.com",
+    );
+    expect(result.res.headers.get("content-security-policy")).not.toContain("'nonce-");
+  });
+
+  it("mantem CSP com nonce fora das rotas publicas com ClientRouter", async () => {
+    const { entries } = createRuntimeDependencies();
+    const securityMiddleware = entries.find(
+      (entry) => entry.method === "use" && typeof entry.args[0] === "function",
+    )?.args[0];
+
+    const result = await invokeMiddlewareStack([securityMiddleware], {
+      headers: {},
+      method: "GET",
+      originalUrl: "/dashboard",
+      path: "/dashboard",
+    });
+
+    expect(result.next).toHaveBeenCalledTimes(1);
+    expect(result.res.headers.get("content-security-policy")).toContain("script-src 'self' 'nonce-");
+    expect(result.res.headers.get("content-security-policy")).not.toContain(
+      "script-src 'self' 'unsafe-inline'",
+    );
+  });
+});
 
 describe("registerRuntimeMiddleware public asset throttling", () => {
   it("reuses the same uploads rate limiter across delivery and static handlers", async () => {

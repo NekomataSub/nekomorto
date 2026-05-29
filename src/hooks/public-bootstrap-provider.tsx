@@ -17,7 +17,7 @@ import {
   readWindowPublicRoutePayload,
   type PublicBootstrapCurrentUser,
 } from "@/lib/public-bootstrap-global";
-import { primePublicBootstrapCache } from "@/hooks/use-public-bootstrap";
+import { primePublicBootstrapCache } from "@/hooks/public-bootstrap-store";
 import type { PublicBootstrapPayload, PublicRoutePayload } from "@/types/public-bootstrap";
 
 type PublicBootstrapContextValue = {

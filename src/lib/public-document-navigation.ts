@@ -112,12 +112,17 @@ const buildLocationSnapshotFromPath = (path: string) => {
   }
 };
 
+const areLocationSnapshotsEqual = (
+  left: ReturnType<typeof buildLocationSnapshotFromPath>,
+  right: ReturnType<typeof buildLocationSnapshotFromPath>,
+) =>
+  left.hash === right.hash &&
+  left.href === right.href &&
+  left.pathname === right.pathname &&
+  left.search === right.search;
+
 export const usePublicDocumentLocation = (initialPath = "/") => {
-  const [location, setLocation] = useState(() =>
-    typeof window === "undefined"
-      ? buildLocationSnapshotFromPath(initialPath)
-      : buildBrowserLocationSnapshot(),
-  );
+  const [location, setLocation] = useState(() => buildLocationSnapshotFromPath(initialPath));
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -125,13 +130,17 @@ export const usePublicDocumentLocation = (initialPath = "/") => {
     }
 
     const sync = () => {
-      setLocation(buildBrowserLocationSnapshot());
+      const nextLocation = buildBrowserLocationSnapshot();
+      setLocation((currentLocation) =>
+        areLocationSnapshotsEqual(currentLocation, nextLocation) ? currentLocation : nextLocation,
+      );
     };
 
     document.addEventListener("astro:page-load", sync as EventListener);
     window.addEventListener("pageshow", sync);
     window.addEventListener("popstate", sync);
     window.addEventListener(PUBLIC_DOCUMENT_LOCATION_CHANGE_EVENT, sync as EventListener);
+    sync();
     return () => {
       document.removeEventListener("astro:page-load", sync as EventListener);
       window.removeEventListener("pageshow", sync);

@@ -83,4 +83,20 @@ describe("ProjectHero", () => {
     expect(trailer.className).toContain("rounded-xl");
     expect(trailer.className).toContain("border-border/70");
   });
+
+  it("renderiza tags com o mesmo padrao compacto de pilula do detalhe hidratado", () => {
+    render(
+      <ProjectHero
+        project={projectFixture}
+        tagItems={[{ href: "/projetos?tag=Angels", key: "Angels", label: "Anjos" }]}
+      />,
+    );
+
+    const tag = screen.getByRole("link", { name: "Anjos" });
+
+    expect(tag.className).toContain("rounded-full");
+    expect(tag.className).toContain("text-[10px]");
+    expect(tag.className).toContain("uppercase");
+    expect(tag.className).toContain("bg-background");
+  });
 });

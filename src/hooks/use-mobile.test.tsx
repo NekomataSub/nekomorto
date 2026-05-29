@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -11,7 +11,7 @@ describe("useIsMobile", () => {
     vi.restoreAllMocks();
   });
 
-  it("suporta MediaQueryList legado via addListener/removeListener", () => {
+  it("suporta MediaQueryList legado via addListener/removeListener", async () => {
     let changeListener: ((event: MediaQueryListEvent) => void) | undefined;
     const removeListener = vi.fn();
 
@@ -28,8 +28,11 @@ describe("useIsMobile", () => {
 
     const { result, unmount } = renderHook(() => useIsMobile());
 
-    expect(result.current).toBe(true);
     expect(window.matchMedia).toHaveBeenCalledWith("(max-width: 767px)");
+
+    await waitFor(() => {
+      expect(result.current).toBe(true);
+    });
 
     act(() => {
       changeListener?.({ matches: false } as MediaQueryListEvent);

@@ -12,6 +12,7 @@ import { createIdempotencyFingerprint } from "./idempotency-store.js";
 import { canAccessApiDuringPendingAuth, resolvePendingAuthStage } from "./pending-mfa-guard.js";
 import { applySecurityHeaders } from "./security-headers.js";
 import { createUploadsDeliveryMiddleware } from "./uploads-delivery.js";
+import { isAstroClientRouterPublicRoute } from "../routes/register-astro-routes.js";
 
 const MUTATING_HTTP_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const IDEMPOTENCY_KEY_PATTERN = /^[a-zA-Z0-9:_-]{8,200}$/;
@@ -263,7 +264,9 @@ export const registerRuntimeMiddleware = ({
     }
     const cspNonce = crypto.randomBytes(16).toString("base64");
     res.locals.cspNonce = cspNonce;
-    applySecurityHeaders(res, cspNonce);
+    applySecurityHeaders(res, cspNonce, {
+      allowInlineScripts: isAstroClientRouterPublicRoute(req.path),
+    });
     return next();
   });
 

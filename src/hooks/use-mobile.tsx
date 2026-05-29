@@ -3,16 +3,8 @@ import * as React from "react";
 const MOBILE_BREAKPOINT = 768;
 const MOBILE_MEDIA_QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
 
-const getInitialIsMobile = () => {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-    return false;
-  }
-
-  return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
-};
-
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean>(getInitialIsMobile);
+  const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {

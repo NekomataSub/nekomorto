@@ -1,7 +1,6 @@
 // Some third-party embeds probe blocked experimental features and may log
 // browser warnings even when playback continues to work as expected.
-const PERMISSIONS_POLICY =
-  "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()";
+const PERMISSIONS_POLICY = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
 
 const HSTS_HEADER_VALUE = "max-age=31536000; includeSubDomains";
 
@@ -12,13 +11,16 @@ const escapeHtmlAttribute = (value) =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-export const buildContentSecurityPolicy = (nonce) => {
+export const buildContentSecurityPolicy = (nonce, options = {}) => {
   const normalizedNonce = String(nonce || "").trim();
+  const allowInlineScripts = options?.allowInlineScripts === true;
   const scriptSrc = ["'self'"];
-  if (normalizedNonce) {
+  if (allowInlineScripts) {
+    scriptSrc.push("'unsafe-inline'");
+  } else if (normalizedNonce) {
     scriptSrc.push(`'nonce-${normalizedNonce}'`);
   }
-  scriptSrc.push("https://platform.twitter.com");
+  scriptSrc.push("https://platform.twitter.com", "https://static.cloudflareinsights.com");
 
   const directives = [
     ["default-src", ["'self'"]],
@@ -65,7 +67,7 @@ export const injectNonceIntoHtmlScripts = (html, nonce) => {
   });
 };
 
-export const applySecurityHeaders = (res, nonce) => {
+export const applySecurityHeaders = (res, nonce, options = {}) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -75,5 +77,5 @@ export const applySecurityHeaders = (res, nonce) => {
   res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
   res.setHeader("Origin-Agent-Cluster", "?1");
   res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
-  res.setHeader("Content-Security-Policy", buildContentSecurityPolicy(nonce));
+  res.setHeader("Content-Security-Policy", buildContentSecurityPolicy(nonce, options));
 };
