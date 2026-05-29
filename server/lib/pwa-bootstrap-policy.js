@@ -24,10 +24,8 @@ export const resolveBootstrapPwaRequestHostname = (req) => {
     return requestHostname;
   }
 
-  const rawForwardedHost = String(req?.headers?.["x-forwarded-host"] || "")
-    .split(",")[0]
-    .trim();
-  const rawHost = rawForwardedHost || String(req?.headers?.host || "").trim();
+  // Fallback for non-Express environments (e.g. basic HTTP servers, test environments)
+  const rawHost = String(req?.headers?.host || "").trim();
   if (!rawHost) {
     return "";
   }
