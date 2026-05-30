@@ -1,3 +1,6 @@
 ## $(date +%Y-%m-%d) - Added ARIA labels to Settings Dashboard Trash Buttons
 **Learning:** Found several icon-only action buttons (e.g. Delete/Trash) in the dashboard settings layout missing `aria-label`s, indicating this might be a pattern across internal dashboard components where functionality is prioritized over a11y.
 **Action:** Always verify icon-only buttons (`DashboardActionButton` using Lucide icons) have appropriate `aria-label`s, especially in complex list/array configuration forms. Keep them in Portuguese to match the app's language context.
+## 2024-05-30 - Added ARIA labels to dashboard widget reordering buttons
+**Learning:** For icon-only buttons in mapped loops (like dashboard custom widgets), generic `aria-label`s are not sufficient. Using dynamic ARIA labels (e.g., `Mover widget ${DASHBOARD_WIDGET_LABELS[widgetId]} para cima`) provides better context to screen readers. Also, explicitly adding `aria-hidden="true"` to nested icon SVG components prevents redundant screen reader announcements.
+**Action:** When creating icon-only buttons within lists or mapped arrays, inject item-specific context into the `aria-label` and remember to hide the nested icon element with `aria-hidden="true"`.
