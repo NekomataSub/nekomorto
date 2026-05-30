@@ -300,6 +300,29 @@ describe("project og helper", () => {
     expect(storyModel.subtitle).toBe("Naoki Urasawa");
   });
 
+  it("uses the manga author as subtitle when the project has no studio", () => {
+    const model = buildProjectOgCardModel({
+      project: {
+        ...baseProject,
+        type: "Mangá",
+        studio: "",
+        animeStaff: [
+          {
+            role: "Story & Art",
+            members: ["Satoru Nii"],
+          },
+        ],
+      },
+      settings: baseSettings,
+      tagTranslations: {},
+      genreTranslations: {},
+      origin: "https://nekomata.moe",
+      resolveVariantUrl: (value: string) => value,
+    });
+
+    expect(model.subtitle).toBe("Satoru Nii");
+  });
+
   it("keeps the subtitle empty when there is no studio or matching author role", () => {
     const model = buildProjectOgCardModel({
       project: {

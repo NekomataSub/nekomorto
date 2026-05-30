@@ -31,10 +31,19 @@ export const normalizeProjectOgKey = (value) =>
 const PROJECT_OG_AUTHOR_ROLE_PRIORITY = [
   "original creator",
   "autor original",
+  "story & art",
+  "story and art",
+  "historia e arte",
   "original story",
   "historia original",
   "story",
   "historia",
+  "art",
+  "arte",
+  "writer",
+  "roteiro",
+  "illustration",
+  "ilustracao",
 ];
 
 const normalizeProjectOgRoleKey = (value) =>
