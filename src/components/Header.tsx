@@ -1,4 +1,5 @@
 import type { DashboardMenuItem } from "@/components/dashboard-menu";
+import ClientMountedSuspense from "@/components/ClientMountedSuspense";
 import type { HeaderActionMenusProps } from "@/components/HeaderActionMenus";
 import PublicLink from "@/components/PublicLink";
 import ThemedSvgLogo from "@/components/ThemedSvgLogo";
@@ -30,7 +31,7 @@ import { cn } from "@/lib/utils";
 import type { SearchSuggestion } from "@/types/search-suggestion";
 import { Menu } from "lucide-react";
 import type { ReactNode } from "react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { schedulePublicRouteIdlePreload } from "@/routes/public-preload";
 
 type HeaderProps = {
@@ -632,7 +633,7 @@ const Header = ({
             </div>
 
             {showResults && (
-              <Suspense
+              <ClientMountedSuspense
                 fallback={
                   <div
                     data-testid="public-header-results"
@@ -655,7 +656,7 @@ const Header = ({
                   remoteSuggestions={remoteSuggestions}
                   remoteMediaVariants={remoteMediaVariants}
                 />
-              </Suspense>
+              </ClientMountedSuspense>
             )}
           </div>
 
@@ -670,7 +671,7 @@ const Header = ({
             )}
           >
             {shouldRenderActionMenus ? (
-              <Suspense
+              <ClientMountedSuspense
                 fallback={
                   <HeaderActionsFallback
                     currentUser={currentUser}
@@ -689,7 +690,7 @@ const Header = ({
                   isLoggingOut={isLoggingOut}
                   onLogout={handleLogout}
                 />
-              </Suspense>
+              </ClientMountedSuspense>
             ) : (
               <HeaderActionsFallback currentUser={currentUser} headerAvatarUrl={headerAvatarUrl} />
             )}

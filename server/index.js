@@ -28,6 +28,7 @@ import {
   normalizeProjectEpisodeContentFormat,
   normalizeProjectEpisodePages,
   normalizeProjectReaderConfig,
+  resolveProjectEpisodeContentFormat,
   normalizeProjectReaderPreferences,
   resolveProjectReaderConfig,
 } from "../shared/project-reader.js";
@@ -1713,7 +1714,8 @@ const publicRuntime = createPublicRuntimeBundle(
   }),
 );
 
-const { getPublicVisiblePosts, getPublicVisibleProjects } = publicRuntime;
+const { getPublicReadableProjects, getPublicVisiblePosts, getPublicVisibleProjects } =
+  publicRuntime;
 
 const isAstroPublicBootstrapPathname = (pathname) => {
   const normalizedPathname = String(pathname || "").trim() || "/";
@@ -1730,6 +1732,9 @@ const resolveAstroPublicRouteKind = (pathname) => {
   const normalizedPathname = String(pathname || "").trim() || "/";
   if (normalizedPathname === "/projetos") {
     return "projects-list";
+  }
+  if (/^\/projeto\/[^/]+\/leitura\/[^/]+$/.test(normalizedPathname)) {
+    return "project-reading";
   }
   if (/^\/projeto\/[^/]+$/.test(normalizedPathname)) {
     return "project-detail";
@@ -1759,6 +1764,110 @@ const findAstroBootstrapProjectByRouteSlug = (projects, routeSlug) => {
       );
     }) || null
   );
+};
+
+const buildAstroReadingRouteChapterPayload = ({ chapter, project, siteSettings }) => {
+  const normalizedPages = normalizeProjectEpisodePages(chapter?.pages);
+  const contentFormat = resolveProjectEpisodeContentFormat({
+    contentFormat: chapter?.contentFormat,
+    episode: chapter,
+    pages: normalizedPages,
+    projectType: project?.type,
+  });
+  const pageCount = getProjectEpisodePageCount({
+    ...chapter,
+    contentFormat,
+    pages: normalizedPages,
+  });
+  return {
+    number: Number.isFinite(Number(chapter?.number)) ? Number(chapter.number) : 0,
+    volume: Number.isFinite(Number(chapter?.volume)) ? Number(chapter.volume) : undefined,
+    title: String(chapter?.title || ""),
+    entryKind:
+      String(chapter?.entryKind || "")
+        .trim()
+        .toLowerCase() === "extra"
+        ? "extra"
+        : "main",
+    entrySubtype: String(chapter?.entrySubtype || "").trim(),
+    readingOrder: Number.isFinite(Number(chapter?.readingOrder))
+      ? Number(chapter.readingOrder)
+      : undefined,
+    displayLabel: String(chapter?.displayLabel || "").trim(),
+    synopsis: deriveChapterSynopsis(chapter),
+    releaseDate: String(chapter?.releaseDate || ""),
+    duration: String(chapter?.duration || ""),
+    coverImageUrl: String(chapter?.coverImageUrl || normalizedPages[0]?.imageUrl || ""),
+    coverImageAlt: String(chapter?.coverImageAlt || ""),
+    sourceType: String(chapter?.sourceType || ""),
+    sources: Array.isArray(chapter?.sources) ? chapter.sources : [],
+    progressStage: String(chapter?.progressStage || ""),
+    completedStages: Array.isArray(chapter?.completedStages) ? chapter.completedStages : [],
+    chapterUpdatedAt: String(chapter?.chapterUpdatedAt || chapter?.updatedAt || ""),
+    content: contentFormat === "lexical" ? String(chapter?.content || "") : "",
+    contentFormat,
+    pages: normalizedPages,
+    pageCount,
+    hasPages: hasProjectEpisodePages({
+      ...chapter,
+      contentFormat,
+      pages: normalizedPages,
+      pageCount,
+    }),
+    hasContent:
+      contentFormat === "lexical"
+        ? String(chapter?.content || "").trim().length > 0
+        : normalizedPages.length > 0,
+    readerConfig: resolveProjectReaderConfig({
+      projectType: project?.type,
+      siteSettings,
+      projectReaderConfig: project?.readerConfig,
+    }),
+  };
+};
+
+const buildAstroProjectReadingRoutePayload = ({ req, siteSettings }) => {
+  const project = findAstroBootstrapProjectByRouteSlug(
+    getPublicReadableProjects(),
+    req?.params?.id,
+  );
+  const chapterNumber = Number(req?.params?.chapter);
+  if (!project || !Number.isFinite(chapterNumber)) {
+    return null;
+  }
+  const routeVolume = Number(req?.query?.volume);
+  const volume = Number.isFinite(routeVolume) ? routeVolume : undefined;
+  const chapter =
+    (Array.isArray(project?.episodeDownloads) ? project.episodeDownloads : []).find((entry) => {
+      if (Number(entry?.number) !== chapterNumber) {
+        return false;
+      }
+      if (volume === undefined) {
+        return true;
+      }
+      return Number(entry?.volume) === volume;
+    }) || null;
+  if (!chapter) {
+    return null;
+  }
+  const tagTranslations = loadTagTranslations();
+  const chapterPayload = buildAstroReadingRouteChapterPayload({
+    chapter,
+    project,
+    siteSettings,
+  });
+  const projectPayload = {
+    ...project,
+    readerConfig: chapterPayload.readerConfig,
+  };
+  return buildPublicRoutePayload({
+    kind: "project-reading",
+    project: projectPayload,
+    chapter: chapterPayload,
+    readerConfig: chapterPayload.readerConfig,
+    tagTranslations,
+    mediaVariants: buildPublicMediaVariants([projectPayload, chapterPayload]),
+  });
 };
 
 const buildAstroRelationProjectLookup = (projects, relations) => {
@@ -1829,6 +1938,16 @@ const astroPublicRequestHandler = createAstroPublicRequestHandler({
           routePayload.project &&
           typeof routePayload.project === "object";
         if (isCompleteProjectPayload) {
+          return routePayload;
+        }
+      } else if (/^\/projeto\/[^/]+\/leitura\/[^/]+$/.test(pathname)) {
+        const isCompleteReadingPayload =
+          routePayload?.kind === "project-reading" &&
+          routePayload.project &&
+          typeof routePayload.project === "object" &&
+          routePayload.chapter &&
+          typeof routePayload.chapter === "object";
+        if (isCompleteReadingPayload) {
           return routePayload;
         }
       } else {
@@ -1935,6 +2054,9 @@ const astroPublicRequestHandler = createAstroPublicRequestHandler({
               projectPayload?.relations || [],
             ]),
           });
+        }
+        if (routeKind === "project-reading") {
+          return buildAstroProjectReadingRoutePayload({ req, siteSettings });
         }
         return undefined;
       },

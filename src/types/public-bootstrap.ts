@@ -197,7 +197,12 @@ export type PublicBootstrapHomeHero = {
 
 export type PublicBootstrapPayloadMode = "full" | "critical-home" | "shell";
 
-export type PublicRoutePayloadKind = "projects-list" | "project-detail" | "team" | "donations";
+export type PublicRoutePayloadKind =
+  | "projects-list"
+  | "project-detail"
+  | "project-reading"
+  | "team"
+  | "donations";
 
 export type PublicRoutePayloadProjectLookup = Record<string, string>;
 
@@ -219,6 +224,16 @@ export type PublicRouteProjectDetailPayload = {
   tagTranslations: PublicBootstrapPayload["tagTranslations"];
 };
 
+export type PublicRouteProjectReadingPayload = {
+  kind: "project-reading";
+  generatedAt: string;
+  project: PublicBootstrapProject | null;
+  chapter: PublicBootstrapEpisode | null;
+  readerConfig?: PublicBootstrapProject["readerConfig"] | null;
+  mediaVariants?: UploadMediaVariantsMap;
+  tagTranslations: PublicBootstrapPayload["tagTranslations"];
+};
+
 export type PublicRouteTeamPayload = {
   kind: "team";
   generatedAt: string;
@@ -237,6 +252,7 @@ export type PublicRouteDonationsPayload = {
 export type PublicRoutePayload =
   | PublicRouteProjectsListPayload
   | PublicRouteProjectDetailPayload
+  | PublicRouteProjectReadingPayload
   | PublicRouteTeamPayload
   | PublicRouteDonationsPayload;
 

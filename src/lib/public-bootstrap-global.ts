@@ -11,6 +11,7 @@ import {
   type PublicRoutePayload,
   type PublicRoutePayloadProjectLookup,
   type PublicRouteProjectDetailPayload,
+  type PublicRouteProjectReadingPayload,
   type PublicRouteProjectsListPayload,
   type PublicRouteTeamPayload,
 } from "@/types/public-bootstrap";
@@ -230,6 +231,30 @@ const normalizePublicRouteProjectDetailPayload = (
   tagTranslations: normalizePublicTagTranslations(candidate.tagTranslations),
 });
 
+const normalizePublicRouteProjectReadingPayload = (
+  candidate: Partial<PublicRouteProjectReadingPayload>,
+): PublicRouteProjectReadingPayload => ({
+  kind: "project-reading",
+  generatedAt: String(candidate.generatedAt || ""),
+  project:
+    candidate.project && typeof candidate.project === "object"
+      ? (candidate.project as PublicRouteProjectReadingPayload["project"])
+      : null,
+  chapter:
+    candidate.chapter && typeof candidate.chapter === "object"
+      ? (candidate.chapter as PublicRouteProjectReadingPayload["chapter"])
+      : null,
+  readerConfig:
+    candidate.readerConfig && typeof candidate.readerConfig === "object"
+      ? candidate.readerConfig
+      : null,
+  mediaVariants:
+    candidate.mediaVariants && typeof candidate.mediaVariants === "object"
+      ? (candidate.mediaVariants as UploadMediaVariantsMap)
+      : {},
+  tagTranslations: normalizePublicTagTranslations(candidate.tagTranslations),
+});
+
 const normalizePublicRouteTeamPayload = (
   candidate: Partial<PublicRouteTeamPayload>,
 ): PublicRouteTeamPayload => ({
@@ -285,6 +310,10 @@ export const asPublicRoutePayload = (value: unknown): PublicRoutePayload | null 
     case "project-detail":
       return normalizePublicRouteProjectDetailPayload(
         candidate as Partial<PublicRouteProjectDetailPayload>,
+      );
+    case "project-reading":
+      return normalizePublicRouteProjectReadingPayload(
+        candidate as Partial<PublicRouteProjectReadingPayload>,
       );
     case "team":
       return normalizePublicRouteTeamPayload(candidate as Partial<PublicRouteTeamPayload>);

@@ -151,6 +151,7 @@ describe("ProjectReading bootstrap-first", () => {
       window as Window & {
         __BOOTSTRAP_PUBLIC__?: unknown;
         __BOOTSTRAP_PUBLIC_ME__?: unknown;
+        __BOOTSTRAP_ROUTE__?: unknown;
       }
     ).__BOOTSTRAP_PUBLIC_ME__ = {
       id: "user-1",
@@ -184,14 +185,23 @@ describe("ProjectReading bootstrap-first", () => {
       window as Window & {
         __BOOTSTRAP_PUBLIC__?: unknown;
         __BOOTSTRAP_PUBLIC_ME__?: unknown;
+        __BOOTSTRAP_ROUTE__?: unknown;
       }
     ).__BOOTSTRAP_PUBLIC__;
     delete (
       window as Window & {
         __BOOTSTRAP_PUBLIC__?: unknown;
         __BOOTSTRAP_PUBLIC_ME__?: unknown;
+        __BOOTSTRAP_ROUTE__?: unknown;
       }
     ).__BOOTSTRAP_PUBLIC_ME__;
+    delete (
+      window as Window & {
+        __BOOTSTRAP_PUBLIC__?: unknown;
+        __BOOTSTRAP_PUBLIC_ME__?: unknown;
+        __BOOTSTRAP_ROUTE__?: unknown;
+      }
+    ).__BOOTSTRAP_ROUTE__;
   });
 
   it("usa bootstrap para hero e navegacao sem requisitar o projeto novamente", () => {

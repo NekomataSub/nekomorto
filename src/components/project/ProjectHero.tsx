@@ -26,7 +26,7 @@ type ProjectHeroActionItem = {
 };
 
 const projectHeroTagPillClassName =
-  "h-6 min-h-6 min-w-6 gap-0 rounded-full px-2 py-0 text-[10px] uppercase leading-none";
+  "h-6 min-h-6 min-w-6 gap-0 rounded-full px-2 py-0 font-sans text-[10px] font-semibold uppercase leading-none";
 
 interface ProjectHeroProps {
   children?: ReactNode;

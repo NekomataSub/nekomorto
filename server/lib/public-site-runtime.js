@@ -1,4 +1,12 @@
 import {
+  getProjectEpisodePageCount,
+  hasProjectEpisodePages,
+  normalizeProjectEpisodePages,
+  resolveProjectEpisodeContentFormat,
+  resolveProjectReaderConfig,
+} from "../../shared/project-reader.js";
+import { deriveChapterSynopsis } from "./chapter-synopsis.js";
+import {
   PUBLIC_ROUTE_KIND_DONATIONS,
   PUBLIC_ROUTE_KIND_POST,
   PUBLIC_ROUTE_KIND_PROJECT_DETAIL,
@@ -75,6 +83,7 @@ export const createPublicSiteRuntime = (dependencies = {}) => {
     createSlug,
     extractLocalStylesheetHrefs,
     getPublicInProgressItems,
+    getPublicReadableProjects = dependencies.getPublicVisibleProjects,
     getPublicVisiblePosts,
     getPublicVisibleProjects,
     getPublicVisibleUpdates,
@@ -603,9 +612,114 @@ export const createPublicSiteRuntime = (dependencies = {}) => {
     }, {});
   };
 
+  const serializeReadingRouteChapter = ({ chapter, project, settings }) => {
+    const normalizedPages = normalizeProjectEpisodePages(chapter?.pages);
+    const contentFormat = resolveProjectEpisodeContentFormat({
+      contentFormat: chapter?.contentFormat,
+      episode: chapter,
+      pages: normalizedPages,
+      projectType: project?.type,
+    });
+    const pageCount = getProjectEpisodePageCount({
+      ...chapter,
+      contentFormat,
+      pages: normalizedPages,
+    });
+    return {
+      number: Number.isFinite(Number(chapter?.number)) ? Number(chapter.number) : 0,
+      volume: Number.isFinite(Number(chapter?.volume)) ? Number(chapter.volume) : undefined,
+      title: String(chapter?.title || ""),
+      entryKind:
+        String(chapter?.entryKind || "")
+          .trim()
+          .toLowerCase() === "extra"
+          ? "extra"
+          : "main",
+      entrySubtype: String(chapter?.entrySubtype || "").trim(),
+      readingOrder: Number.isFinite(Number(chapter?.readingOrder))
+        ? Number(chapter.readingOrder)
+        : undefined,
+      displayLabel: String(chapter?.displayLabel || "").trim(),
+      synopsis: deriveChapterSynopsis(chapter),
+      releaseDate: String(chapter?.releaseDate || ""),
+      duration: String(chapter?.duration || ""),
+      coverImageUrl: String(chapter?.coverImageUrl || normalizedPages[0]?.imageUrl || ""),
+      coverImageAlt: String(chapter?.coverImageAlt || ""),
+      sourceType: String(chapter?.sourceType || ""),
+      sources: Array.isArray(chapter?.sources) ? chapter.sources : [],
+      progressStage: String(chapter?.progressStage || ""),
+      completedStages: Array.isArray(chapter?.completedStages) ? chapter.completedStages : [],
+      chapterUpdatedAt: String(chapter?.chapterUpdatedAt || chapter?.updatedAt || ""),
+      content: contentFormat === "lexical" ? String(chapter?.content || "") : "",
+      contentFormat,
+      pages: normalizedPages,
+      pageCount,
+      hasPages: hasProjectEpisodePages({
+        ...chapter,
+        contentFormat,
+        pages: normalizedPages,
+        pageCount,
+      }),
+      hasContent:
+        contentFormat === "lexical"
+          ? String(chapter?.content || "").trim().length > 0
+          : normalizedPages.length > 0,
+      readerConfig: resolveProjectReaderConfig({
+        projectType: project?.type,
+        siteSettings: settings,
+        projectReaderConfig: project?.readerConfig,
+      }),
+    };
+  };
+
+  const resolveProjectReadingRoutePayload = ({
+    generatedAt,
+    routeParams,
+    routeQuery,
+    settings,
+  }) => {
+    const projects = getPublicReadableProjects();
+    const project = findBootstrapProjectByRouteSlug(projects, routeParams?.id);
+    const chapterNumber = Number(routeParams?.chapter);
+    if (!project || !Number.isFinite(chapterNumber)) {
+      return null;
+    }
+    const routeVolume = Number(routeQuery?.volume);
+    const volume = Number.isFinite(routeVolume) ? routeVolume : undefined;
+    const chapter =
+      (Array.isArray(project?.episodeDownloads) ? project.episodeDownloads : []).find((entry) => {
+        if (Number(entry?.number) !== chapterNumber) {
+          return false;
+        }
+        if (volume === undefined) {
+          return true;
+        }
+        return Number(entry?.volume) === volume;
+      }) || null;
+    if (!chapter) {
+      return null;
+    }
+    const tagTranslations = loadTagTranslations();
+    const chapterPayload = serializeReadingRouteChapter({ chapter, project, settings });
+    const projectPayload = {
+      ...project,
+      readerConfig: chapterPayload.readerConfig,
+    };
+    return buildPublicRoutePayload({
+      kind: "project-reading",
+      generatedAt,
+      project: projectPayload,
+      chapter: chapterPayload,
+      readerConfig: chapterPayload.readerConfig,
+      tagTranslations,
+      mediaVariants: buildPublicMediaVariants([projectPayload, chapterPayload]),
+    });
+  };
+
   const buildPublicRouteResponsePayload = async ({
     generatedAt = new Date().toISOString(),
     pages = loadPages(),
+    routeQuery = {},
     routeKind,
     routeParams = {},
     settings = loadSiteSettings(),
@@ -649,6 +763,13 @@ export const createPublicSiteRuntime = (dependencies = {}) => {
           ]),
         });
       }
+      case PUBLIC_ROUTE_KIND_PROJECT_READING:
+        return resolveProjectReadingRoutePayload({
+          generatedAt,
+          routeParams,
+          routeQuery,
+          settings,
+        });
       case PUBLIC_ROUTE_KIND_TEAM: {
         const teamMembers = buildPublicTeamMembers();
         const teamLinkTypes = loadLinkTypes();
@@ -1246,6 +1367,7 @@ export const createPublicSiteRuntime = (dependencies = {}) => {
             pages: normalizedPages,
             routeKind,
             routeParams: req?.params,
+            routeQuery: req?.query,
           })
         : null;
     const routeProject =

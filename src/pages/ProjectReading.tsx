@@ -18,7 +18,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { Project } from "@/data/projects";
 import { useDeferredVisibility } from "@/hooks/use-deferred-visibility";
 import { usePageMeta } from "@/hooks/use-page-meta";
-import { useResolvedPublicBootstrap } from "@/hooks/public-bootstrap-provider";
+import {
+  useResolvedPublicBootstrap,
+  useResolvedPublicRoutePayload,
+} from "@/hooks/public-bootstrap-provider";
 import { usePublicCurrentUser } from "@/hooks/use-public-current-user";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { canManageProjectsAccess } from "@/lib/access-control";
@@ -40,7 +43,11 @@ import { hasPublicEpisodeReadableContent } from "@/lib/public-project-episodes";
 import type { UploadMediaVariantsMap } from "@/lib/upload-variants";
 import { cn } from "@/lib/utils";
 import "@/styles/project-reading.css";
-import type { PublicBootstrapPayload, PublicBootstrapProject } from "@/types/public-bootstrap";
+import type {
+  PublicBootstrapPayload,
+  PublicBootstrapProject,
+  PublicRouteProjectReadingPayload,
+} from "@/types/public-bootstrap";
 import {
   normalizeProjectEpisodePages,
   resolveProjectEpisodeContentFormat,
@@ -116,6 +123,27 @@ const resolveBootstrapProject = (
       );
     }) || null
   );
+};
+
+const resolveProjectReadingRoutePayloadForSlug = (
+  payload: PublicRouteProjectReadingPayload | null,
+  slug: string | undefined,
+  chapterNumber: number,
+  volume: number | undefined,
+) => {
+  if (!payload?.project) {
+    return null;
+  }
+  if (!payload.chapter || Number(payload.chapter.number) !== chapterNumber) {
+    return null;
+  }
+  if (volume !== undefined && Number(payload.chapter.volume) !== volume) {
+    return null;
+  }
+  const projectListBootstrap = {
+    projects: [payload.project],
+  } as PublicBootstrapPayload;
+  return resolveBootstrapProject(projectListBootstrap, slug) ? payload : null;
 };
 
 const mergeMediaVariants = (base: UploadMediaVariantsMap, nextValue: unknown) => ({
@@ -228,18 +256,34 @@ const ProjectReading = () => {
   const apiBase = getApiBase();
   const { settings } = useSiteSettings();
   const resolvedBootstrap = useResolvedPublicBootstrap();
+  const resolvedRoutePayload = useResolvedPublicRoutePayload();
   const [bootstrapData] = useState<PublicBootstrapPayload | null>(() => resolvedBootstrap);
+  const [initialRoutePayload] = useState(() => resolvedRoutePayload);
   const { currentUser } = usePublicCurrentUser();
-  const bootstrapProject = useMemo(
-    () => resolveBootstrapProject(bootstrapData, slug),
-    [bootstrapData, slug],
-  );
-  const [project, setProject] = useState<ReadingProject | null>(bootstrapProject);
   const chapterNumber = Number(chapter);
   const volumeParamRaw = searchParams.get("volume");
   const parsedVolumeParam = Number(volumeParamRaw);
   const volumeParam =
     volumeParamRaw !== null && Number.isFinite(parsedVolumeParam) ? parsedVolumeParam : undefined;
+  const readingRoutePayload = useMemo(
+    () =>
+      initialRoutePayload?.kind === "project-reading"
+        ? resolveProjectReadingRoutePayloadForSlug(
+            initialRoutePayload,
+            slug,
+            chapterNumber,
+            volumeParam,
+          )
+        : null,
+    [chapterNumber, initialRoutePayload, slug, volumeParam],
+  );
+  const bootstrapProject = useMemo(
+    () => resolveBootstrapProject(bootstrapData, slug),
+    [bootstrapData, slug],
+  );
+  const routeProject = readingRoutePayload?.project || null;
+  const initialProject = routeProject || bootstrapProject;
+  const [project, setProject] = useState<ReadingProject | null>(initialProject);
   const bootstrapChapterContent = useMemo(() => {
     if (!bootstrapProject || !Number.isFinite(chapterNumber)) {
       return null;
@@ -272,13 +316,19 @@ const ProjectReading = () => {
       }),
     [bootstrapReadableEpisodes, chapterNumber, volumeParam],
   );
+  const routeChapterContent = readingRoutePayload?.chapter || null;
+  const routeHasChapterContent = Boolean(
+    routeChapterContent &&
+      (String(routeChapterContent.content || "").trim() ||
+        normalizeProjectEpisodePages(routeChapterContent.pages).length > 0),
+  );
   const shouldHydrateProjectFromApi =
     Boolean(slug) &&
-    (!bootstrapProject ||
+    (!initialProject ||
       bootstrapData?.payloadMode === "critical-home" ||
-      bootstrapReadableEpisodes.length === 0 ||
-      !bootstrapHasRequestedChapter);
-  const shouldHydrateChapterFromApi = true;
+      (bootstrapReadableEpisodes.length === 0 && !routeProject) ||
+      (!bootstrapHasRequestedChapter && !routeHasChapterContent));
+  const shouldHydrateChapterFromApi = !routeHasChapterContent;
   const [chapterContent, setChapterContent] = useState<{
     number: number;
     volume?: number;
@@ -301,12 +351,24 @@ const ProjectReading = () => {
     hasPages?: boolean;
     coverImageUrl?: string;
     coverImageAlt?: string;
-  } | null>(bootstrapHasChapterContent ? bootstrapChapterContent : null);
-  const [chapterReaderConfig, setChapterReaderConfig] = useState<Record<string, unknown> | null>(
-    bootstrapHasChapterContent ? project?.readerConfig || null : null,
+  } | null>(
+    routeHasChapterContent
+      ? routeChapterContent
+      : bootstrapHasChapterContent
+        ? bootstrapChapterContent
+        : null,
   );
-  const [hasLoadedProject, setHasLoadedProject] = useState(Boolean(bootstrapProject));
-  const [hasLoadedChapter, setHasLoadedChapter] = useState(bootstrapHasChapterContent);
+  const [chapterReaderConfig, setChapterReaderConfig] = useState<Record<string, unknown> | null>(
+    routeHasChapterContent
+      ? readingRoutePayload?.readerConfig || project?.readerConfig || null
+      : bootstrapHasChapterContent
+        ? project?.readerConfig || null
+        : null,
+  );
+  const [hasLoadedProject, setHasLoadedProject] = useState(Boolean(initialProject));
+  const [hasLoadedChapter, setHasLoadedChapter] = useState(
+    routeHasChapterContent || bootstrapHasChapterContent,
+  );
   const [chapterLoadError, setChapterLoadError] = useState(false);
   const [mediaVariants, setMediaVariants] = useState<UploadMediaVariantsMap>(
     () => bootstrapData?.mediaVariants || {},
@@ -320,10 +382,14 @@ const ProjectReading = () => {
   });
 
   useEffect(() => {
-    setProject(bootstrapProject);
-    setHasLoadedProject(Boolean(bootstrapProject));
-    setMediaVariants(bootstrapData?.mediaVariants || {});
-  }, [bootstrapData, bootstrapProject]);
+    const nextProject = routeProject || bootstrapProject;
+    setProject(nextProject);
+    setHasLoadedProject(Boolean(nextProject));
+    setMediaVariants({
+      ...(bootstrapData?.mediaVariants || {}),
+      ...(readingRoutePayload?.mediaVariants || {}),
+    });
+  }, [bootstrapData, bootstrapProject, readingRoutePayload?.mediaVariants, routeProject]);
 
   useEffect(() => {
     let isActive = true;
@@ -331,15 +397,17 @@ const ProjectReading = () => {
     const loadProject = async () => {
       if (!shouldHydrateProjectFromApi) {
         if (isActive) {
-          setHasLoadedProject(Boolean(bootstrapProject));
+          setHasLoadedProject(Boolean(routeProject || bootstrapProject));
         }
         return;
       }
 
-      const projectRequestId = String(bootstrapProject?.id || slug || "").trim();
+      const projectRequestId = String(
+        routeProject?.id || bootstrapProject?.id || slug || "",
+      ).trim();
       if (!projectRequestId) {
         if (isActive) {
-          setHasLoadedProject(Boolean(bootstrapProject));
+          setHasLoadedProject(Boolean(routeProject || bootstrapProject));
         }
         return;
       }
@@ -382,7 +450,14 @@ const ProjectReading = () => {
     return () => {
       isActive = false;
     };
-  }, [apiBase, bootstrapData?.mediaVariants, bootstrapProject, shouldHydrateProjectFromApi, slug]);
+  }, [
+    apiBase,
+    bootstrapData?.mediaVariants,
+    bootstrapProject,
+    routeProject,
+    shouldHydrateProjectFromApi,
+    slug,
+  ]);
   const isLightNovel = isLightNovelType(project?.type || "");
   const isManga = isMangaType(project?.type || "");
   const isReaderProject = isLightNovel || isManga;
@@ -766,6 +841,24 @@ const ProjectReading = () => {
   }, [apiBase, chapterNumber, project?.id, shouldHydrateChapterFromApi, volumeParam]);
 
   useEffect(() => {
+    if (!routeHasChapterContent || !routeChapterContent) {
+      return;
+    }
+    setChapterContent(routeChapterContent);
+    setChapterReaderConfig(readingRoutePayload?.readerConfig || project?.readerConfig || null);
+    setHasLoadedChapter(true);
+    setChapterLoadError(false);
+  }, [
+    project?.readerConfig,
+    readingRoutePayload?.readerConfig,
+    routeChapterContent,
+    routeHasChapterContent,
+  ]);
+
+  useEffect(() => {
+    if (routeHasChapterContent) {
+      return;
+    }
     if (!bootstrapHasChapterContent || !bootstrapChapterContent) {
       return;
     }
@@ -773,7 +866,12 @@ const ProjectReading = () => {
     setChapterReaderConfig(project?.readerConfig || null);
     setHasLoadedChapter(true);
     setChapterLoadError(false);
-  }, [bootstrapChapterContent, bootstrapHasChapterContent, project?.readerConfig]);
+  }, [
+    bootstrapChapterContent,
+    bootstrapHasChapterContent,
+    project?.readerConfig,
+    routeHasChapterContent,
+  ]);
 
   useEffect(() => {
     const currentChapterContent = chapterContent;

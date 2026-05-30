@@ -410,6 +410,25 @@ export const buildPublicRoutePayload = ({ kind, generatedAt, ...payload } = {}) 
         relationProjectLookup: sanitizeRouteProjectLookup(payload.relationProjectLookup),
         tagTranslations: normalizePublicTagTranslations(payload.tagTranslations),
       };
+    case "project-reading":
+      return {
+        kind: "project-reading",
+        generatedAt: resolvedGeneratedAt,
+        project: payload.project ? toPublicBootstrapProject(payload.project) : null,
+        chapter:
+          payload.chapter && typeof payload.chapter === "object" && !Array.isArray(payload.chapter)
+            ? payload.chapter
+            : null,
+        readerConfig:
+          payload.readerConfig && typeof payload.readerConfig === "object"
+            ? payload.readerConfig
+            : null,
+        mediaVariants:
+          payload.mediaVariants && typeof payload.mediaVariants === "object"
+            ? payload.mediaVariants
+            : {},
+        tagTranslations: normalizePublicTagTranslations(payload.tagTranslations),
+      };
     case "team":
       return {
         kind: "team",

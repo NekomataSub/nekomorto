@@ -1,4 +1,5 @@
 import PublicLink from "@/components/PublicLink";
+import ClientMountedSuspense from "@/components/ClientMountedSuspense";
 import CompactPagination from "@/components/ui/compact-pagination";
 import AsyncState from "@/components/ui/async-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { usePublicBootstrap } from "@/hooks/use-public-bootstrap";
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { CalendarDays, User } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getPublicRoutePreloadHandlers,
   schedulePublicRouteIdlePreload,
@@ -208,9 +209,9 @@ const ReleasesSection = () => {
           <div className="flex h-full flex-col gap-6">
             <LatestEpisodeCard />
             <WorkStatusCard />
-            <Suspense fallback={<TopProjectsSkeleton />}>
+            <ClientMountedSuspense fallback={<TopProjectsSkeleton />}>
               <TopProjectsSection />
-            </Suspense>
+            </ClientMountedSuspense>
             <DiscordInviteCard />
           </div>
         </div>

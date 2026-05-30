@@ -84,6 +84,7 @@ export const createPublicRuntimeBundle = (dependencies = {}) => {
     createSlug: dependencies.createSlug,
     extractLocalStylesheetHrefs: dependencies.extractLocalStylesheetHrefs,
     getPublicInProgressItems: publicVisibilityRuntime.getPublicInProgressItems,
+    getPublicReadableProjects: publicVisibilityRuntime.getPublicReadableProjects,
     getPublicVisiblePosts: publicVisibilityRuntime.getPublicVisiblePosts,
     getPublicVisibleProjects: publicVisibilityRuntime.getPublicVisibleProjects,
     getPublicVisibleUpdates: publicVisibilityRuntime.getPublicVisibleUpdates,
