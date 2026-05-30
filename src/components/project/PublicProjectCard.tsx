@@ -266,7 +266,7 @@ const PublicProjectCard = ({
           key={badge.key}
           tone={badge.variant === "secondary" ? "secondary" : "outline"}
           className={cn(
-            "h-6 min-h-6 min-w-6 shrink-0 gap-0 rounded-full px-2 py-0 text-[9px] uppercase leading-none",
+            "h-6 min-h-6 min-w-6 shrink-0 items-center rounded-full px-2.5 py-0 font-sans text-[10px] font-semibold uppercase leading-none",
             badge.className,
           )}
           title={badge.title || badge.label}
@@ -288,7 +288,7 @@ const PublicProjectCard = ({
         key={badge.key}
         variant={badge.variant}
         className={cn(
-          "inline-flex h-6 shrink-0 whitespace-nowrap px-2 text-[9px] uppercase leading-none",
+          "inline-flex h-6 shrink-0 items-center justify-center whitespace-nowrap px-2.5 py-0 font-sans text-[10px] font-semibold uppercase leading-none",
           badge.className,
         )}
         title={badge.title || badge.label}
@@ -408,7 +408,7 @@ const PublicProjectCard = ({
                 className="mt-auto flex shrink-0 flex-col gap-2 pt-3"
               >
                 {primaryBadges.length > 0 ? (
-                  <div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
+                  <div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
                     {primaryBadges.map(renderPrimaryBadge)}
                   </div>
                 ) : null}
