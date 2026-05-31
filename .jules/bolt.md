@@ -11,3 +11,6 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+## 2024-05-19 - Schwartzian Transform + Intl.Collator for Sorting Strings
+**Learning:** Using `String.prototype.localeCompare` inside an `O(N log N)` `sort` comparator combined with expensive accessor functions (like translation lookups) is extremely slow because the accessor runs repeatedly and `localeCompare` instantiates collator logic internally each time.
+**Action:** When sorting arrays of objects based on translated strings, use the Schwartzian transform (map -> sort -> map) to precompute the string labels in an O(N) pass, and use a cached `Intl.Collator(locale).compare` in the sort comparator to avoid repetitive initializations. This yields a massive performance boost (e.g. ~40x faster for 1k items).

@@ -128,8 +128,29 @@ export const translateRelation = (value?: string | null) => {
   return relationMap.get(normalized) || relationMap.get(normalized.replace(/_/g, " ")) || raw;
 };
 
+const collators = new Map<string, Intl.Collator>();
+const getCollator = (locale: string) => {
+  let collator = collators.get(locale);
+  if (!collator) {
+    collator = new Intl.Collator(locale);
+    collators.set(locale, collator);
+  }
+  return collator;
+};
+
+// Optimizes sorting by pre-computing the translated label (Schwartzian transform)
+// and caching the Intl.Collator per locale to avoid repetitive initializations.
 export const sortByTranslatedLabel = <T>(
   items: T[],
   translator: (item: T) => string,
   locale = "pt-BR",
-) => [...items].sort((a, b) => translator(a).localeCompare(translator(b), locale));
+) => {
+  if (!items.length) {
+    return [];
+  }
+  const collator = getCollator(locale);
+  return items
+    .map((item) => ({ item, label: translator(item) }))
+    .sort((a, b) => collator.compare(a.label, b.label))
+    .map(({ item }) => item);
+};
