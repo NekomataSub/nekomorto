@@ -11,3 +11,7 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+
+## 2023-11-20 - Intl.Collator with exact variant sensitivity
+**Learning:** `localeCompare` uses `sensitivity: "variant"` by default (respects cases and accents). Previously, `comparePtBr` was instantiated with `sensitivity: "base"`. Using `{ sensitivity: "base" }` causes the collator to treat "maca" and "Maçã" as identical (yielding 0), which slightly breaks the expected behavior if code was relying on strict `localeCompare` behavior.
+**Action:** When migrating from `localeCompare` to `Intl.Collator` to speed up array sorting, define a new `comparePtBrVariant` (using `sensitivity: "variant"`) alongside `comparePtBr` instead of modifying the sensitivity of the base one, to strictly match default `localeCompare` logic.

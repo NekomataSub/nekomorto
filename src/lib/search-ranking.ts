@@ -1,4 +1,5 @@
 const PT_BR_COLLATOR = new Intl.Collator("pt-BR", { sensitivity: "base" });
+const PT_BR_VARIANT_COLLATOR = new Intl.Collator("pt-BR", { sensitivity: "variant" });
 
 export type ProjectSearchItem = {
   label: string;
@@ -28,6 +29,9 @@ export const normalizeSearchText = (value: string): string =>
 
 export const comparePtBr = (a: string, b: string): number =>
   PT_BR_COLLATOR.compare(String(a || ""), String(b || ""));
+
+export const comparePtBrVariant = (a: string, b: string): number =>
+  PT_BR_VARIANT_COLLATOR.compare(String(a || ""), String(b || ""));
 
 export const sortAlphabeticallyPtBr = (values: string[]): string[] => [...values].sort(comparePtBr);
 
