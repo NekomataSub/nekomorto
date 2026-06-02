@@ -1,10 +1,10 @@
-import { Input } from "@/components/dashboard/dashboard-form-controls";
-import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
-import { Card, CardContent } from "@/components/ui/card";
-import { TabsContent } from "@/components/ui/tabs";
 import { Download, Plus, Save, Trash2 } from "lucide-react";
 import type { UIEvent } from "react";
 import { useState } from "react";
+import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
+import { Input } from "@/components/dashboard/dashboard-form-controls";
+import { Card, CardContent } from "@/components/ui/card";
+import { TabsContent } from "@/components/ui/tabs";
 import { useDashboardSettingsContext } from "./dashboard-settings-context";
 import {
   dashboardSettingsCardClassName,
@@ -93,7 +93,7 @@ export const DashboardSettingsTranslationsTab = () => {
                 onClick={() => syncAniListTerms()}
                 disabled={isSyncingAniList}
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4" aria-hidden="true" />
                 {isSyncingAniList ? "Importando..." : "Importar AniList"}
               </DashboardActionButton>
               <DashboardActionButton
@@ -106,7 +106,7 @@ export const DashboardSettingsTranslationsTab = () => {
                 }}
                 disabled={!hasResolvedTranslations || isSavingTranslations}
               >
-                <Save className="h-4 w-4" />
+                <Save className="h-4 w-4" aria-hidden="true" />
                 {isSavingTranslations ? "Salvando..." : "Salvar traduções"}
               </DashboardActionButton>
             </div>
@@ -126,6 +126,7 @@ export const DashboardSettingsTranslationsTab = () => {
               <DashboardActionButton
                 type="button"
                 tone="primary"
+                aria-label="Adicionar tag"
                 onClick={() => {
                   const value = newTag.trim();
                   if (!value || tagTranslations[value] !== undefined) {
@@ -135,7 +136,7 @@ export const DashboardSettingsTranslationsTab = () => {
                   setNewTag("");
                 }}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4" aria-hidden="true" />
               </DashboardActionButton>
             </div>
           </div>
@@ -181,6 +182,7 @@ export const DashboardSettingsTranslationsTab = () => {
                         <td className="px-4 py-3 text-right">
                           <DashboardActionButton
                             size="icon"
+                            aria-label={`Excluir tag ${tag}`}
                             onClick={() =>
                               setTagTranslations((prev) => {
                                 const next = { ...prev };
@@ -189,7 +191,7 @@ export const DashboardSettingsTranslationsTab = () => {
                               })
                             }
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </DashboardActionButton>
                         </td>
                       </tr>
@@ -218,7 +220,7 @@ export const DashboardSettingsTranslationsTab = () => {
                 onClick={() => syncAniListTerms()}
                 disabled={isSyncingAniList}
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4" aria-hidden="true" />
                 {isSyncingAniList ? "Importando..." : "Importar AniList"}
               </DashboardActionButton>
               <DashboardActionButton
@@ -231,7 +233,7 @@ export const DashboardSettingsTranslationsTab = () => {
                 }}
                 disabled={!hasResolvedTranslations || isSavingTranslations}
               >
-                <Save className="h-4 w-4" />
+                <Save className="h-4 w-4" aria-hidden="true" />
                 {isSavingTranslations ? "Salvando..." : "Salvar traduções"}
               </DashboardActionButton>
             </div>
@@ -251,6 +253,7 @@ export const DashboardSettingsTranslationsTab = () => {
               <DashboardActionButton
                 type="button"
                 tone="primary"
+                aria-label="Adicionar gênero"
                 onClick={() => {
                   const value = newGenre.trim();
                   if (!value || genreTranslations[value] !== undefined) {
@@ -260,7 +263,7 @@ export const DashboardSettingsTranslationsTab = () => {
                   setNewGenre("");
                 }}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4" aria-hidden="true" />
               </DashboardActionButton>
             </div>
           </div>
@@ -317,6 +320,7 @@ export const DashboardSettingsTranslationsTab = () => {
                         <td className="px-4 py-3 text-right">
                           <DashboardActionButton
                             size="icon"
+                            aria-label={`Excluir gênero ${genre}`}
                             onClick={() =>
                               setGenreTranslations((prev) => {
                                 const next = { ...prev };
@@ -325,7 +329,7 @@ export const DashboardSettingsTranslationsTab = () => {
                               })
                             }
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </DashboardActionButton>
                         </td>
                       </tr>
@@ -357,7 +361,7 @@ export const DashboardSettingsTranslationsTab = () => {
               }}
               disabled={!hasResolvedTranslations || isSavingTranslations}
             >
-              <Save className="h-4 w-4" />
+              <Save className="h-4 w-4" aria-hidden="true" />
               {isSavingTranslations ? "Salvando..." : "Salvar traduções"}
             </DashboardActionButton>
           </div>
@@ -376,6 +380,7 @@ export const DashboardSettingsTranslationsTab = () => {
               <DashboardActionButton
                 type="button"
                 tone="primary"
+                aria-label="Adicionar cargo"
                 onClick={() => {
                   const value = newStaffRole.trim();
                   if (!value || staffRoleTranslations[value] !== undefined) {
@@ -385,7 +390,7 @@ export const DashboardSettingsTranslationsTab = () => {
                   setNewStaffRole("");
                 }}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4" aria-hidden="true" />
               </DashboardActionButton>
             </div>
           </div>
@@ -448,6 +453,7 @@ export const DashboardSettingsTranslationsTab = () => {
                         <td className="px-4 py-3 text-right">
                           <DashboardActionButton
                             size="icon"
+                            aria-label={`Excluir cargo ${role}`}
                             onClick={() =>
                               setStaffRoleTranslations((prev) => {
                                 const next = { ...prev };
@@ -456,7 +462,7 @@ export const DashboardSettingsTranslationsTab = () => {
                               })
                             }
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </DashboardActionButton>
                         </td>
                       </tr>

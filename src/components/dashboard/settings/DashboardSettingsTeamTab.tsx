@@ -37,6 +37,7 @@ export const DashboardSettingsTeamTab = () => {
             </div>
             <DashboardActionButton
               type="button"
+              aria-label="Adicionar função"
               onClick={() =>
                 setSettings((prev) => ({
                   ...prev,
@@ -51,7 +52,7 @@ export const DashboardSettingsTeamTab = () => {
                 }))
               }
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4" aria-hidden="true" />
             </DashboardActionButton>
           </div>
 
@@ -92,6 +93,7 @@ export const DashboardSettingsTeamTab = () => {
                 <DashboardActionButton
                   type="button"
                   size="icon"
+                  aria-label={`Excluir função ${role.label || index + 1}`}
                   className={responsiveCompactRowDeleteButtonClass}
                   onClick={() =>
                     setSettings((prev) => ({
@@ -100,7 +102,7 @@ export const DashboardSettingsTeamTab = () => {
                     }))
                   }
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </DashboardActionButton>
               </div>
             ))}

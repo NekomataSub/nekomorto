@@ -1,10 +1,10 @@
-import { Input } from "@/components/dashboard/dashboard-form-controls";
+import { Plus, Save, Trash2 } from "lucide-react";
 import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
+import { Input } from "@/components/dashboard/dashboard-form-controls";
 import ThemedSvgLogo from "@/components/ThemedSvgLogo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { TabsContent } from "@/components/ui/tabs";
-import { Plus, Save, Trash2 } from "lucide-react";
 import { useDashboardSettingsContext } from "./dashboard-settings-context";
 import {
   dashboardSettingsCardClassName,
@@ -54,7 +54,7 @@ export const DashboardSettingsSocialLinksTab = () => {
                   ])
                 }
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4" aria-hidden="true" />
                 Adicionar
               </DashboardActionButton>
               <DashboardActionButton
@@ -67,7 +67,7 @@ export const DashboardSettingsSocialLinksTab = () => {
                 }}
                 disabled={!hasResolvedLinkTypes || isSavingLinkTypes}
               >
-                <Save className="h-4 w-4" />
+                <Save className="h-4 w-4" aria-hidden="true" />
                 {isSavingLinkTypes ? "Salvando..." : "Salvar"}
               </DashboardActionButton>
             </div>
@@ -133,22 +133,24 @@ export const DashboardSettingsSocialLinksTab = () => {
                       <DashboardActionButton
                         type="button"
                         size="icon"
+                        aria-label={`Excluir rede ${link.label || index + 1}`}
                         className={responsiveSvgCardMobileRemoveButtonClass}
                         onClick={() =>
                           setLinkTypes((prev) => prev.filter((_, idx) => idx !== index))
                         }
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </DashboardActionButton>
                     </div>
                   </div>
                   <DashboardActionButton
                     type="button"
                     size="icon"
+                    aria-label={`Excluir rede ${link.label || index + 1}`}
                     className={responsiveSvgCardDesktopRemoveButtonClass}
                     onClick={() => setLinkTypes((prev) => prev.filter((_, idx) => idx !== index))}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </DashboardActionButton>
                 </div>
               );

@@ -1,3 +1,4 @@
+import DashboardFieldStack from "@/components/dashboard/DashboardFieldStack";
 import { Combobox, Input, Textarea } from "@/components/dashboard/dashboard-form-controls";
 import {
   dashboardStrongFocusFieldClassName,
@@ -5,7 +6,6 @@ import {
   dashboardStrongFocusTriggerClassName,
   dashboardStrongSurfaceHoverClassName,
 } from "@/components/dashboard/dashboard-page-tokens";
-import DashboardFieldStack from "@/components/dashboard/DashboardFieldStack";
 import { Card, CardContent } from "@/components/ui/card";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { Label } from "@/components/ui/label";
