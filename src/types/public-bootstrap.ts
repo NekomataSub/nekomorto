@@ -206,6 +206,18 @@ export type PublicRoutePayloadKind =
 
 export type PublicRoutePayloadProjectLookup = Record<string, string>;
 
+export type PublicRoutePayloadRelationProjectCard = {
+  id: string;
+  title: string;
+  cover: string;
+  coverAlt: string;
+};
+
+export type PublicRoutePayloadRelationProjectCards = Record<
+  string,
+  PublicRoutePayloadRelationProjectCard
+>;
+
 export type PublicRouteProjectsListPayload = {
   kind: "projects-list";
   generatedAt: string;
@@ -221,6 +233,7 @@ export type PublicRouteProjectDetailPayload = {
   revision: string;
   mediaVariants?: UploadMediaVariantsMap;
   relationProjectLookup: PublicRoutePayloadProjectLookup;
+  relationProjectCards?: PublicRoutePayloadRelationProjectCards;
   tagTranslations: PublicBootstrapPayload["tagTranslations"];
 };
 

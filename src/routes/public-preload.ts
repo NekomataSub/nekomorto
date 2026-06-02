@@ -7,7 +7,11 @@ import {
 } from "@/lib/public-post-preload";
 import { readWindowPublicBootstrap } from "@/lib/public-bootstrap-global";
 import type { UploadMediaVariantsMap } from "@/lib/upload-variants";
-import type { PublicRoutePayload, PublicRouteProjectDetailPayload } from "@/types/public-bootstrap";
+import type {
+  PublicRoutePayload,
+  PublicRoutePayloadRelationProjectCards,
+  PublicRouteProjectDetailPayload,
+} from "@/types/public-bootstrap";
 import {
   PUBLIC_ROUTE_KIND_ABOUT,
   PUBLIC_ROUTE_KIND_DONATIONS,
@@ -121,6 +125,57 @@ const buildRelationProjectLookup = ({
   }, {});
 };
 
+const buildRelationProjectCards = ({
+  project,
+  projects,
+}: {
+  project: {
+    relations?: Array<{ projectId?: string | null; anilistId?: number | null }>;
+  } | null;
+  projects: Array<{
+    id?: string | null;
+    anilistId?: number | null;
+    title?: string | null;
+    cover?: string | null;
+    coverAlt?: string | null;
+  }>;
+}): PublicRoutePayloadRelationProjectCards => {
+  if (!project?.relations?.length) {
+    return {};
+  }
+  const relationKeys = new Set<string>();
+  project.relations.forEach((relation) => {
+    const relationProjectId = String(relation?.projectId || "").trim();
+    const relationAniListId = String(relation?.anilistId || "").trim();
+    if (relationProjectId) {
+      relationKeys.add(relationProjectId);
+    }
+    if (relationAniListId) {
+      relationKeys.add(relationAniListId);
+    }
+  });
+  return projects.reduce<PublicRoutePayloadRelationProjectCards>((result, entry) => {
+    const projectId = String(entry.id || "").trim();
+    const anilistId = String(entry.anilistId || "").trim();
+    if (!projectId) {
+      return result;
+    }
+    const card = {
+      id: projectId,
+      title: String(entry.title || ""),
+      cover: String(entry.cover || ""),
+      coverAlt: String(entry.coverAlt || ""),
+    };
+    if (relationKeys.has(projectId)) {
+      result[projectId] = card;
+    }
+    if (anilistId && relationKeys.has(anilistId)) {
+      result[anilistId] = card;
+    }
+    return result;
+  }, {});
+};
+
 const prewarmImage = (value: string) => {
   if (typeof window === "undefined" || typeof Image === "undefined") {
     return;
@@ -165,6 +220,15 @@ const buildProjectDetailRoutePayload = ({
       } | null,
       projects: bootstrap?.projects || [],
     }),
+    relationProjectCards:
+      response?.relationProjectCards && typeof response.relationProjectCards === "object"
+        ? (response.relationProjectCards as PublicRoutePayloadRelationProjectCards)
+        : buildRelationProjectCards({
+            project: project as {
+              relations?: Array<{ projectId?: string | null; anilistId?: number | null }>;
+            } | null,
+            projects: bootstrap?.projects || [],
+          }),
     tagTranslations,
   };
 };

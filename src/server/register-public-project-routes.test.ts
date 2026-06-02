@@ -395,6 +395,7 @@ describe("registerPublicProjectRoutes", () => {
         staffRoles: { director: "Direcao" },
       },
       revision: "project-revision",
+      relationProjectCards: {},
       mediaVariants: {
         cover: "variant",
       },

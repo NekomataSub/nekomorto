@@ -671,6 +671,127 @@ describe("Project mobile hero layout", () => {
     expect(relationCover?.style.aspectRatio).toBe("9 / 14");
   });
 
+  it("usa a capa atual do projeto relacionado quando aponta para um projeto interno", async () => {
+    const projectWithRelation = {
+      ...projectFixture,
+      relations: [
+        {
+          relation: "SEQUEL",
+          title: "Titulo antigo da relacao",
+          format: "Anime",
+          status: "Em andamento",
+          image: "/uploads/old-related-cover.jpg",
+          projectId: "project-2",
+        },
+      ],
+    };
+
+    apiFetchMock.mockReset();
+    apiFetchMock.mockImplementation(
+      async (_apiBase: string, endpoint: string, options?: RequestInit) => {
+        const method = String(options?.method || "GET").toUpperCase();
+
+        if (endpoint === "/api/public/projects/project-1" && method === "GET") {
+          return mockJsonResponse(true, {
+            project: projectWithRelation,
+            relationProjectCards: {
+              "project-2": {
+                id: "project-2",
+                title: "Projeto Relacionado Atual",
+                cover: "/uploads/current-related-cover.jpg",
+                coverAlt: "Capa atual",
+              },
+            },
+          });
+        }
+        if (endpoint === "/api/public/tag-translations" && method === "GET") {
+          return mockJsonResponse(true, { tags: {}, genres: {}, staffRoles: {} });
+        }
+        if (endpoint === "/api/public/projects/project-1/view" && method === "POST") {
+          return mockJsonResponse(true, { views: 1 });
+        }
+        if (endpoint === "/api/public/me" && method === "GET") {
+          return mockJsonResponse(true, { user: null });
+        }
+        return mockJsonResponse(false, { error: "not_found" }, 404);
+      },
+    );
+
+    render(
+      <MemoryRouter>
+        <ProjectPage />
+      </MemoryRouter>,
+    );
+
+    const relationImage = await screen.findByRole("img", { name: "Capa atual" });
+    expect(relationImage).toHaveAttribute(
+      "src",
+      expect.stringContaining("/uploads/current-related-cover.jpg"),
+    );
+    expect(screen.getByText("Projeto Relacionado Atual")).toBeInTheDocument();
+  });
+
+  it("mantem a imagem salva na relacao como fallback quando o projeto esta sem capa", async () => {
+    const projectWithRelation = {
+      ...projectFixture,
+      relations: [
+        {
+          relation: "SEQUEL",
+          title: "Projeto Relacionado",
+          format: "Anime",
+          status: "Em andamento",
+          image: "/uploads/old-related-cover.jpg",
+          projectId: "project-2",
+        },
+      ],
+    };
+
+    apiFetchMock.mockReset();
+    apiFetchMock.mockImplementation(
+      async (_apiBase: string, endpoint: string, options?: RequestInit) => {
+        const method = String(options?.method || "GET").toUpperCase();
+
+        if (endpoint === "/api/public/projects/project-1" && method === "GET") {
+          return mockJsonResponse(true, {
+            project: projectWithRelation,
+            relationProjectCards: {
+              "project-2": {
+                id: "project-2",
+                title: "Projeto Relacionado Atual",
+                cover: "",
+                coverAlt: "",
+              },
+            },
+          });
+        }
+        if (endpoint === "/api/public/tag-translations" && method === "GET") {
+          return mockJsonResponse(true, { tags: {}, genres: {}, staffRoles: {} });
+        }
+        if (endpoint === "/api/public/projects/project-1/view" && method === "POST") {
+          return mockJsonResponse(true, { views: 1 });
+        }
+        if (endpoint === "/api/public/me" && method === "GET") {
+          return mockJsonResponse(true, { user: null });
+        }
+        return mockJsonResponse(false, { error: "not_found" }, 404);
+      },
+    );
+
+    render(
+      <MemoryRouter>
+        <ProjectPage />
+      </MemoryRouter>,
+    );
+
+    const relationImage = await screen.findByRole("img", {
+      name: "Projeto Relacionado Atual",
+    });
+    expect(relationImage).toHaveAttribute(
+      "src",
+      expect.stringContaining("/uploads/old-related-cover.jpg"),
+    );
+  });
+
   it("remove a borda apenas dos cards externos de sobre, relacionados, staff e compartilhar", async () => {
     const projectWithSections = {
       ...projectFixture,

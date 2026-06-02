@@ -76,6 +76,7 @@ import type {
   PublicBootstrapPayload,
   PublicBootstrapProject,
   PublicRoutePayloadProjectLookup,
+  PublicRoutePayloadRelationProjectCards,
   PublicRouteProjectDetailPayload,
 } from "@/types/public-bootstrap";
 import {
@@ -254,6 +255,49 @@ const buildRelationProjectLookup = ({
   }, {});
 };
 
+const buildRelationProjectCards = ({
+  project,
+  projects,
+}: {
+  project: PublicBootstrapProject | null;
+  projects: Array<Pick<Project, "id" | "anilistId" | "title" | "cover" | "coverAlt">>;
+}): PublicRoutePayloadRelationProjectCards => {
+  if (!project?.relations?.length) {
+    return {};
+  }
+  const relationKeys = new Set<string>();
+  project.relations.forEach((relation) => {
+    const relationProjectId = String(relation.projectId || "").trim();
+    const relationAniListId = String(relation.anilistId || "").trim();
+    if (relationProjectId) {
+      relationKeys.add(relationProjectId);
+    }
+    if (relationAniListId) {
+      relationKeys.add(relationAniListId);
+    }
+  });
+  return projects.reduce<PublicRoutePayloadRelationProjectCards>((result, entry) => {
+    const projectId = String(entry.id || "").trim();
+    const anilistId = String(entry.anilistId || "").trim();
+    if (!projectId) {
+      return result;
+    }
+    const card = {
+      id: projectId,
+      title: String(entry.title || ""),
+      cover: String(entry.cover || ""),
+      coverAlt: String(entry.coverAlt || ""),
+    };
+    if (relationKeys.has(projectId)) {
+      result[projectId] = card;
+    }
+    if (anilistId && relationKeys.has(anilistId)) {
+      result[anilistId] = card;
+    }
+    return result;
+  }, {});
+};
+
 const resolveProjectRoutePayloadForSlug = (
   payload: PublicRouteProjectDetailPayload | null,
   slug: string | undefined,
@@ -328,6 +372,16 @@ const ProjectPage = ({
           projects: hasFullBootstrap ? ((bootstrapData?.projects || []) as Project[]) : [],
         }),
     );
+  const [relationProjectCards, setRelationProjectCards] =
+    useState<PublicRoutePayloadRelationProjectCards>(
+      () =>
+        projectRoutePayload?.relationProjectCards ||
+        preloadedProjectRoutePayload?.relationProjectCards ||
+        buildRelationProjectCards({
+          project: bootstrapProjectSnapshot as PublicBootstrapProject | null,
+          projects: hasFullBootstrap ? ((bootstrapData?.projects || []) as Project[]) : [],
+        }),
+    );
   const [tagTranslations, setTagTranslations] = useState<Record<string, string>>(
     () =>
       projectRoutePayload?.tagTranslations?.tags ||
@@ -398,6 +452,7 @@ const ProjectPage = ({
       setProjectRevision(payload.revision || "");
       setMediaVariants(payload.mediaVariants || {});
       setRelationProjectLookup(payload.relationProjectLookup || {});
+      setRelationProjectCards(payload.relationProjectCards || {});
       if (hasProjectRoutePayloadTranslations(payload)) {
         setTagTranslations(payload.tagTranslations?.tags || {});
         setGenreTranslations(payload.tagTranslations?.genres || {});
@@ -424,6 +479,12 @@ const ProjectPage = ({
           projects: (bootstrapData?.projects || []) as Project[],
         }),
       );
+      setRelationProjectCards(
+        buildRelationProjectCards({
+          project: nextProject as PublicBootstrapProject | null,
+          projects: (bootstrapData?.projects || []) as Project[],
+        }),
+      );
       setTagTranslations(bootstrapData?.tagTranslations?.tags || {});
       setGenreTranslations(bootstrapData?.tagTranslations?.genres || {});
       setStaffRoleTranslations(bootstrapData?.tagTranslations?.staffRoles || {});
@@ -443,6 +504,7 @@ const ProjectPage = ({
     setProjectRevision("");
     setMediaVariants({});
     setRelationProjectLookup({});
+    setRelationProjectCards({});
     setHasLoaded(false);
   }, []);
 
@@ -1320,6 +1382,10 @@ const ProjectPage = ({
     () => new Map(Object.entries(relationProjectLookup)),
     [relationProjectLookup],
   );
+  const relationProjectCardMap = useMemo(
+    () => new Map(Object.entries(relationProjectCards)),
+    [relationProjectCards],
+  );
 
   const handleCopyLink = async () => {
     if (!project) {
@@ -1634,7 +1700,13 @@ const ProjectPage = ({
                           relation.projectId ||
                           (relation.anilistId ? String(relation.anilistId) : "");
                         const projectId = relationProjectIds.get(relationId);
-                        const targetId = projectId || relationId;
+                        const relationProjectCard =
+                          relationProjectCardMap.get(relationId) ||
+                          (projectId ? relationProjectCardMap.get(projectId) : undefined);
+                        const targetId = relationProjectCard?.id || projectId || relationId;
+                        const title = relationProjectCard?.title || relation.title;
+                        const coverSrc = relationProjectCard?.cover || relation.image;
+                        const coverAlt = relationProjectCard?.coverAlt || title;
                         const supportingText = [relation.format, relation.status]
                           .map((value) => String(value || "").trim())
                           .filter(Boolean)
@@ -1645,12 +1717,12 @@ const ProjectPage = ({
                             variant="related"
                             model={{
                               href: targetId ? `/projeto/${targetId}` : "#",
-                              title: relation.title,
-                              coverSrc: relation.image,
-                              coverAlt: relation.title,
+                              title,
+                              coverSrc,
+                              coverAlt,
                               mediaVariants,
                               eyebrow: translateRelation(relation.relation),
-                              synopsisKey: relation.title,
+                              synopsisKey: title,
                               supportingText,
                             }}
                           />

@@ -379,6 +379,29 @@ const sanitizeRouteProjectLookup = (value) => {
   }, {});
 };
 
+const sanitizeRouteRelationProjectCards = (value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return Object.entries(value).reduce((result, [rawKey, rawCard]) => {
+    const key = safeString(rawKey).trim();
+    if (!key || !rawCard || typeof rawCard !== "object" || Array.isArray(rawCard)) {
+      return result;
+    }
+    const id = safeString(rawCard.id).trim();
+    if (!id) {
+      return result;
+    }
+    result[key] = {
+      id,
+      title: safeString(rawCard.title),
+      cover: safeString(rawCard.cover),
+      coverAlt: safeString(rawCard.coverAlt),
+    };
+    return result;
+  }, {});
+};
+
 export const buildPublicRoutePayload = ({ kind, generatedAt, ...payload } = {}) => {
   const normalizedKind = safeString(kind).trim().toLowerCase();
   const resolvedGeneratedAt = safeString(generatedAt || new Date().toISOString());
@@ -408,6 +431,7 @@ export const buildPublicRoutePayload = ({ kind, generatedAt, ...payload } = {}) 
             ? payload.mediaVariants
             : {},
         relationProjectLookup: sanitizeRouteProjectLookup(payload.relationProjectLookup),
+        relationProjectCards: sanitizeRouteRelationProjectCards(payload.relationProjectCards),
         tagTranslations: normalizePublicTagTranslations(payload.tagTranslations),
       };
     case "project-reading":

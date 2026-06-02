@@ -612,6 +612,43 @@ export const createPublicSiteRuntime = (dependencies = {}) => {
     }, {});
   };
 
+  const buildRelationProjectCards = (projects, relations) => {
+    const relationKeys = new Set();
+    (Array.isArray(relations) ? relations : []).forEach((relation) => {
+      const projectId = String(relation?.projectId || "").trim();
+      const anilistId = String(relation?.anilistId || "").trim();
+      if (projectId) {
+        relationKeys.add(projectId);
+      }
+      if (anilistId) {
+        relationKeys.add(anilistId);
+      }
+    });
+    if (relationKeys.size === 0) {
+      return {};
+    }
+    return (Array.isArray(projects) ? projects : []).reduce((result, project) => {
+      const projectId = String(project?.id || "").trim();
+      const anilistId = String(project?.anilistId || "").trim();
+      if (!projectId) {
+        return result;
+      }
+      const card = {
+        id: projectId,
+        title: String(project?.title || ""),
+        cover: String(project?.cover || ""),
+        coverAlt: String(project?.coverAlt || ""),
+      };
+      if (relationKeys.has(projectId)) {
+        result[projectId] = card;
+      }
+      if (anilistId && relationKeys.has(anilistId)) {
+        result[anilistId] = card;
+      }
+      return result;
+    }, {});
+  };
+
   const serializeReadingRouteChapter = ({ chapter, project, settings }) => {
     const normalizedPages = normalizeProjectEpisodePages(chapter?.pages);
     const contentFormat = resolveProjectEpisodeContentFormat({
@@ -744,6 +781,7 @@ export const createPublicSiteRuntime = (dependencies = {}) => {
         }
         const tagTranslations = loadTagTranslations();
         const projectPayload = { ...project };
+        const relationProjectCards = buildRelationProjectCards(projects, project?.relations);
         return buildPublicRoutePayload({
           kind: "project-detail",
           generatedAt,
@@ -756,10 +794,12 @@ export const createPublicSiteRuntime = (dependencies = {}) => {
             resolveVariantUrl: resolveMetaImageVariantUrl,
           }),
           relationProjectLookup: buildRelationProjectLookup(projects, project?.relations),
+          relationProjectCards,
           tagTranslations,
           mediaVariants: buildPublicMediaVariants([
             projectPayload,
             projectPayload?.relations || [],
+            Object.values(relationProjectCards),
           ]),
         });
       }

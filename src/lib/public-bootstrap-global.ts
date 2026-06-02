@@ -10,6 +10,7 @@ import {
   type PublicRouteDonationsPayload,
   type PublicRoutePayload,
   type PublicRoutePayloadProjectLookup,
+  type PublicRoutePayloadRelationProjectCards,
   type PublicRouteProjectDetailPayload,
   type PublicRouteProjectReadingPayload,
   type PublicRouteProjectsListPayload,
@@ -200,6 +201,40 @@ const normalizeRouteProjectLookup = (value: unknown): PublicRoutePayloadProjectL
   );
 };
 
+const normalizeRouteRelationProjectCards = (
+  value: unknown,
+): PublicRoutePayloadRelationProjectCards => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return Object.entries(value).reduce<PublicRoutePayloadRelationProjectCards>(
+    (result, [key, rawCard]) => {
+      const normalizedKey = String(key || "").trim();
+      if (!normalizedKey || !rawCard || typeof rawCard !== "object" || Array.isArray(rawCard)) {
+        return result;
+      }
+      const card = rawCard as {
+        id?: unknown;
+        title?: unknown;
+        cover?: unknown;
+        coverAlt?: unknown;
+      };
+      const id = String(card.id || "").trim();
+      if (!id) {
+        return result;
+      }
+      result[normalizedKey] = {
+        id,
+        title: String(card.title || ""),
+        cover: String(card.cover || ""),
+        coverAlt: String(card.coverAlt || ""),
+      };
+      return result;
+    },
+    {},
+  );
+};
+
 const normalizePublicRouteProjectsListPayload = (
   candidate: Partial<PublicRouteProjectsListPayload>,
 ): PublicRouteProjectsListPayload => ({
@@ -228,6 +263,7 @@ const normalizePublicRouteProjectDetailPayload = (
       ? (candidate.mediaVariants as UploadMediaVariantsMap)
       : {},
   relationProjectLookup: normalizeRouteProjectLookup(candidate.relationProjectLookup),
+  relationProjectCards: normalizeRouteRelationProjectCards(candidate.relationProjectCards),
   tagTranslations: normalizePublicTagTranslations(candidate.tagTranslations),
 });
 

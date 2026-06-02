@@ -68,6 +68,43 @@ const buildPublicProjectsPayload = ({
   };
 };
 
+const buildRelationProjectCards = (projects, relations) => {
+  const relationKeys = new Set();
+  (Array.isArray(relations) ? relations : []).forEach((relation) => {
+    const projectId = String(relation?.projectId || "").trim();
+    const anilistId = String(relation?.anilistId || "").trim();
+    if (projectId) {
+      relationKeys.add(projectId);
+    }
+    if (anilistId) {
+      relationKeys.add(anilistId);
+    }
+  });
+  if (relationKeys.size === 0) {
+    return {};
+  }
+  return (Array.isArray(projects) ? projects : []).reduce((result, project) => {
+    const projectId = String(project?.id || "").trim();
+    const anilistId = String(project?.anilistId || "").trim();
+    if (!projectId) {
+      return result;
+    }
+    const card = {
+      id: projectId,
+      title: String(project?.title || ""),
+      cover: String(project?.cover || ""),
+      coverAlt: String(project?.coverAlt || ""),
+    };
+    if (relationKeys.has(projectId)) {
+      result[projectId] = card;
+    }
+    if (anilistId && relationKeys.has(anilistId)) {
+      result[anilistId] = card;
+    }
+    return result;
+  }, {});
+};
+
 const serializePublicProjectDetail = (
   project,
   { resolveProjectReaderConfig, siteSettings } = {},
@@ -238,6 +275,7 @@ export const registerPublicProjectRoutes = ({
       resolveProjectReaderConfig,
       siteSettings: settings,
     });
+    const relationProjectCards = buildRelationProjectCards(projects, project?.relations);
     const translations = loadTagTranslations();
     return res.json({
       project: projectPayload,
@@ -268,7 +306,11 @@ export const registerPublicProjectRoutes = ({
         origin: PRIMARY_APP_ORIGIN,
         resolveVariantUrl: resolveMetaImageVariantUrl,
       }),
-      mediaVariants: buildPublicMediaVariants(projectPayload),
+      relationProjectCards,
+      mediaVariants: buildPublicMediaVariants([
+        projectPayload,
+        Object.values(relationProjectCards),
+      ]),
     });
   });
 
