@@ -1,3 +1,4 @@
+import { comparePtBrVariant } from "@/lib/search-ranking";
 export const normalizeKey = (value: string) =>
   String(value || "")
     .trim()
@@ -132,4 +133,9 @@ export const sortByTranslatedLabel = <T>(
   items: T[],
   translator: (item: T) => string,
   locale = "pt-BR",
-) => [...items].sort((a, b) => translator(a).localeCompare(translator(b), locale));
+) =>
+  [...items].sort((a, b) =>
+    locale === "pt-BR"
+      ? comparePtBrVariant(translator(a), translator(b))
+      : translator(a).localeCompare(translator(b), locale),
+  );
