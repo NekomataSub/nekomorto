@@ -59,6 +59,8 @@ if (!window.cancelAnimationFrame) {
 
 if (!window.ResizeObserver) {
   window.ResizeObserver = class ResizeObserver {
+    constructor(_callback: ResizeObserverCallback) {}
+
     observe() {}
     unobserve() {}
     disconnect() {}
