@@ -2427,3 +2427,16 @@ startServerJobs({
   runWebhookDeliveryWorkerTick,
   webhookDeliveryWorkerState,
 });
+
+const drainPersistQueueOnShutdown = async (signal) => {
+  console.log(`[server] ${signal} received, draining persist queue...`);
+  try {
+    await dataRepositoryAdaptersRuntime.flushPersistQueue?.();
+  } catch {
+    // ignore drain errors during shutdown
+  }
+  process.exit(0);
+};
+
+process.on("SIGTERM", () => drainPersistQueueOnShutdown("SIGTERM"));
+process.on("SIGINT", () => drainPersistQueueOnShutdown("SIGINT"));

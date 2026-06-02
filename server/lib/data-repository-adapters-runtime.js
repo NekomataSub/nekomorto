@@ -37,6 +37,9 @@ export const createDataRepositoryAdaptersRuntime = (dependencies = {}) => {
   const writeUserIdentityRecords = (records) =>
     callRepositoryMethod("writeUserIdentityRecords", [records], []);
 
+  const flushPersistQueue = async () =>
+    callRepositoryMethod("flushPersistQueue", [], undefined);
+
   const loadAdminExportJobs = () => callRepositoryMethod("loadAdminExportJobs", [], []);
   const upsertAdminExportJob = (job) => callRepositoryMethod("upsertAdminExportJob", [job], null);
 
@@ -77,6 +80,7 @@ export const createDataRepositoryAdaptersRuntime = (dependencies = {}) => {
     appendSecretRotation,
     claimWebhookDelivery,
     findUserIdentityRecord,
+    flushPersistQueue,
     findUserIdentityRecordsByEmail,
     findWebhookDelivery,
     isEpubImportJobStorageAvailable,

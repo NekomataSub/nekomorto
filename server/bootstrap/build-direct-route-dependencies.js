@@ -82,6 +82,7 @@ export const DIRECT_ROUTE_DEPENDENCY_KEYS = {
     "establishAuthenticatedSession",
     "findUserIdentityRecord",
     "findUserIdentityRecordsByEmail",
+    "flushPersistQueue",
     "getRequestIp",
     "googleClientId",
     "googleClientSecret",

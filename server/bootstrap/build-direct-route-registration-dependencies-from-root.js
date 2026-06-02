@@ -39,6 +39,7 @@ export const buildDirectRouteRegistrationDependenciesFromRoot = (dependencies = 
     evaluateOperationalMonitoring: dependencies.evaluateOperationalMonitoring,
     findUserIdentityRecord: dependencies.findUserIdentityRecord,
     findUserIdentityRecordsByEmail: dependencies.findUserIdentityRecordsByEmail,
+    flushPersistQueue: dependencies.flushPersistQueue,
     generateRecoveryCodes: dependencies.generateRecoveryCodes,
     getPendingMfaEnrollmentRedirectTarget: dependencies.getPendingMfaEnrollmentRedirectTarget,
     getPendingMfaEnrollmentState: dependencies.getPendingMfaEnrollmentState,

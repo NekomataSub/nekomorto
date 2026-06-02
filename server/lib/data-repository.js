@@ -1614,7 +1614,7 @@ export class DbDataRepository {
       list.push(normalized);
     }
     this.snapshot.userIdentityRecords = list;
-    this.enqueuePersist("user_identities", async () => {
+    const persistPromise = this.enqueuePersist("user_identities", async () => {
       const persistenceRow = toUserIdentityPersistenceRow(normalized);
       await prisma.userIdentityRecord.upsert({
         where: { id: normalized.id },
@@ -1625,7 +1625,11 @@ export class DbDataRepository {
         update: persistenceRow,
       });
     });
-    return cloneUserIdentityRecord(normalized);
+    return persistPromise;
+  }
+
+  async flushPersistQueue() {
+    await this.persistQueue;
   }
 
   writeUserIdentityRecords(records) {

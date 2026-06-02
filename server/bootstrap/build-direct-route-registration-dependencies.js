@@ -69,6 +69,7 @@ export const buildDirectRouteRegistrationDependencies = (dependencies = {}) =>
       canAttemptAuth: dependencies.canAttemptAuth,
       findUserIdentityRecord: dependencies.findUserIdentityRecord,
       findUserIdentityRecordsByEmail: dependencies.findUserIdentityRecordsByEmail,
+      flushPersistQueue: dependencies.flushPersistQueue,
       upsertUserIdentityRecord: dependencies.upsertUserIdentityRecord,
       writeUserIdentityRecords: dependencies.writeUserIdentityRecords,
       googleClientId: dependencies.googleClientId,

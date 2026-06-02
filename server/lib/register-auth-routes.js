@@ -16,6 +16,7 @@ export const registerAuthRoutes = ({
   establishAuthenticatedSession,
   findUserIdentityRecord,
   findUserIdentityRecordsByEmail,
+  flushPersistQueue,
   getRequestIp,
   googleClientId,
   googleClientSecret,
@@ -906,6 +907,8 @@ export const registerAuthRoutes = ({
         );
       }
 
+      await flushPersistQueue?.();
+
       const allowedUsers = resolveAllowedUsersList();
       if (allowedUsers.length && !allowedUsers.includes(String(resolvedIdentity.userId))) {
         safeDestroySession(req);
@@ -1153,6 +1156,8 @@ export const registerAuthRoutes = ({
           }),
         );
       }
+
+      await flushPersistQueue?.();
 
       const allowedUsers = resolveAllowedUsersList();
       if (allowedUsers.length && !allowedUsers.includes(String(resolvedIdentity.userId))) {

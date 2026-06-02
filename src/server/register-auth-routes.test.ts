@@ -57,6 +57,7 @@ const invokeHandlers = async (
 ) => {
   const res = createResponse();
   let index = 0;
+  let nextChain: Promise<unknown> | null = null;
   const runHandler = async (arg?: unknown) => {
     if (arg !== undefined) {
       res.nextArgs.push(arg);
@@ -71,8 +72,13 @@ const invokeHandlers = async (
     }
     return handler(req, res, next);
   };
-  const next = async (arg?: unknown) => runHandler(arg);
+  const next = async (arg?: unknown) => {
+    const p = runHandler(arg);
+    nextChain = p;
+    return p;
+  };
   await runHandler();
+  await nextChain;
   return res;
 };
 
@@ -113,6 +119,7 @@ const createDependencies = (overrides: Record<string, unknown> = {}) => {
     establishAuthenticatedSession: vi.fn(async () => undefined),
     findUserIdentityRecord: vi.fn(() => null),
     findUserIdentityRecordsByEmail: vi.fn(() => []),
+    flushPersistQueue: vi.fn(async () => {}),
     getRequestIp: vi.fn(() => "203.0.113.5"),
     loadOwnerIds: vi.fn(() => []),
     loadUserIdentityRecords: vi.fn(() => []),
