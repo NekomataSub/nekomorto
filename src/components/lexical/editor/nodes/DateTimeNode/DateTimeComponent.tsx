@@ -188,11 +188,10 @@ export default function DateTimeComponent({
                   showOutsideDays={false}
                   mode="single"
                   selected={selected}
-                  required={true}
                   // timeZone="BST" TODO: Support time zone selection
                   onSelect={handleDaySelect}
-                  fromMonth={new Date(1925, 0)}
-                  toMonth={new Date(2042, 7)}
+                  startMonth={new Date(1925, 0)}
+                  endMonth={new Date(2042, 7)}
                 />
                 <form style={{ marginBlockEnd: "1em" }}>
                   <div
