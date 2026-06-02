@@ -3286,7 +3286,7 @@ const PublicProjectReaderContent = ({
     syncHorizontalScrollPosition,
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const nextInitialPositionKey = currentInitialReaderPositionKey;
     if (location.hash) {
       lastInitialReaderPositionKeyRef.current = nextInitialPositionKey;
@@ -3300,7 +3300,7 @@ const PublicProjectReaderContent = ({
     }
 
     let initialPositionRetryCount = 0;
-    const scheduleInitialPositionRetry = () => {
+    function scheduleInitialPositionRetry() {
       if (initialPositionRetryCount >= 8) {
         initialReaderPositionFrameRef.current = null;
         return;
@@ -3308,96 +3308,90 @@ const PublicProjectReaderContent = ({
 
       initialPositionRetryCount += 1;
       initialReaderPositionFrameRef.current = window.requestAnimationFrame(positionReader);
-    };
+    }
 
-    const positionReader = () => {
-      initialReaderPositionFrameRef.current = window.requestAnimationFrame(() => {
-        const stage = stageRef.current;
-        if (!stage) {
-          initialReaderPositionFrameRef.current = null;
-          return;
-        }
-
-        const stageRect = stage.getBoundingClientRect();
-        if (stageRect.height <= 0 || stageRect.width <= 0) {
-          scheduleInitialPositionRetry();
-          return;
-        }
-
-        const viewportMetrics = getVisibleViewportMetrics();
-        const targetPageNode = pageRefs.current[resolvedInitialPageIndex];
-        if (stageRect.height <= 0 || stageRect.width <= 0) {
-          scheduleInitialPositionRetry();
-          return;
-        }
-
-        if (layout === "scroll-horizontal") {
-          const container = horizontalScrollRef.current;
-          const targetPageRect = targetPageNode?.getBoundingClientRect();
-          if (
-            !container ||
-            container.clientWidth <= 0 ||
-            !targetPageRect ||
-            targetPageRect.width <= 0
-          ) {
-            scheduleInitialPositionRetry();
-            return;
-          }
-        }
-
-        if (layout === "scroll-vertical") {
-          const container = verticalScrollRef.current;
-          const targetPageRect = targetPageNode?.getBoundingClientRect();
-          if (
-            !container ||
-            container.clientHeight <= 0 ||
-            !targetPageRect ||
-            targetPageRect.height <= 0
-          ) {
-            scheduleInitialPositionRetry();
-            return;
-          }
-        }
-
-        window.scrollTo({
-          top: getCenteredViewportScrollTop({
-            targetRect: stageRect,
-            viewportHeight: viewportMetrics.height,
-            viewportOffsetTop: viewportMetrics.offsetTop,
-          }),
-          behavior: "auto",
-        });
-
-        if (layout === "scroll-horizontal") {
-          const container = horizontalScrollRef.current;
-          const rail = horizontalScrollRailRef.current;
-          if (container && targetPageNode) {
-            const nextScrollLeft = getCenteredHorizontalScrollLeft({
-              container,
-              targetNode: targetPageNode,
-              targetRect: targetPageNode.getBoundingClientRect(),
-            });
-            container.scrollLeft = nextScrollLeft;
-            if (rail && Math.abs(rail.scrollLeft - nextScrollLeft) > 1) {
-              markPendingHorizontalScrollSync("rail", nextScrollLeft);
-              rail.scrollLeft = nextScrollLeft;
-            }
-          }
-        } else if (layout === "scroll-vertical") {
-          const container = verticalScrollRef.current;
-          if (container && targetPageNode) {
-            container.scrollTop = getTopAlignedVerticalScrollTop({
-              container,
-              targetNode: targetPageNode,
-              targetRect: targetPageNode.getBoundingClientRect(),
-            });
-          }
-        }
-
-        lastInitialReaderPositionKeyRef.current = nextInitialPositionKey;
+    function positionReader() {
+      const stage = stageRef.current;
+      if (!stage) {
         initialReaderPositionFrameRef.current = null;
+        return;
+      }
+
+      const stageRect = stage.getBoundingClientRect();
+      if (stageRect.height <= 0 || stageRect.width <= 0) {
+        scheduleInitialPositionRetry();
+        return;
+      }
+
+      const viewportMetrics = getVisibleViewportMetrics();
+      const targetPageNode = pageRefs.current[resolvedInitialPageIndex];
+
+      if (layout === "scroll-horizontal") {
+        const container = horizontalScrollRef.current;
+        const targetPageRect = targetPageNode?.getBoundingClientRect();
+        if (
+          !container ||
+          container.clientWidth <= 0 ||
+          !targetPageRect ||
+          targetPageRect.width <= 0
+        ) {
+          scheduleInitialPositionRetry();
+          return;
+        }
+      }
+
+      if (layout === "scroll-vertical") {
+        const container = verticalScrollRef.current;
+        const targetPageRect = targetPageNode?.getBoundingClientRect();
+        if (
+          !container ||
+          container.clientHeight <= 0 ||
+          !targetPageRect ||
+          targetPageRect.height <= 0
+        ) {
+          scheduleInitialPositionRetry();
+          return;
+        }
+      }
+
+      window.scrollTo({
+        top: getCenteredViewportScrollTop({
+          targetRect: stageRect,
+          viewportHeight: viewportMetrics.height,
+          viewportOffsetTop: viewportMetrics.offsetTop,
+        }),
+        behavior: "auto",
       });
-    };
+
+      if (layout === "scroll-horizontal") {
+        const container = horizontalScrollRef.current;
+        const rail = horizontalScrollRailRef.current;
+        if (container && targetPageNode) {
+          const nextScrollLeft = getCenteredHorizontalScrollLeft({
+            container,
+            targetNode: targetPageNode,
+            targetRect: targetPageNode.getBoundingClientRect(),
+          });
+          container.scrollLeft = nextScrollLeft;
+          if (rail && Math.abs(rail.scrollLeft - nextScrollLeft) > 1) {
+            markPendingHorizontalScrollSync("rail", nextScrollLeft);
+            rail.scrollLeft = nextScrollLeft;
+          }
+        }
+      } else if (layout === "scroll-vertical") {
+        const container = verticalScrollRef.current;
+        if (container && targetPageNode) {
+          container.scrollTop = getTopAlignedVerticalScrollTop({
+            container,
+            targetNode: targetPageNode,
+            targetRect: targetPageNode.getBoundingClientRect(),
+          });
+        }
+      }
+
+      lastInitialReaderPositionKeyRef.current = nextInitialPositionKey;
+      initialReaderPositionFrameRef.current = null;
+    }
 
     clearInitialReaderPositionFrame();
     positionReader();
@@ -3407,9 +3401,11 @@ const PublicProjectReaderContent = ({
     clearInitialReaderPositionFrame,
     currentInitialReaderPositionKey,
     horizontalScrollMetrics.clientWidth,
+    layout,
     location.hash,
     markPendingHorizontalScrollSync,
     paginated,
+    resolvedInitialPageIndex,
     stageViewportHeight,
   ]);
 
