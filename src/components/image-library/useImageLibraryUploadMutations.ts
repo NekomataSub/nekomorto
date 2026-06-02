@@ -242,6 +242,8 @@ export const useImageLibraryUploadMutations = ({
         description: "A imagem foi importada por URL com sucesso.",
         intent: "success",
       });
+    } catch {
+      toast({ title: "Não foi possível importar a imagem por URL." });
     } finally {
       setIsUploading(false);
     }

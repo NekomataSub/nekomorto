@@ -12,6 +12,7 @@ import {
   generateUploadVariants,
   POST_UPLOAD_VARIANT_PRESET_KEYS,
   PROJECT_UPLOAD_VARIANT_PRESET_KEYS,
+  resolveUploadAbsolutePath,
   resolveUploadVariantAvifQuality,
   resolveUploadVariantPresetKeysForArea,
   UPLOAD_VARIANT_PRESET_KEYS,
@@ -71,6 +72,29 @@ afterEach(() => {
 });
 
 describe("upload-media", () => {
+  it("bloqueia paths de upload que escapam da raiz", () => {
+    const uploadsDir = path.join(os.tmpdir(), "nekomorto", "uploads");
+
+    expect(
+      resolveUploadAbsolutePath({
+        uploadsDir,
+        uploadUrl: "/uploads/posts/capa.png",
+      }),
+    ).toBe(path.join(uploadsDir, "posts", "capa.png"));
+    expect(
+      resolveUploadAbsolutePath({
+        uploadsDir,
+        uploadUrl: "/uploads/../uploads_evil/capa.png",
+      }),
+    ).toBeNull();
+    expect(
+      resolveUploadAbsolutePath({
+        uploadsDir,
+        uploadUrl: "/uploads/posts/../../uploads_evil/capa.png",
+      }),
+    ).toBeNull();
+  });
+
   it("resolve perfis de variantes por area", () => {
     expect(resolveUploadVariantPresetKeysForArea("projects/demo")).toEqual(
       PROJECT_UPLOAD_VARIANT_PRESET_KEYS,

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   resolveHomeHeroPreloadFromSlide,
+  resolvePublicUploadDiskPath,
   resolvePublicPostCoverPreload,
   resolvePublicReaderHeroPreload,
   sanitizePublicMediaVariantEntry,
@@ -39,6 +40,29 @@ afterEach(() => {
 });
 
 describe("public media variants", () => {
+  it("bloqueia paths publicos de upload que escapam da raiz", () => {
+    const uploadsDir = path.join(os.tmpdir(), "nekomorto", "public", "uploads");
+
+    expect(
+      resolvePublicUploadDiskPath({
+        uploadsDir,
+        uploadUrl: "/uploads/projects/capa.png",
+      }),
+    ).toBe(path.join(uploadsDir, "projects", "capa.png"));
+    expect(
+      resolvePublicUploadDiskPath({
+        uploadsDir,
+        uploadUrl: "/uploads/../uploads_evil/capa.png",
+      }),
+    ).toBeNull();
+    expect(
+      resolvePublicUploadDiskPath({
+        uploadsDir,
+        uploadUrl: "/uploads/projects/../../uploads_evil/capa.png",
+      }),
+    ).toBeNull();
+  });
+
   it("remove formats e presets que apontam para variants inexistentes", () => {
     const uploadsDir = createTempUploadsDir([
       { relativePath: "_variants/u-1/hero-v1.avif" },

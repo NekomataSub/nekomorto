@@ -347,6 +347,7 @@ export const registerUploadMetadataRoutes = (deps) => {
         !hasOwnField(requestedFocalPayload, "focalPoints") &&
         !hasOwnField(requestedFocalPayload, "focalPoint")
       ) {
+        cleanupUploadStagingWorkspace(stagingWorkspace);
         return res.status(400).json({ error: "invalid_focal_point" });
       }
       const nextFocalState = resolveIncomingUploadFocalState(requestedFocalPayload, current);

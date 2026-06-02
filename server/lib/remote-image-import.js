@@ -85,6 +85,13 @@ const isPrivateHost = (host) => {
   return false;
 };
 
+const isPathInsideRoot = (rootPath, targetPath) => {
+  const safeRoot = path.resolve(rootPath);
+  const safeTarget = path.resolve(targetPath);
+  const relative = path.relative(safeRoot, safeTarget);
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+};
+
 const resolveHostAddresses = async (host) => {
   try {
     const records = await dns.lookup(host, { all: true, verbatim: true });
@@ -332,7 +339,7 @@ export const importRemoteImageFile = async ({
     const safeFolder = sanitizeUploadFolder(folder);
     const targetDir = safeFolder ? path.join(uploadsRoot, safeFolder) : uploadsRoot;
     const resolvedTarget = path.resolve(targetDir);
-    if (!resolvedTarget.startsWith(uploadsRoot)) {
+    if (!isPathInsideRoot(uploadsRoot, resolvedTarget)) {
       return toFailureResult("invalid_folder", "Invalid target folder.");
     }
     fs.mkdirSync(resolvedTarget, { recursive: true });

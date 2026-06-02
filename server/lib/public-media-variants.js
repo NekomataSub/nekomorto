@@ -36,6 +36,13 @@ const fileExists = (value) => {
 const toSafeUploadsDir = (uploadsDir = path.join(process.cwd(), "public", "uploads")) =>
   path.resolve(String(uploadsDir || path.join(process.cwd(), "public", "uploads")));
 
+const isPathInsideRoot = (rootPath, targetPath) => {
+  const safeRoot = path.resolve(rootPath);
+  const safeTarget = path.resolve(targetPath);
+  const relative = path.relative(safeRoot, safeTarget);
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+};
+
 export const normalizePublicUploadUrl = (value) => {
   const trimmed = String(value || "").trim();
   if (!trimmed) {
@@ -93,7 +100,7 @@ export const resolvePublicUploadDiskPath = ({
   const uploadsRoot = toSafeUploadsDir(uploadsDir);
   const relative = normalizedUrl.replace(/^\/uploads\//, "");
   const resolved = path.resolve(path.join(uploadsRoot, relative));
-  if (!resolved.startsWith(uploadsRoot)) {
+  if (!isPathInsideRoot(uploadsRoot, resolved)) {
     return null;
   }
   return resolved;

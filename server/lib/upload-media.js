@@ -666,7 +666,7 @@ export const resolveUploadAbsolutePath = ({ uploadsDir, uploadUrl }) => {
   const relative = normalizedUrl.replace(/^\/uploads\//, "");
   const resolved = path.resolve(path.join(uploadsDir, relative));
   const uploadsRoot = path.resolve(uploadsDir);
-  if (!resolved.startsWith(uploadsRoot)) {
+  if (!isPathInsideRoot(uploadsRoot, resolved)) {
     return null;
   }
   return resolved;

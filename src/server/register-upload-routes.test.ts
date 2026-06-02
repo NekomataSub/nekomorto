@@ -359,6 +359,67 @@ describe("registerUploadRoutes", () => {
     expect(res.body).toEqual({ error: "forbidden" });
   });
 
+  it("limpa staging workspace quando focal point e invalido", async () => {
+    const { app, routes } = createAppRecorder();
+    const uploadsDir = fs.mkdtempSync(path.join(os.tmpdir(), "upload-routes-focal-"));
+    const sourcePath = path.join(uploadsDir, "posts", "cover.png");
+    fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
+    fs.writeFileSync(sourcePath, Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
+    const stagingWorkspace = {
+      uploadsDir: path.join(uploadsDir, "_staging"),
+    };
+    const dependencies = createDependencies({
+      app,
+      overrides: {
+        PUBLIC_UPLOADS_DIR: uploadsDir,
+        canManageUploads: vi.fn(() => true),
+        cleanupUploadStagingWorkspace: vi.fn(),
+        createUploadStagingWorkspace: vi.fn(() => stagingWorkspace),
+        extractRequestedUploadFocalPayload: vi.fn(() => ({})),
+        loadUploads: vi.fn(() => [
+          {
+            id: "upload-1",
+            url: "/uploads/posts/cover.png",
+            folder: "posts",
+            fileName: "cover.png",
+            mime: "image/png",
+            size: 120,
+            createdAt: "2024-01-01T00:00:00.000Z",
+          },
+        ]),
+        resolveUploadAbsolutePath: vi.fn(() => sourcePath),
+        writeUploadBufferToStaging: vi.fn(() =>
+          path.join(stagingWorkspace.uploadsDir, "cover.png"),
+        ),
+      },
+    });
+
+    try {
+      registerUploadRoutes(dependencies);
+
+      const route = getRoute(routes, "PATCH", "/api/uploads/:id/focal-point");
+      expect(route).toBeTruthy();
+
+      const res = await invokeFinalHandler(route, {
+        params: {
+          id: "upload-1",
+        },
+        body: {},
+        session: {
+          user: {
+            id: "user-1",
+          },
+        },
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toEqual({ error: "invalid_focal_point" });
+      expect(dependencies.cleanupUploadStagingWorkspace).toHaveBeenCalledWith(stagingWorkspace);
+    } finally {
+      fs.rmSync(uploadsDir, { recursive: true, force: true });
+    }
+  });
+
   it("lista uploads de branding sem misturar outros roots", async () => {
     const { app, routes } = createAppRecorder();
     const uploadsDir = fs.mkdtempSync(path.join(os.tmpdir(), "upload-routes-branding-"));
