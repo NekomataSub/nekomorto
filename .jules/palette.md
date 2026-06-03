@@ -1,3 +1,6 @@
 ## $(date +%Y-%m-%d) - Added ARIA labels to Settings Dashboard Trash Buttons
 **Learning:** Found several icon-only action buttons (e.g. Delete/Trash) in the dashboard settings layout missing `aria-label`s, indicating this might be a pattern across internal dashboard components where functionality is prioritized over a11y.
 **Action:** Always verify icon-only buttons (`DashboardActionButton` using Lucide icons) have appropriate `aria-label`s, especially in complex list/array configuration forms. Keep them in Portuguese to match the app's language context.
+## 2025-02-23 - Missing ARIA labels in dynamic form arrays
+**Learning:** The application uses `DashboardActionButton` with `Plus` SVGs for adding items in dynamically generated list settings (like navbar links, footer columns, etc.). These SVGs are typically decorative but weren't marked with `aria-hidden='true'`, and the buttons themselves lacked `aria-label`s, causing them to be completely unannounced to screen readers.
+**Action:** Always verify that 'Add' or 'Create' icon-only buttons in array map contexts have contextually descriptive Portuguese `aria-label`s (e.g., 'Adicionar tag', 'Adicionar coluna') and explicitly set `aria-hidden='true'` on the child icon components.

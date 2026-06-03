@@ -37,6 +37,7 @@ export const DashboardSettingsTeamTab = () => {
             </div>
             <DashboardActionButton
               type="button"
+              aria-label="Adicionar função"
               onClick={() =>
                 setSettings((prev) => ({
                   ...prev,
@@ -51,7 +52,7 @@ export const DashboardSettingsTeamTab = () => {
                 }))
               }
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4" aria-hidden="true" />
             </DashboardActionButton>
           </div>
 
