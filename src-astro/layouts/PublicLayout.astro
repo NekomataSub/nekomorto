@@ -118,8 +118,10 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
   lang="pt-BR"
   data-page-meta="true"
   data-page-owner="astro"
+  data-global-theme-mode={themeModeDocument.mode}
+  data-theme-accent={themeModeDocument.accent}
   data-theme-mode={themeModeDocument.mode}
-  class={themeModeDocument.className}
+  class:list={[themeModeDocument.className, "public-scrollbar-gutter-stable"]}
   style={themeModeDocument.style}
 >
   <head>
@@ -161,7 +163,7 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
         : null
     }
   </head>
-  <body class="min-h-screen bg-background text-foreground">
+  <body class="public-scrollbar-gutter-stable min-h-screen bg-background text-foreground">
     <div class:list={["flex min-h-screen flex-col bg-background text-foreground", _hasSurfaceGradient && "bg-gradient-surface"]}>
       <PublicChromeIsland
         client:idle

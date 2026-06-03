@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "@/App";
 
 const scheduleOnBrowserLoadIdleMock = vi.hoisted(() => vi.fn());
+const PUBLIC_SCROLLBAR_GUTTER_CLASS = "public-scrollbar-gutter-stable";
 
 vi.mock("@/lib/browser-idle", () => ({
   scheduleOnBrowserLoadIdle: (
@@ -31,6 +32,10 @@ vi.mock("@/hooks/accessibility-announcer", () => ({
 vi.mock("@/hooks/global-shortcuts-provider", () => ({
   GlobalShortcutsProvider: ({ children }: { children: unknown }) => <>{children}</>,
   RoutedGlobalShortcutsProvider: ({ children }: { children: unknown }) => <>{children}</>,
+}));
+
+vi.mock("./routes/DashboardRoutes", () => ({
+  default: () => <div>dashboard-route</div>,
 }));
 
 vi.mock("@/components/Header", () => ({
@@ -106,6 +111,13 @@ describe("App public routes in dev", () => {
       writable: true,
       configurable: true,
     });
+    document.documentElement.classList.remove(PUBLIC_SCROLLBAR_GUTTER_CLASS);
+    document.body.classList.remove(PUBLIC_SCROLLBAR_GUTTER_CLASS);
+  });
+
+  afterEach(() => {
+    document.documentElement.classList.remove(PUBLIC_SCROLLBAR_GUTTER_CLASS);
+    document.body.classList.remove(PUBLIC_SCROLLBAR_GUTTER_CLASS);
   });
 
   it("renders the home route instead of falling into a reload loop", async () => {
@@ -116,6 +128,8 @@ describe("App public routes in dev", () => {
     expect(await screen.findByText("public-home-route")).toBeInTheDocument();
     expect(screen.getByTestId("public-header")).toBeInTheDocument();
     expect(screen.getByTestId("public-footer")).toBeInTheDocument();
+    expect(document.documentElement).toHaveClass(PUBLIC_SCROLLBAR_GUTTER_CLASS);
+    expect(document.body).toHaveClass(PUBLIC_SCROLLBAR_GUTTER_CLASS);
   });
 
   it("renders an institutional public route inside the dev router", async () => {
@@ -124,5 +138,19 @@ describe("App public routes in dev", () => {
     render(<App />);
 
     expect(await screen.findByText("public-about-route")).toBeInTheDocument();
+    expect(document.documentElement).toHaveClass(PUBLIC_SCROLLBAR_GUTTER_CLASS);
+    expect(document.body).toHaveClass(PUBLIC_SCROLLBAR_GUTTER_CLASS);
+  });
+
+  it("does not keep the public scrollbar gutter class on dashboard routes", async () => {
+    window.history.replaceState({}, "", "/dashboard");
+    document.documentElement.classList.add(PUBLIC_SCROLLBAR_GUTTER_CLASS);
+    document.body.classList.add(PUBLIC_SCROLLBAR_GUTTER_CLASS);
+
+    render(<App />);
+
+    expect(await screen.findByText("dashboard-route")).toBeInTheDocument();
+    expect(document.documentElement).not.toHaveClass(PUBLIC_SCROLLBAR_GUTTER_CLASS);
+    expect(document.body).not.toHaveClass(PUBLIC_SCROLLBAR_GUTTER_CLASS);
   });
 });

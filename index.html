@@ -23,18 +23,19 @@
     <link rel="icon" href="/favicon.ico" />
     <script>
       (() => {
-        if (window.location.pathname !== "/") {
+        const pathname = window.location.pathname;
+        if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
           return;
         }
 
-        const homeScrollbarGutterClass = "public-home-scrollbar-gutter-stable";
-        document.documentElement.classList.add(homeScrollbarGutterClass);
+        const publicScrollbarGutterClass = "public-scrollbar-gutter-stable";
+        document.documentElement.classList.add(publicScrollbarGutterClass);
 
         const applyBodyClass = () => {
           if (!document.body) {
             return;
           }
-          document.body.classList.add(homeScrollbarGutterClass);
+          document.body.classList.add(publicScrollbarGutterClass);
         };
 
         applyBodyClass();

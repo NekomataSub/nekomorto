@@ -12,9 +12,9 @@ describe("scrollbar gutter contract", () => {
     );
   });
 
-  it("reserves a stable gutter for the public home only when the home-scoped class is present", () => {
+  it("reserves a stable gutter for public surfaces only when the public-scoped class is present", () => {
     expect(cssSource).toMatch(
-      /html\.public-home-scrollbar-gutter-stable,\s*html\.public-home-scrollbar-gutter-stable body,\s*body\.public-home-scrollbar-gutter-stable\s*\{[\s\S]*scrollbar-gutter:\s*stable;/,
+      /html\.public-scrollbar-gutter-stable,\s*html\.public-scrollbar-gutter-stable body,\s*body\.public-scrollbar-gutter-stable\s*\{[\s\S]*scrollbar-gutter:\s*stable;/,
     );
   });
 

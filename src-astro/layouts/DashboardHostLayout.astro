@@ -30,6 +30,8 @@ const themeModeBootstrapScript = buildThemeModeBootstrapScript(siteSettings);
 <!doctype html>
 <html
   lang="pt-BR"
+  data-global-theme-mode={themeModeDocument.mode}
+  data-theme-accent={themeModeDocument.accent}
   data-theme-mode={themeModeDocument.mode}
   class={themeModeDocument.className}
   style={themeModeDocument.style}

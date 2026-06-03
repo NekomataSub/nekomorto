@@ -15,7 +15,9 @@ const DeferredSonner = lazy(() =>
 );
 const loadDashboardRoutes = () => import("./routes/DashboardRoutes");
 const PublicRoutes = lazy(() => import("./routes/PublicRoutes"));
-const PUBLIC_HOME_SCROLLBAR_GUTTER_CLASS = "public-home-scrollbar-gutter-stable";
+const PUBLIC_SCROLLBAR_GUTTER_CLASS = "public-scrollbar-gutter-stable";
+const isDashboardPath = (pathname: string) =>
+  pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 
 const RouteLoadingFallback = () => <AppLoadingFallback label="Carregando..." />;
 export { default as ScrollToTop } from "@/components/ScrollToTop";
@@ -48,7 +50,7 @@ const DashboardRoutesLoader = () => {
 const RouterShell = () => {
   const location = useLocation();
   useReveal();
-  const isHomeRoute = location.pathname === "/";
+  const isPublicRoute = !isDashboardPath(location.pathname);
 
   useLayoutEffect(() => {
     if (typeof document === "undefined" || typeof window === "undefined") {
@@ -61,7 +63,7 @@ const RouterShell = () => {
       if (!target) {
         return;
       }
-      target.classList.toggle(PUBLIC_HOME_SCROLLBAR_GUTTER_CLASS, isHomeRoute);
+      target.classList.toggle(PUBLIC_SCROLLBAR_GUTTER_CLASS, isPublicRoute);
     });
 
     return () => {
@@ -69,10 +71,10 @@ const RouterShell = () => {
         if (!target) {
           return;
         }
-        target.classList.remove(PUBLIC_HOME_SCROLLBAR_GUTTER_CLASS);
+        target.classList.remove(PUBLIC_SCROLLBAR_GUTTER_CLASS);
       });
     };
-  }, [isHomeRoute]);
+  }, [isPublicRoute]);
 
   return (
     <Suspense fallback={<RouteLoadingFallback />}>

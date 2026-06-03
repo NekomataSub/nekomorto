@@ -511,9 +511,9 @@
     scrollbar-gutter: stable;
   }
 
-  html.public-home-scrollbar-gutter-stable,
-  html.public-home-scrollbar-gutter-stable body,
-  body.public-home-scrollbar-gutter-stable {
+  html.public-scrollbar-gutter-stable,
+  html.public-scrollbar-gutter-stable body,
+  body.public-scrollbar-gutter-stable {
     scrollbar-gutter: stable;
   }
 
