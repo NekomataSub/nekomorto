@@ -1,6 +1,26 @@
+import {
+  CalendarDays,
+  Copy,
+  Eye,
+  List as ListIcon,
+  MessageSquare,
+  Plus,
+  RotateCcw,
+  Trash2,
+  UserRound,
+} from "lucide-react";
+import {
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import DashboardShell from "@/components/DashboardShell";
-import ProjectEmbedCard from "@/components/ProjectEmbedCard";
-import UploadPicture from "@/components/UploadPicture";
 import DashboardActionButton, {
   default as Button,
 } from "@/components/dashboard/DashboardActionButton";
@@ -36,6 +56,8 @@ import {
 import LazyImageLibraryDialog from "@/components/lazy/LazyImageLibraryDialog";
 import type { LexicalEditorHandle } from "@/components/lexical/LexicalEditor";
 import LexicalEditorSurface from "@/components/lexical/LexicalEditorSurface";
+import ProjectEmbedCard from "@/components/ProjectEmbedCard";
+import UploadPicture from "@/components/UploadPicture";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import AsyncState from "@/components/ui/async-state";
 import { Badge } from "@/components/ui/badge";
@@ -95,30 +117,9 @@ import { filterImageLibraryFoldersByAccess } from "@/lib/image-library-scope";
 import { createSlug, getLexicalText } from "@/lib/post-content";
 import { getImageFileNameFromUrl, resolvePostCoverPreview } from "@/lib/post-cover";
 import { buildTranslationMap, sortByTranslatedLabel, translateTag } from "@/lib/project-taxonomy";
+import { comparePtBrVariant } from "@/lib/search-ranking";
 import { normalizeUploadVariantUrlKey, type UploadMediaVariantsMap } from "@/lib/upload-variants";
 import type { ContentVersion, EditorialCalendarItem } from "@/types/editorial";
-import {
-  CalendarDays,
-  Copy,
-  Eye,
-  List as ListIcon,
-  MessageSquare,
-  Plus,
-  RotateCcw,
-  Trash2,
-  UserRound,
-} from "lucide-react";
-import {
-  type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 const POST_EDITOR_TOOLBAR_STICKY_OFFSET_PX = 5;
 
@@ -989,10 +990,22 @@ const DashboardPosts = () => {
   }, [activePosts, projectFilterId, projectMap, searchQuery, sortMode]);
 
   const sortedPosts = useMemo(() => {
+    if (sortMode === "tags") {
+      const mapped = filteredPosts.map((post) => {
+        const tags = [
+          ...(post.projectId ? projectMap.get(post.projectId)?.tags || [] : []),
+          ...(Array.isArray(post.tags) ? post.tags : []),
+        ];
+        return { post, sortKey: tags.join(",") };
+      });
+      mapped.sort((a, b) => comparePtBrVariant(a.sortKey, b.sortKey));
+      return mapped.map((w) => w.post);
+    }
+
     if (
       sortMode === "projects" ||
       sortMode === "recent" ||
-      !["alpha", "tags", "status", "views", "comments"].includes(sortMode)
+      !["alpha", "status", "views", "comments"].includes(sortMode)
     ) {
       // Precompute timestamps to avoid O(N log N) date parsing
       const mapped = filteredPosts.map((post) => ({
@@ -1008,21 +1021,10 @@ const DashboardPosts = () => {
     const next = [...filteredPosts];
     next.sort((a, b) => {
       if (sortMode === "alpha") {
-        return a.title.localeCompare(b.title, "pt-BR");
-      }
-      if (sortMode === "tags") {
-        const tagsA = [
-          ...(a.projectId ? projectMap.get(a.projectId)?.tags || [] : []),
-          ...(Array.isArray(a.tags) ? a.tags : []),
-        ];
-        const tagsB = [
-          ...(b.projectId ? projectMap.get(b.projectId)?.tags || [] : []),
-          ...(Array.isArray(b.tags) ? b.tags : []),
-        ];
-        return tagsA.join(",").localeCompare(tagsB.join(","), "pt-BR");
+        return comparePtBrVariant(a.title, b.title);
       }
       if (sortMode === "status") {
-        return a.status.localeCompare(b.status, "pt-BR");
+        return comparePtBrVariant(a.status, b.status);
       }
       if (sortMode === "views") {
         return (b.views || 0) - (a.views || 0);
