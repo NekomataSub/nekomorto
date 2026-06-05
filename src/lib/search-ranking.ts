@@ -197,3 +197,16 @@ export const rankPosts = (items: PostSearchItem[], query: string): PostSearchIte
   });
   return ranked.map((entry) => entry.item);
 };
+
+// ⚡ Bolt Performance Optimization:
+// Reusing a pre-instantiated Intl.Collator is significantly faster than calling
+// String.prototype.localeCompare inside a sort comparator, because it avoids
+// re-initializing the underlying collator engine on every single comparison.
+export const PT_BR_VARIANT_COLLATOR = new Intl.Collator("pt-BR", { sensitivity: "variant" });
+export const EN_VARIANT_COLLATOR = new Intl.Collator("en", { sensitivity: "variant" });
+
+export const comparePtBrVariant = (a: string, b: string): number =>
+  PT_BR_VARIANT_COLLATOR.compare(String(a || ""), String(b || ""));
+
+export const compareEnVariant = (a: string, b: string): number =>
+  EN_VARIANT_COLLATOR.compare(String(a || ""), String(b || ""));

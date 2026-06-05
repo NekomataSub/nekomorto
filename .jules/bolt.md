@@ -11,3 +11,6 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+## 2025-03-09 - Reuse Intl.Collator for faster array sorting
+**Learning:** `String.prototype.localeCompare` is surprisingly slow in JavaScript when called inside loops (like `Array.prototype.sort`) because it may initialize the underlying internationalization/collator engine for each comparison, turning an O(N log N) sort into an extremely CPU-intensive operation for large datasets.
+**Action:** When sorting arrays of strings with localization in mind, pre-instantiate an `Intl.Collator` outside of the sort callback and use its `.compare` method.
