@@ -1,3 +1,5 @@
-## $(date +%Y-%m-%d) - Added ARIA labels to Settings Dashboard Trash Buttons
-**Learning:** Found several icon-only action buttons (e.g. Delete/Trash) in the dashboard settings layout missing `aria-label`s, indicating this might be a pattern across internal dashboard components where functionality is prioritized over a11y.
-**Action:** Always verify icon-only buttons (`DashboardActionButton` using Lucide icons) have appropriate `aria-label`s, especially in complex list/array configuration forms. Keep them in Portuguese to match the app's language context.
+## 2025-06-06 - Accessible Icon-Only Delete Buttons in Settings
+
+**Learning:** When using mapped UI components (like `DashboardActionButton` wrapping an icon such as `<Trash2>`) to delete items in a dynamic list, screen readers require specific, contextual `aria-label`s (e.g., `aria-label={"Remover tradução da tag " + tag}`) to distinguish the buttons. Additionally, the nested SVG icon itself should be explicitly hidden with `aria-hidden="true"` so that screen readers don't attempt to announce both the button label and the generic "SVG" or icon element.
+
+**Action:** Whenever implementing icon-only buttons, especially inside lists or tables, ensure the wrapping button receives a clear, dynamically contextual `aria-label` and the inner icon component has `aria-hidden="true"`.
