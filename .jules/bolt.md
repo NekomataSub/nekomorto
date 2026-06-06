@@ -11,3 +11,7 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+
+## 2025-05-15 - Optimize array sorting using Schwartzian transform and Intl.Collator
+**Learning:** Parsing strings, spreading arrays, or calling `.join()` inside `.sort()` array comparators can cause significant bottlenecks since `.sort()` operations execute the comparator multiple times per item (O(N log N)). Additionally, inline `String.prototype.localeCompare` instances generate unnecessary `Intl.Collator` initialization overhead when executed repeatedly during a sort.
+**Action:** Extract expensive operations into a Schwartzian transform (map-sort-map), ensuring they only run O(N) times. Substitute inline `localeCompare` uses with a pre-instantiated `Intl.Collator` (e.g., using `comparePtBrVariant` from `src/lib/search-ranking.ts`).
