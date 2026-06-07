@@ -576,7 +576,12 @@ const HeroSlideFrame = ({
               </Button>
               {slide.trailerUrl ? (
                 <Button asChild variant="outline" className="gap-2">
-                  <a href={slide.trailerUrl} target="_blank" rel="noreferrer">
+                  <a
+                    href={slide.trailerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Assistir trailer de ${slide.title}`}
+                  >
                     <Play className="h-4 w-4" />
                     Assistir trailer
                   </a>

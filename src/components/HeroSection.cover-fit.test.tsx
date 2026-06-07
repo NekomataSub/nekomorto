@@ -197,9 +197,11 @@ vi.mock("@/components/ui/carousel", () => {
 const setupBootstrapMock = ({
   includeSecondProject = false,
   projectTitle = "Projeto com Hero",
+  trailerUrl = "",
 }: {
   includeSecondProject?: boolean;
   projectTitle?: string;
+  trailerUrl?: string;
 } = {}) => {
   const projects = [
     {
@@ -212,7 +214,7 @@ const setupBootstrapMock = ({
       heroImageUrl: "/uploads/hero-fit.jpg",
       banner: "",
       cover: "",
-      trailerUrl: "",
+      trailerUrl,
       forceHero: true,
     },
   ];
@@ -358,6 +360,23 @@ describe("HeroSection cover fit", () => {
       screen.getByRole("link", { name: /Acessar p.gina de Projeto com Hero/i }),
     );
     expect(typeStatus).toHaveClass("hero-home__meta-text");
+  });
+
+  it("diferencia o nome acessivel do link de trailer pelo titulo do slide", async () => {
+    setupBootstrapMock({ trailerUrl: "https://youtube.example/trailer-1" });
+
+    render(
+      <MemoryRouter>
+        <HeroSection />
+      </MemoryRouter>,
+    );
+
+    const trailer = await screen.findByRole("link", {
+      name: "Assistir trailer de Projeto com Hero",
+    });
+
+    expect(trailer).toHaveAttribute("href", "https://youtube.example/trailer-1");
+    expect(trailer).toHaveTextContent("Assistir trailer");
   });
 
   it("aplica animacao escalonada em meta e titulo no modo carrossel", async () => {

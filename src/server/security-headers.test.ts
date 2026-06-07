@@ -17,7 +17,7 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain(
-      `script-src 'self' 'nonce-${nonce}' https://platform.twitter.com https://static.cloudflareinsights.com`,
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://platform.twitter.com https://static.cloudflareinsights.com`,
     );
     expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
     expect(csp).toContain("style-src 'self' 'unsafe-inline'");
@@ -33,7 +33,7 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp.endsWith(";")).toBe(true);
   });
 
-  it("permite scripts inline sem nonce para paginas publicas com ClientRouter", () => {
+  it("mantem compatibilidade explicita para scripts inline quando solicitado", () => {
     const csp = buildContentSecurityPolicy("nonce-valor-teste", {
       allowInlineScripts: true,
     });
@@ -87,7 +87,7 @@ describe("applySecurityHeaders", () => {
     expect(permissionsPolicy).not.toContain("compute-pressure");
     expect(setHeader).toHaveBeenCalledWith(
       "Strict-Transport-Security",
-      "max-age=31536000; includeSubDomains",
+      "max-age=31536000; includeSubDomains; preload",
     );
     expect(setHeader).toHaveBeenCalledWith("Cross-Origin-Opener-Policy", "same-origin");
     expect(setHeader).toHaveBeenCalledWith("Cross-Origin-Resource-Policy", "same-origin");

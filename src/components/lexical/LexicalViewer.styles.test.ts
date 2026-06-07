@@ -42,7 +42,7 @@ describe("Lexical viewer styles", () => {
     expect(cssSource).toContain(".lexical-playground.lexical-playground--viewer .lexical-tweet");
     expect(cssSource).toContain(".lexical-tweet__target");
     expect(cssSource).toContain(
-      "clip-path: inset(-1.2px round calc(var(--lexical-content-embed-radius, 16px) + 1.2px));",
+      "clip-path: inset(-3px round calc(var(--lexical-content-embed-radius, 16px) + 3px));",
     );
     expect(cssSource).toContain(".twitter-tweet-rendered");
     expect(cssSource).toContain('iframe[src*="twitter.com"]');
@@ -96,5 +96,33 @@ describe("Lexical viewer styles", () => {
     expect(editableCss).toContain("line-height: var(--lexical-content-line-height, 1.75);");
     expect(editorOverridesCss).toContain(".ContentEditable__root > * + *");
     expect(editorOverridesCss).toContain(".lexical-tweet__target");
+  });
+
+  it("preserva a estrutura visual de tabelas Lexical no viewer publico", () => {
+    const viewerCss = readFileSync(
+      resolve(process.cwd(), "src/components/lexical/lexical-viewer.css"),
+      "utf8",
+    );
+
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableScrollableWrapper");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableScrollRight");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableScrollLeft");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableScrollMiddle");
+    expect(viewerCss).toContain("width: fit-content;");
+    expect(viewerCss).toContain("table-layout: fixed;");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableFrozenRow");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableFrozenColumn");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableSelection *::selection");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableSelected");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableCellSelected::after");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableCell,");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableCellHeader");
+    expect(viewerCss).toContain("width: 75px;");
+    expect(viewerCss).toContain("text-align: start;");
+    expect(viewerCss).toContain("padding: 6px 8px;");
+    expect(viewerCss).toContain("position: relative;");
+    expect(viewerCss).toContain("overflow: auto;");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableCell > *");
+    expect(viewerCss).toContain(".LexicalViewerTheme__tableRowStriping tr:nth-child(even)");
   });
 });

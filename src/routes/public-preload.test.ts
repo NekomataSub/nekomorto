@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const apiFetchMock = vi.hoisted(() => vi.fn());
+const postRouteImportMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/api-base", () => ({
   getApiBase: () => "",
@@ -20,6 +21,11 @@ vi.mock("@/lib/browser-idle", () => ({
   },
 }));
 
+vi.mock("@/pages/Post", () => {
+  postRouteImportMock();
+  return { default: () => null };
+});
+
 import {
   clearPublicRoutePreloadCacheForTests,
   peekPreloadedPublicRoutePayload,
@@ -38,6 +44,7 @@ describe("preloadPublicRoute", () => {
   beforeEach(() => {
     clearPublicRoutePreloadCacheForTests();
     apiFetchMock.mockReset();
+    postRouteImportMock.mockClear();
     (window as Window & { __BOOTSTRAP_PUBLIC__?: unknown }).__BOOTSTRAP_PUBLIC__ = {
       settings: {},
       pages: {},
@@ -258,5 +265,30 @@ describe("preloadPublicRoute", () => {
     expect(apiFetchMock).toHaveBeenCalledWith("", "/api/public/projects/project-2", {
       cache: "force-cache",
     });
+  });
+
+  it("keeps idle preloads payload-only so route code waits for user intent", async () => {
+    apiFetchMock.mockResolvedValueOnce(
+      mockJsonResponse(true, {
+        post: {
+          id: "post-1",
+          slug: "exemplo",
+          title: "Post exemplo",
+          coverImageUrl: "/uploads/post.jpg",
+        },
+      }),
+    );
+
+    schedulePublicRouteIdlePreload(["/postagem/exemplo"], {
+      delayMs: 0,
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(apiFetchMock).toHaveBeenCalledWith("", "/api/public/posts/exemplo", {
+      cache: "force-cache",
+    });
+    expect(postRouteImportMock).not.toHaveBeenCalled();
   });
 });

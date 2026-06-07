@@ -4,6 +4,8 @@ import node from "@astrojs/node";
 import react from "@astrojs/react";
 import { classifyManualChunk } from "./src/lib/build-chunking";
 
+const buildSourcemap = process.env.VITE_BUILD_SOURCEMAP === "true";
+
 export default defineConfig({
   integrations: [react()],
   prefetch: {
@@ -27,6 +29,7 @@ export default defineConfig({
       // Keep Astro's client build aligned with the main Vite build so large,
       // intentionally isolated editor bundles don't trigger generic warnings.
       chunkSizeWarningLimit: 1250,
+      sourcemap: buildSourcemap,
       rolldownOptions: {
         output: {
           manualChunks: classifyManualChunk,

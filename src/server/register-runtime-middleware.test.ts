@@ -274,7 +274,7 @@ const expectCodeQlVisibleAssetLimiterBeforeCustomLimiter = (args: unknown[]) => 
 };
 
 describe("registerRuntimeMiddleware security headers", () => {
-  it("permite scripts inline somente em rotas publicas Astro com ClientRouter", async () => {
+  it("mantem CSP com nonce nas rotas publicas Astro com ClientRouter", async () => {
     const { entries } = createRuntimeDependencies();
     const securityMiddleware = entries.find(
       (entry) => entry.method === "use" && typeof entry.args[0] === "function",
@@ -289,9 +289,12 @@ describe("registerRuntimeMiddleware security headers", () => {
 
     expect(result.next).toHaveBeenCalledTimes(1);
     expect(result.res.headers.get("content-security-policy")).toContain(
-      "script-src 'self' 'unsafe-inline' https://platform.twitter.com",
+      "script-src 'self' 'nonce-",
     );
-    expect(result.res.headers.get("content-security-policy")).not.toContain("'nonce-");
+    expect(result.res.headers.get("content-security-policy")).toContain("'strict-dynamic'");
+    expect(result.res.headers.get("content-security-policy")).not.toContain(
+      "script-src 'self' 'unsafe-inline'",
+    );
   });
 
   it("mantem CSP com nonce fora das rotas publicas com ClientRouter", async () => {

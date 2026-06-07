@@ -529,7 +529,7 @@ const PublicProjectCard = ({
             <UploadPicture
               src={coverSrc}
               alt={coverAlt}
-              preset="posterThumb"
+              preset="posterThumbSm"
               mediaVariants={model.mediaVariants || {}}
               sizes={imageSizes}
               className="block h-full w-full"
@@ -624,7 +624,7 @@ const PublicProjectCard = ({
             <UploadPicture
               src={coverSrc}
               alt={coverAlt}
-              preset="posterThumb"
+              preset="posterThumbSm"
               mediaVariants={model.mediaVariants || {}}
               className="block h-full w-full"
               imgClassName="home-card-media-transition h-full w-full object-cover object-center"

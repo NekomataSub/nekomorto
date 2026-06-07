@@ -100,4 +100,14 @@ describe("public projects list preloads", () => {
       }),
     );
   });
+
+  it("nao emite preload quando a unica opcao seria a imagem original", () => {
+    const preloads = resolvePublicProjectsListPreloads({
+      projects: [{ title: "Original pesado", cover: "/uploads/projects/original.jpeg" }],
+      mediaVariants: {},
+      resolveVariantUrl: (value) => value,
+    });
+
+    expect(preloads).toEqual([]);
+  });
 });

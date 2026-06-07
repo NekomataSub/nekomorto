@@ -172,8 +172,27 @@ describe("PublicProjectCard", () => {
           model={{
             href: "/projeto/project-2",
             title: "Projeto Sidebar",
-            coverSrc: "/placeholder.svg",
+            coverSrc: "/uploads/projects/sidebar-cover.jpg",
             coverAlt: "Projeto Sidebar",
+            mediaVariants: {
+              "/uploads/projects/sidebar-cover.jpg": {
+                variantsVersion: 1,
+                variants: {
+                  posterThumbSm: {
+                    formats: {
+                      avif: { url: "/uploads/_variants/sidebar/posterThumbSm-v1.avif" },
+                      fallback: { url: "/uploads/_variants/sidebar/posterThumbSm-v1.jpeg" },
+                    },
+                  },
+                  posterThumb: {
+                    formats: {
+                      avif: { url: "/uploads/_variants/sidebar/posterThumb-v1.avif" },
+                      fallback: { url: "/uploads/_variants/sidebar/posterThumb-v1.jpeg" },
+                    },
+                  },
+                },
+              },
+            },
             eyebrow: "Anime",
             synopsis: "Sinopse lateral",
             synopsisKey: "project-2",
@@ -202,6 +221,10 @@ describe("PublicProjectCard", () => {
     expect(screen.getByTestId("top-project-item-1-rank")).toHaveTextContent("1");
     expect(screen.getByTestId("top-project-item-1-metric")).toHaveTextContent("120");
     expect(screen.getByAltText("Projeto Sidebar")).toHaveClass("home-card-media-transition");
+    expect(screen.getByAltText("Projeto Sidebar")).toHaveAttribute(
+      "srcset",
+      expect.stringContaining("/uploads/_variants/sidebar/posterThumbSm-v1.jpeg 192w"),
+    );
     expect(screen.getByAltText("Projeto Sidebar")).not.toHaveClass(
       "group-hover:scale-[1.025]",
       "group-focus-within:scale-[1.025]",

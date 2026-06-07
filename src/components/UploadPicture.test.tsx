@@ -332,6 +332,67 @@ describe("UploadPicture", () => {
     );
   });
 
+  it("aplica srcset responsivo para posterThumbSm em thumbnails compactos", () => {
+    const mediaVariants: UploadMediaVariantsMap = {
+      "/uploads/projects/capa.png": {
+        variantsVersion: 2,
+        variants: {
+          posterThumbSm: {
+            formats: {
+              avif: { url: "/uploads/_variants/u123/posterThumbSm-v2.avif" },
+              webp: { url: "/uploads/_variants/u123/posterThumbSm-v2.webp" },
+              fallback: { url: "/uploads/_variants/u123/posterThumbSm-v2.jpeg" },
+            },
+          },
+          posterThumb: {
+            formats: {
+              avif: { url: "/uploads/_variants/u123/posterThumb-v2.avif" },
+              webp: { url: "/uploads/_variants/u123/posterThumb-v2.webp" },
+              fallback: { url: "/uploads/_variants/u123/posterThumb-v2.jpeg" },
+            },
+          },
+          poster: {
+            formats: {
+              avif: { url: "/uploads/_variants/u123/poster-v2.avif" },
+              webp: { url: "/uploads/_variants/u123/poster-v2.webp" },
+              fallback: { url: "/uploads/_variants/u123/poster-v2.jpeg" },
+            },
+          },
+        },
+      },
+    };
+
+    const { container } = render(
+      <UploadPicture
+        src="/uploads/projects/capa.png"
+        alt="Poster thumb compacto"
+        preset="posterThumbSm"
+        mediaVariants={mediaVariants}
+        sizes="105px"
+      />,
+    );
+
+    const sources = Array.from(container.querySelectorAll("source"));
+    expect(sources).toHaveLength(2);
+    expect(sources[0]).toHaveAttribute(
+      "srcset",
+      expect.stringContaining("/uploads/_variants/u123/posterThumbSm-v2.avif 192w"),
+    );
+    expect(sources[0]).toHaveAttribute(
+      "srcset",
+      expect.stringContaining("/uploads/_variants/u123/posterThumb-v2.avif 320w"),
+    );
+    expect(sources[0]).toHaveAttribute(
+      "srcset",
+      expect.stringContaining("/uploads/_variants/u123/poster-v2.avif 920w"),
+    );
+    expect(container.querySelector("img")).toHaveAttribute(
+      "srcset",
+      expect.stringContaining("/uploads/_variants/u123/posterThumbSm-v2.jpeg 192w"),
+    );
+    expect(container.querySelector("img")).toHaveAttribute("sizes", "105px");
+  });
+
   it("faz fallback de posterThumb para poster quando necessario", () => {
     const mediaVariants: UploadMediaVariantsMap = {
       "/uploads/projects/capa.png": {

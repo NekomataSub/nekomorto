@@ -28,6 +28,10 @@ export const resolvePublicProjectsListPreloads = ({
       if (!preload) {
         return null;
       }
+      const sourceCover = String(project?.cover || "").trim();
+      if (sourceCover && String(preload.href || "").trim() === sourceCover) {
+        return null;
+      }
       if (index === 0) {
         return { ...preload, fetchpriority: "high" };
       }

@@ -454,10 +454,9 @@ export const resolvePublicPostCoverPreload = ({
     (normalizedCoverUrl
       ? readPublicVariantAssetUrl(mediaVariants?.[normalizedCoverUrl]?.variants?.card?.formats, "")
       : "") ||
-    (typeof resolveVariantUrl === "function" ? resolveVariantUrl(sourceCoverUrl, "card") : "") ||
-    sourceCoverUrl;
+    (typeof resolveVariantUrl === "function" ? resolveVariantUrl(sourceCoverUrl, "card") : "");
 
-  if (!href) {
+  if (!href || href === sourceCoverUrl) {
     return null;
   }
 
@@ -489,11 +488,10 @@ export const resolveProjectPosterPreload = ({
       : "") ||
     (typeof resolveVariantUrl === "function"
       ? resolveVariantUrl(sourceCoverUrl, "posterThumb")
-      : "") ||
-    sourceCoverUrl;
+      : "");
 
   if (!variants || typeof variants !== "object") {
-    return fallbackHref
+    return fallbackHref && fallbackHref !== sourceCoverUrl
       ? {
           href: fallbackHref,
           as: "image",

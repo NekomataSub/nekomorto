@@ -2,7 +2,7 @@
 // browser warnings even when playback continues to work as expected.
 const PERMISSIONS_POLICY = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
 
-const HSTS_HEADER_VALUE = "max-age=31536000; includeSubDomains";
+const HSTS_HEADER_VALUE = "max-age=31536000; includeSubDomains; preload";
 
 const escapeHtmlAttribute = (value) =>
   String(value ?? "")
@@ -18,7 +18,7 @@ export const buildContentSecurityPolicy = (nonce, options = {}) => {
   if (allowInlineScripts) {
     scriptSrc.push("'unsafe-inline'");
   } else if (normalizedNonce) {
-    scriptSrc.push(`'nonce-${normalizedNonce}'`);
+    scriptSrc.push(`'nonce-${normalizedNonce}'`, "'strict-dynamic'");
   }
   scriptSrc.push("https://platform.twitter.com", "https://static.cloudflareinsights.com");
 

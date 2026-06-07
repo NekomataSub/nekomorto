@@ -45,6 +45,10 @@ const inflightPublicPostPayloads = new Map<string, Promise<unknown | null>>();
 const prewarmedImageUrls = new Set<string>();
 const idleScheduledPublicPaths = new Set<string>();
 
+type PreloadPublicRouteOptions = {
+  includeCode?: boolean;
+};
+
 const normalizePathname = (value: string) => {
   const normalized = normalizePublicPrefetchPath(value);
   if (!normalized) {
@@ -433,29 +437,31 @@ const loadPublicRouteModule = (routeKind: string) => {
   }
 };
 
-export const preloadPublicRoute = async (path: string) => {
+export const preloadPublicRoute = async (path: string, options: PreloadPublicRouteOptions = {}) => {
   const normalizedPath = normalizePublicPrefetchPath(path);
   if (!normalizedPath) {
     return null;
   }
+  const includeCode = options.includeCode !== false;
   const routeKind = resolvePublicRouteKind(normalizedPath);
   if (routeKind === PUBLIC_ROUTE_KIND_NOT_FOUND) {
     return null;
   }
-  if (preloadedPublicRouteKinds.has(routeKind)) {
+  if (includeCode && preloadedPublicRouteKinds.has(routeKind)) {
     return routeKind === PUBLIC_ROUTE_KIND_PROJECT_DETAIL
       ? preloadProjectDetailPayload(normalizedPath)
       : preloadedPublicRoutePayloads.get(resolvePreloadCacheKey(normalizedPath)) || null;
   }
-  const loadRoute = loadPublicRouteModule(routeKind);
-  if (!loadRoute) {
-    return null;
-  }
-  preloadedPublicRouteKinds.add(routeKind);
-  const codePreloadPromise = loadRoute.catch(() => {
-    preloadedPublicRouteKinds.delete(routeKind);
-    return null;
-  });
+  const loadRoute = includeCode ? loadPublicRouteModule(routeKind) : null;
+  const codePreloadPromise = loadRoute
+    ? (() => {
+        preloadedPublicRouteKinds.add(routeKind);
+        return loadRoute.catch(() => {
+          preloadedPublicRouteKinds.delete(routeKind);
+          return null;
+        });
+      })()
+    : Promise.resolve(null);
   const payloadPreloadPromise =
     routeKind === PUBLIC_ROUTE_KIND_PROJECT_DETAIL
       ? preloadProjectDetailPayload(normalizedPath)
@@ -520,7 +526,7 @@ export const schedulePublicRouteIdlePreload = (paths: string[], options?: { dela
       return;
     }
     normalizedPaths.forEach((path) => {
-      void preloadPublicRoute(path);
+      void preloadPublicRoute(path, { includeCode: false });
     });
   }, options);
 

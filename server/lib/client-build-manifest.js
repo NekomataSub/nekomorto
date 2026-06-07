@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import {
+  PUBLIC_ROUTE_KIND_HOME,
   PUBLIC_ROUTE_MODULE_IDS,
   resolvePublicRouteKind,
 } from "../../shared/public-route-registry.js";
@@ -63,6 +64,19 @@ export const resolvePublicRouteModulePreloads = ({ manifest, pathname } = {}) =>
   const moduleId = PUBLIC_ROUTE_MODULE_IDS[routeKind];
   if (!moduleId) {
     return [];
+  }
+  if (routeKind === PUBLIC_ROUTE_KIND_HOME) {
+    const entry = manifest?.[moduleId];
+    const fileHref = String(entry?.file || "").trim();
+    return fileHref
+      ? [
+          {
+            rel: "modulepreload",
+            href: fileHref.startsWith("/") ? fileHref : `/${fileHref}`,
+            crossorigin: "anonymous",
+          },
+        ]
+      : [];
   }
   const preloads = [];
   collectManifestImports({

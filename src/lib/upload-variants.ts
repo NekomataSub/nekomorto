@@ -87,6 +87,7 @@ const UPLOAD_VARIANT_RESPONSIVE_PRESET_ORDER: Partial<
 > = Object.freeze({
   cardHome: Object.freeze(["cardHomeXs", "cardHomeSm", "cardHome", "card"]),
   hero: Object.freeze(["heroXs", "heroSm", "heroMd", "hero"]),
+  posterThumbSm: Object.freeze(["posterThumbSm", "posterThumb"]),
   posterThumb: Object.freeze(["posterThumbSm", "posterThumb", "poster"]),
 } satisfies Partial<Record<UploadVariantPresetKey, readonly UploadVariantPresetKey[]>>);
 

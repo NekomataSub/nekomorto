@@ -43,12 +43,15 @@ describe("html bootstrap injection", () => {
       ],
     });
 
-    expect(result).toContain("window.__BOOTSTRAP_PUBLIC__ = ");
-    expect(result).toContain("window.__BOOTSTRAP_ROUTE__ = null");
-    expect(result).toContain("window.__BOOTSTRAP_SETTINGS__ = ");
-    expect(result).toContain("window.__BOOTSTRAP_PUBLIC_ME__ = ");
-    expect(result).toContain("window.__BOOTSTRAP_PWA_ENABLED__ = false");
-    expect(result).toContain("window.__BOOTSTRAP_SKIP_PUBLIC_FETCH__ = false");
+    expect(result).toContain('type="application/json" id="nekomata-bootstrap-public"');
+    expect(result).toContain('type="application/json" id="nekomata-bootstrap-route"');
+    expect(result).toContain('type="application/json" id="nekomata-bootstrap-settings"');
+    expect(result).toContain('type="application/json" id="nekomata-bootstrap-public-me"');
+    expect(result).toContain('type="application/json" id="nekomata-bootstrap-pwa-enabled"');
+    expect(result).toContain('type="application/json" id="nekomata-bootstrap-skip-public-fetch"');
+    expect(result).toContain("readSerializedBootstrapValue('nekomata-bootstrap-public'");
+    expect(result).toContain("window.__BOOTSTRAP_PWA_ENABLED__");
+    expect(result).toContain("window.__BOOTSTRAP_SKIP_PUBLIC_FETCH__");
     expect(result).toContain("window.__BOOTSTRAP_PUBLIC_PROMISE__");
     expect(result).toContain("normalizeThemeColor");
     expect(result).toContain("meta.setAttribute('content', normalizeThemeColor(accentHex));");
@@ -120,9 +123,10 @@ describe("html bootstrap injection", () => {
       publicMe: null,
     });
 
+    expect(result).toContain('<script type="application/json" id="nekomata-bootstrap-public">');
     expect(result).toContain("<script>");
     expect(result).not.toContain('<script src="/bootstrap-init.js"></script>');
-    expect(result).toContain("window.__BOOTSTRAP_PUBLIC__ = ");
+    expect(result).toContain("readSerializedBootstrapValue('nekomata-bootstrap-public'");
   });
 
   it("permite bootstrap leve sem fetch publico inicial", () => {
@@ -141,12 +145,15 @@ describe("html bootstrap injection", () => {
       skipPublicFetch: true,
     });
 
-    expect(result).toContain("window.__BOOTSTRAP_PUBLIC__ = null");
-    expect(result).toContain('window.__BOOTSTRAP_ROUTE__ = {"kind":"donations"');
-    expect(result).toContain("window.__BOOTSTRAP_SETTINGS__ = ");
-    expect(result).toContain("window.__BOOTSTRAP_PUBLIC_ME__ = ");
-    expect(result).toContain("window.__BOOTSTRAP_PWA_ENABLED__ = true");
-    expect(result).toContain("window.__BOOTSTRAP_SKIP_PUBLIC_FETCH__ = true");
+    expect(result).toContain('<script type="application/json" id="nekomata-bootstrap-public">');
+    expect(result).toContain("\nnull\n</script>");
+    expect(result).toContain('id="nekomata-bootstrap-route"');
+    expect(result).toContain('"kind":"donations"');
+    expect(result).toContain('id="nekomata-bootstrap-settings"');
+    expect(result).toContain('id="nekomata-bootstrap-public-me"');
+    expect(result).toContain('id="nekomata-bootstrap-pwa-enabled"');
+    expect(result).toContain("\ntrue\n</script>");
+    expect(result).toContain('id="nekomata-bootstrap-skip-public-fetch"');
     expect(result).toContain("window.__BOOTSTRAP_PUBLIC_PROMISE__");
     expect(result).toContain("fetch('/api/public/bootstrap'");
   });

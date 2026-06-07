@@ -218,7 +218,7 @@ const LatestEpisodeCard = () => {
                       <UploadPicture
                         src={update.image || "/placeholder.svg"}
                         alt={update.projectTitle}
-                        preset="posterThumb"
+                        preset="posterThumbSm"
                         mediaVariants={mediaVariants}
                         sizes="105px"
                         className="block h-full w-full"
