@@ -775,9 +775,9 @@ const ProjectReading = () => {
     [navigate, project?.id, sortedChapters],
   );
 
-  const navigateChapterToTop = useCallback(
+  const navigateImageReaderChapter = useCallback(
     (href: string) => {
-      navigate(href, { state: { preserveScroll: false } });
+      navigate(href, { state: { preserveScroll: true } });
     },
     [navigate],
   );
@@ -1080,6 +1080,51 @@ const ProjectReading = () => {
     chapterContent?.entryKind === "extra" || chapterData?.entryKind === "extra"
       ? "Editar extra"
       : "Editar capítulo";
+  const chapterNavigationState = isImageReader
+    ? { preserveScroll: true }
+    : { preserveScroll: false };
+  const chapterNavigation =
+    previousChapterLink || nextChapterLink ? (
+      <nav
+        data-testid="project-reading-chapter-nav"
+        aria-label={"Navega\u00e7\u00e3o de cap\u00edtulos"}
+        className="project-reading-chapter-nav flex flex-wrap items-center gap-2"
+      >
+        {previousChapterLink ? (
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="project-reading-nav-btn project-reading-nav-btn--secondary project-reading-chapter-nav__button"
+          >
+            <Link
+              to={previousChapterLink.href}
+              title={previousChapterLink.label}
+              state={chapterNavigationState}
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              <span>{"Cap\u00edtulo anterior"}</span>
+            </Link>
+          </Button>
+        ) : null}
+        {nextChapterLink ? (
+          <Button
+            asChild
+            size="sm"
+            className="project-reading-nav-btn project-reading-nav-btn--next project-reading-chapter-nav__button project-reading-chapter-nav__button--next ml-auto"
+          >
+            <Link
+              to={nextChapterLink.href}
+              title={nextChapterLink.label}
+              state={chapterNavigationState}
+            >
+              <span>{"Pr\u00f3ximo cap\u00edtulo"}</span>
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        ) : null}
+      </nav>
+    ) : null;
 
   const imageReaderProps = {
     projectTitle: project.title,
@@ -1095,7 +1140,7 @@ const ProjectReading = () => {
     editActionLabel: chapterEditActionLabel,
     chapterOptions,
     currentChapterValue,
-    onNavigateChapter: navigateChapterToTop,
+    onNavigateChapter: navigateImageReaderChapter,
     backHref: `/projeto/${encodeURIComponent(project.id)}`,
     preferences: imageReaderPreferences,
   };
@@ -1139,6 +1184,9 @@ const ProjectReading = () => {
           >
             <PublicProjectReader {...imageReaderProps} />
           </div>
+          {chapterNavigation ? (
+            <div className="mx-auto w-full max-w-6xl px-4 py-4 md:px-6">{chapterNavigation}</div>
+          ) : null}
         </div>
       ) : isLightNovel ? (
         <>
@@ -1191,47 +1239,7 @@ const ProjectReading = () => {
                     </CardContent>
                   </Card>
 
-                  {previousChapterLink || nextChapterLink ? (
-                    <nav
-                      data-testid="project-reading-chapter-nav"
-                      aria-label={"Navega\u00e7\u00e3o de cap\u00edtulos"}
-                      className="project-reading-chapter-nav flex flex-wrap items-center gap-2"
-                    >
-                      {previousChapterLink ? (
-                        <Button
-                          asChild
-                          size="sm"
-                          variant="outline"
-                          className="project-reading-nav-btn project-reading-nav-btn--secondary project-reading-chapter-nav__button"
-                        >
-                          <Link
-                            to={previousChapterLink.href}
-                            title={previousChapterLink.label}
-                            state={{ preserveScroll: false }}
-                          >
-                            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                            <span>{"Cap\u00edtulo anterior"}</span>
-                          </Link>
-                        </Button>
-                      ) : null}
-                      {nextChapterLink ? (
-                        <Button
-                          asChild
-                          size="sm"
-                          className="project-reading-nav-btn project-reading-nav-btn--next project-reading-chapter-nav__button project-reading-chapter-nav__button--next ml-auto"
-                        >
-                          <Link
-                            to={nextChapterLink.href}
-                            title={nextChapterLink.label}
-                            state={{ preserveScroll: false }}
-                          >
-                            <span>{"Pr\u00f3ximo cap\u00edtulo"}</span>
-                            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                          </Link>
-                        </Button>
-                      ) : null}
-                    </nav>
-                  ) : null}
+                  {chapterNavigation}
 
                   <div
                     ref={commentsSentinelRef}

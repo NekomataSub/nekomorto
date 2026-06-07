@@ -910,7 +910,20 @@ describe("ProjectReading analytics", () => {
       expect(readerShell.style.minHeight).toMatch(/px$/);
     });
 
-    expect(screen.queryByTestId("project-reading-chapter-nav")).not.toBeInTheDocument();
+    const chapterNav = screen.getByTestId("project-reading-chapter-nav");
+    expect(
+      within(chapterNav).queryByRole("link", { name: /Cap.*tulo anterior/i }),
+    ).not.toBeInTheDocument();
+    const nextChapterLink = within(chapterNav).getByRole("link", {
+      name: /Pr.ximo cap.*tulo/i,
+    });
+    expect(nextChapterLink).toHaveAttribute("href", "/projeto/projeto-teste/leitura/2?volume=2");
+    expect(nextChapterLink).toHaveClass(
+      "project-reading-nav-btn",
+      "project-reading-nav-btn--next",
+      "project-reading-chapter-nav__button--next",
+      "ml-auto",
+    );
     expect(screen.queryByTestId("project-reader-sidebar")).not.toBeInTheDocument();
     expect(
       screen
@@ -939,6 +952,70 @@ describe("ProjectReading analytics", () => {
         name: /Editar cap.tulo/i,
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it("mostra navegacao externa de capitulos no leitor de imagens", async () => {
+    const project = {
+      ...createProjectFixture([
+        {
+          number: 1,
+          volume: 2,
+          title: "Capitulo 1",
+          synopsis: "Resumo do capitulo",
+          hasPages: true,
+        },
+        {
+          number: 2,
+          volume: 2,
+          title: "Capitulo 2",
+          synopsis: "Resumo do capitulo 2",
+          hasPages: true,
+        },
+      ]),
+      type: "Manga",
+    };
+
+    setupProjectReadingApiMock(undefined, null, {
+      project,
+      readerConfig: {
+        layout: "scroll-vertical",
+        imageFit: "both",
+      },
+      chapterResponse: createImageChapterResponse({
+        number: 1,
+        volume: 2,
+        title: "Capitulo 1",
+      }),
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/projeto/projeto-teste/leitura/1?volume=2"]}>
+        <ProjectReading />
+        <ProjectReadingLocationProbe />
+      </MemoryRouter>,
+    );
+
+    await screen.findByTestId("project-reading-stage");
+    const chapterNav = screen.getByTestId("project-reading-chapter-nav");
+    expect(
+      within(chapterNav).queryByRole("link", { name: /Cap.*tulo anterior/i }),
+    ).not.toBeInTheDocument();
+    const nextChapterLink = within(chapterNav).getByRole("link", {
+      name: /Pr.ximo cap.*tulo/i,
+    });
+
+    expect(nextChapterLink).toHaveAttribute("href", "/projeto/projeto-teste/leitura/2?volume=2");
+    fireEvent.click(nextChapterLink);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("project-reading-location-pathname")).toHaveTextContent(
+        "/projeto/projeto-teste/leitura/2",
+      );
+      expect(screen.getByTestId("project-reading-location-search")).toHaveTextContent("?volume=2");
+    });
+    expect(screen.getByTestId("project-reading-location-preserve-scroll")).toHaveTextContent(
+      "true",
+    );
   });
 
   it("muda o wrapper do leitor de imagens pelo readerConfig mesmo com o mesmo projectType", async () => {
@@ -1331,6 +1408,15 @@ describe("ProjectReading analytics", () => {
     );
 
     await screen.findByTestId("project-reading-stage");
+    const chapterNav = screen.getByTestId("project-reading-chapter-nav");
+    expect(within(chapterNav).getByRole("link", { name: /Cap.tulo anterior/i })).toHaveAttribute(
+      "href",
+      "/projeto/projeto-teste/leitura/1?volume=0",
+    );
+    expect(within(chapterNav).getByRole("link", { name: /Pr.ximo cap.tulo/i })).toHaveAttribute(
+      "href",
+      "/projeto/projeto-teste/leitura/1?volume=1",
+    );
     fireEvent.click(screen.getByTestId("project-reader-menu-button"));
 
     const sidebar = await screen.findByTestId("project-reader-sidebar");
