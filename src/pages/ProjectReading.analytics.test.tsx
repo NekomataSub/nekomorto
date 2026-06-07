@@ -159,6 +159,14 @@ const mockRectsByTestId = (
 const ProjectReadingLocationProbe = () => {
   const location = useLocation();
   const navigationType = useNavigationType();
+  const locationState =
+    typeof location.state === "object" && location.state !== null
+      ? (location.state as { preserveScroll?: boolean })
+      : null;
+  const preserveScroll =
+    locationState && "preserveScroll" in locationState
+      ? String(locationState.preserveScroll === true)
+      : "unset";
 
   return (
     <>
@@ -166,6 +174,7 @@ const ProjectReadingLocationProbe = () => {
       <div data-testid="project-reading-location-search">{location.search}</div>
       <div data-testid="project-reading-location-hash">{location.hash}</div>
       <div data-testid="project-reading-location-action">{navigationType}</div>
+      <div data-testid="project-reading-location-preserve-scroll">{preserveScroll}</div>
     </>
   );
 };
@@ -1936,6 +1945,7 @@ describe("ProjectReading analytics", () => {
           initialEntries={[`/projeto/projeto-teste/leitura/${chapterNumber}?volume=${volume}`]}
         >
           <ProjectReading />
+          <ProjectReadingLocationProbe />
         </MemoryRouter>,
       );
     };
@@ -1955,6 +1965,18 @@ describe("ProjectReading analytics", () => {
       "ml-auto",
     );
     expect(firstNextLink).toHaveAttribute("href", "/projeto/projeto-teste/leitura/2?volume=0");
+    vi.mocked(window.scrollTo).mockClear();
+    fireEvent.click(firstNextLink);
+    await waitFor(() => {
+      expect(screen.getByTestId("project-reading-location-pathname")).toHaveTextContent(
+        "/projeto/projeto-teste/leitura/2",
+      );
+      expect(screen.getByTestId("project-reading-location-search")).toHaveTextContent("?volume=0");
+    });
+    expect(screen.getByTestId("project-reading-location-preserve-scroll")).toHaveTextContent(
+      "false",
+    );
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
     firstRender.unmount();
 
     const secondRender = renderReadingChapter(2, 0);

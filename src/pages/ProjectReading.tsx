@@ -375,6 +375,7 @@ const ProjectReading = () => {
   );
   const trackedChapterViewsRef = useRef<Set<string>>(new Set());
   const imageReaderSiteHeaderContainerRef = useRef<HTMLDivElement | null>(null);
+  const lastChapterNavigationScrollKeyRef = useRef<string | null>(null);
   const [measuredImageReaderHeaderHeight, setMeasuredImageReaderHeaderHeight] = useState(0);
   const { isVisible: isCommentsVisible, sentinelRef: commentsSentinelRef } = useDeferredVisibility({
     initialVisible: location.hash.startsWith("#comment-"),
@@ -774,6 +775,13 @@ const ProjectReading = () => {
     [navigate, project?.id, sortedChapters],
   );
 
+  const navigateChapterToTop = useCallback(
+    (href: string) => {
+      navigate(href, { state: { preserveScroll: false } });
+    },
+    [navigate],
+  );
+
   useEffect(() => {
     let isActive = true;
 
@@ -943,6 +951,7 @@ const ProjectReading = () => {
     isImageReader && imageReaderSiteHeaderVariant === "fixed";
   const shouldShowImageReaderSiteFooter =
     isImageReader && imageReaderPreferences.resolvedConfig.showSiteFooter !== false;
+  const chapterNavigationScrollKey = `${location.pathname}${location.search}`;
 
   useLayoutEffect(() => {
     if (!shouldUseFixedImageReaderSiteHeader) {
@@ -996,6 +1005,32 @@ const ProjectReading = () => {
       window.removeEventListener("resize", measureHeaderHeight);
     };
   }, [shouldUseFixedImageReaderSiteHeader]);
+
+  useLayoutEffect(() => {
+    const locationState =
+      typeof location.state === "object" && location.state !== null
+        ? (location.state as { preserveScroll?: boolean })
+        : null;
+
+    if (
+      !isLightNovel ||
+      isImageReader ||
+      location.hash ||
+      locationState?.preserveScroll !== false ||
+      lastChapterNavigationScrollKeyRef.current === chapterNavigationScrollKey
+    ) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    lastChapterNavigationScrollKeyRef.current = chapterNavigationScrollKey;
+  }, [
+    chapterNavigationScrollKey,
+    isImageReader,
+    isLightNovel,
+    location.hash,
+    location.state,
+  ]);
 
   const shouldShowNotFound = !slug || (!project && hasLoadedProject);
   if (shouldShowNotFound) {
@@ -1060,7 +1095,7 @@ const ProjectReading = () => {
     editActionLabel: chapterEditActionLabel,
     chapterOptions,
     currentChapterValue,
-    onNavigateChapter: (href: string) => navigate(href),
+    onNavigateChapter: navigateChapterToTop,
     backHref: `/projeto/${encodeURIComponent(project.id)}`,
     preferences: imageReaderPreferences,
   };
@@ -1169,7 +1204,11 @@ const ProjectReading = () => {
                           variant="outline"
                           className="project-reading-nav-btn project-reading-nav-btn--secondary project-reading-chapter-nav__button"
                         >
-                          <Link to={previousChapterLink.href} title={previousChapterLink.label}>
+                          <Link
+                            to={previousChapterLink.href}
+                            title={previousChapterLink.label}
+                            state={{ preserveScroll: false }}
+                          >
                             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                             <span>{"Cap\u00edtulo anterior"}</span>
                           </Link>
@@ -1181,7 +1220,11 @@ const ProjectReading = () => {
                           size="sm"
                           className="project-reading-nav-btn project-reading-nav-btn--next project-reading-chapter-nav__button project-reading-chapter-nav__button--next ml-auto"
                         >
-                          <Link to={nextChapterLink.href} title={nextChapterLink.label}>
+                          <Link
+                            to={nextChapterLink.href}
+                            title={nextChapterLink.label}
+                            state={{ preserveScroll: false }}
+                          >
                             <span>{"Pr\u00f3ximo cap\u00edtulo"}</span>
                             <ChevronRight className="h-4 w-4" aria-hidden="true" />
                           </Link>
