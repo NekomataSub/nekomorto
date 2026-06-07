@@ -878,7 +878,7 @@
   width: 100%;
   max-width: var(--lexical-content-tweet-max-width, 550px);
   border-radius: var(--lexical-content-embed-radius, 16px);
-  clip-path: inset(-3px round calc(var(--lexical-content-embed-radius, 16px) + 3px));
+  clip-path: inset(-3px round calc(var(--lexical-content-embed-radius, 16px) + 8px));
   background: transparent;
   vertical-align: top;
   isolation: isolate;
