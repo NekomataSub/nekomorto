@@ -1,10 +1,20 @@
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { CheckListPlugin } from "@lexical/react/LexicalCheckListPlugin";
+import { ClickableLinkPlugin } from "@lexical/react/LexicalClickableLinkPlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
 import * as React from "react";
 
+import TableScrollShadowPlugin from "@/components/lexical/editor/plugins/TableScrollShadowPlugin";
+import TableThemeSyncPlugin from "@/components/lexical/editor/plugins/TableThemeSyncPlugin";
+import TwitterPlugin from "@/components/lexical/editor/plugins/TwitterPlugin";
+import YouTubePlugin from "@/components/lexical/editor/plugins/YouTubePlugin";
+import PlaygroundEditorTheme from "@/components/lexical/editor/themes/PlaygroundEditorTheme";
+import LinkPlugin from "@/components/lexical/editor/plugins/LinkPlugin";
 import { getApiBase } from "@/lib/api-base";
 import { apiFetch } from "@/lib/api-client";
 import { resolveEpubViewerLinkAction } from "@/lib/epub-internal-links";
@@ -13,12 +23,19 @@ import { prepareLexicalViewerState, readPreparedLexicalViewerState } from "@/lib
 import { createRandomId } from "@/lib/random-id";
 import { ensureStyleAssetLoaded } from "@/lib/style-asset-loader";
 import LexicalViewerNodes from "./LexicalViewerNodes";
-import LexicalViewerTheme from "./LexicalViewerTheme";
 import { type PollTarget, ViewerPollProvider } from "./viewer-nodes/ViewerPollContext";
+import contentEditableCssHref from "@/components/lexical/editor/ui/ContentEditable.css?url";
+import lexicalEditorCssHref from "@/components/lexical/editor/lexical-editor.css?url";
+import playgroundCssHref from "@/components/lexical/editor/playground.css?url";
+import playgroundOverridesCssHref from "@/components/lexical/editor/playground-overrides.css?url";
 import richContentCssHref from "@/styles/rich-content.css?url";
 import lexicalViewerCssHref from "./lexical-viewer.css?url";
 
 ensureStyleAssetLoaded(richContentCssHref);
+ensureStyleAssetLoaded(playgroundCssHref);
+ensureStyleAssetLoaded(contentEditableCssHref);
+ensureStyleAssetLoaded(playgroundOverridesCssHref);
+ensureStyleAssetLoaded(lexicalEditorCssHref);
 ensureStyleAssetLoaded(lexicalViewerCssHref);
 
 type LexicalViewerProps = {
@@ -205,7 +222,7 @@ const LexicalViewer = ({
   );
   const initialConfig = React.useRef({
     namespace: "RainbowLexicalViewer",
-    theme: LexicalViewerTheme,
+    theme: PlaygroundEditorTheme,
     nodes: LexicalViewerNodes,
     onError: (error: Error) => {
       console.error(error);
@@ -267,18 +284,41 @@ const LexicalViewer = ({
           className={`lexical-playground lexical-playground--viewer ${className || ""}`}
           data-lexical-viewer="true"
         >
-          <div className="LexicalViewer__editor" data-lexical-viewer-editor="true">
-            <RichTextPlugin
-              contentEditable={
-                <ContentEditable
-                  aria-label={viewerLabel}
-                  className="LexicalViewer__content"
-                  data-lexical-viewer-content="true"
-                />
-              }
-              placeholder={null}
-              ErrorBoundary={LexicalErrorBoundary}
-            />
+          <div
+            className="editor-shell editor-shell--read-only"
+            data-lexical-viewer-editor="true"
+          >
+            <div className="editor-container">
+              <RichTextPlugin
+                contentEditable={
+                  <div className="editor-scroller">
+                    <div className="editor">
+                      <ContentEditable
+                        aria-label={viewerLabel}
+                        className="ContentEditable__root"
+                        data-lexical-viewer-content="true"
+                      />
+                    </div>
+                  </div>
+                }
+                placeholder={null}
+                ErrorBoundary={LexicalErrorBoundary}
+              />
+              <ListPlugin />
+              <CheckListPlugin />
+              <TablePlugin
+                hasCellMerge={true}
+                hasCellBackgroundColor={true}
+                hasHorizontalScroll={true}
+                hasNestedTables={true}
+              />
+              <TableThemeSyncPlugin />
+              <TableScrollShadowPlugin />
+              <LinkPlugin hasLinkAttributes={true} />
+              <TwitterPlugin />
+              <YouTubePlugin />
+              <ClickableLinkPlugin disabled={false} />
+            </div>
           </div>
           <ValuePlugin editorStateJson={preparedEditorState} />
           <EditablePlugin />

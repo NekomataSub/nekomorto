@@ -111,9 +111,13 @@ describe("LexicalViewer fidelity", () => {
     );
 
     expect(await screen.findByText("Qual opção?")).toBeInTheDocument();
-    expect(container.querySelector(".LexicalViewerTheme__code")).toBeTruthy();
-    expect(container.querySelector(".LexicalViewerTheme__table")).toBeTruthy();
-    expect(container.querySelector(".LexicalViewerTheme__hr")).toBeTruthy();
+    expect(container.querySelector(".editor-shell--read-only")).toBeTruthy();
+    expect(container.querySelector(".ContentEditable__root")).toBeTruthy();
+    expect(container.querySelector(".PlaygroundEditorTheme__code")).toBeTruthy();
+    expect(container.querySelector(".PlaygroundEditorTheme__table")).toBeTruthy();
+    expect(container.querySelector(".PlaygroundEditorTheme__tableCell")).toBeTruthy();
+    expect(container.querySelector(".PlaygroundEditorTheme__tableCellHeader")).toBeTruthy();
+    expect(container.querySelector(".PlaygroundEditorTheme__hr")).toBeTruthy();
     expect(container.querySelector('[data-lexical-viewer-poll="true"]')).toBeTruthy();
     expect(container.querySelector(".PollNode__container")).toBeTruthy();
     const tweetContainer = container.querySelector(".lexical-tweet") as HTMLElement | null;

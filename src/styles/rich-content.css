@@ -266,8 +266,8 @@
   margin: 1.2rem 0;
 }
 
-.lexical-playground.lexical-playground--viewer.post-content .LexicalViewerTheme__code,
-.lexical-playground.lexical-playground--viewer.reader-content .LexicalViewerTheme__code,
+.lexical-playground.lexical-playground--viewer.post-content .PlaygroundEditorTheme__code,
+.lexical-playground.lexical-playground--viewer.reader-content .PlaygroundEditorTheme__code,
 .lexical-playground.lexical-playground--viewer.post-content pre,
 .lexical-playground.lexical-playground--viewer.reader-content pre {
   display: block;
@@ -277,24 +277,23 @@
   word-break: normal;
 }
 
-.lexical-playground.lexical-playground--viewer.post-content .LexicalViewerTheme__textCode,
-.lexical-playground.lexical-playground--viewer.reader-content .LexicalViewerTheme__textCode {
+.lexical-playground.lexical-playground--viewer.post-content .PlaygroundEditorTheme__textCode,
+.lexical-playground.lexical-playground--viewer.reader-content .PlaygroundEditorTheme__textCode {
   display: inline;
   white-space: break-spaces;
 }
 
-.lexical-playground.lexical-playground--viewer.post-content .LexicalViewerTheme__table,
-.lexical-playground.lexical-playground--viewer.reader-content .LexicalViewerTheme__table {
+.lexical-playground.lexical-playground--viewer.post-content .PlaygroundEditorTheme__table,
+.lexical-playground.lexical-playground--viewer.reader-content .PlaygroundEditorTheme__table {
   width: fit-content;
-  min-width: 100%;
 }
 
-.lexical-playground.lexical-playground--viewer.post-content .LexicalViewerTheme__h1,
-.lexical-playground.lexical-playground--viewer.reader-content .LexicalViewerTheme__h1,
-.lexical-playground.lexical-playground--viewer.post-content .LexicalViewerTheme__h2,
-.lexical-playground.lexical-playground--viewer.reader-content .LexicalViewerTheme__h2,
-.lexical-playground.lexical-playground--viewer.post-content .LexicalViewerTheme__h3,
-.lexical-playground.lexical-playground--viewer.reader-content .LexicalViewerTheme__h3 {
+.lexical-playground.lexical-playground--viewer.post-content .PlaygroundEditorTheme__h1,
+.lexical-playground.lexical-playground--viewer.reader-content .PlaygroundEditorTheme__h1,
+.lexical-playground.lexical-playground--viewer.post-content .PlaygroundEditorTheme__h2,
+.lexical-playground.lexical-playground--viewer.reader-content .PlaygroundEditorTheme__h2,
+.lexical-playground.lexical-playground--viewer.post-content .PlaygroundEditorTheme__h3,
+.lexical-playground.lexical-playground--viewer.reader-content .PlaygroundEditorTheme__h3 {
   margin: 0;
 }
 
