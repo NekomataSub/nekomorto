@@ -11,3 +11,6 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+## 2025-10-24 - Precomputing Strings with Schwartzian Transform
+**Learning:** For properties derived from merging array fields and `.join(",")` calls (such as generating comma-separated tag strings inside `.sort()` comparators), the continuous O(N log N) re-allocation and concatenation creates extreme overhead in large datasets.
+**Action:** Always precompute merged properties upfront by combining `.map()` to build the properties, sorting the mapped objects via `Intl.Collator` (or numeric methods), and unwrapping via `.map()` again (Schwartzian transform). This drops string processing overhead from O(N log N) to strictly O(N).
