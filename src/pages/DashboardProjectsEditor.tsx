@@ -1,3 +1,16 @@
+import {
+  Clapperboard,
+  Copy,
+  Eye,
+  FileImage,
+  FileText,
+  type LucideIcon,
+  PencilLine,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import DashboardShell from "@/components/DashboardShell";
 import DashboardActionButton, {
   default as Button,
@@ -16,6 +29,11 @@ import {
   dashboardStrongSurfaceHoverClassName,
   dashboardSubtleSurfaceHoverClassName,
 } from "@/components/dashboard/dashboard-page-tokens";
+import type {
+  EditorProjectEpisode,
+  ProjectForm,
+  ProjectRecord,
+} from "@/components/dashboard/project-editor/dashboard-projects-editor-types";
 import ProjectEditorDialogShell from "@/components/dashboard/project-editor/ProjectEditorDialogShell";
 import ProjectEditorImageLibraryDialog from "@/components/dashboard/project-editor/ProjectEditorImageLibraryDialog";
 import ProjectEditorImportSection from "@/components/dashboard/project-editor/ProjectEditorImportSection";
@@ -28,11 +46,6 @@ import {
   ProjectEditorConfirmDialog,
   ProjectEditorDeleteDialog,
 } from "@/components/dashboard/project-editor/ProjectEditorSupportDialogs";
-import type {
-  EditorProjectEpisode,
-  ProjectForm,
-  ProjectRecord,
-} from "@/components/dashboard/project-editor/dashboard-projects-editor-types";
 import { DEFAULT_PROJECT_FORMAT_OPTIONS } from "@/components/dashboard/project-editor/project-editor-constants";
 import {
   buildEmptyProjectForm,
@@ -84,19 +97,6 @@ import { resolveEpisodeLookup } from "@/lib/project-episode-key";
 import { isChapterBasedType, isLightNovelType, isMangaType } from "@/lib/project-utils";
 import { buildVolumeCoverKey } from "@/lib/project-volume-cover-key";
 import { reorderItems } from "@/lib/reorder-items";
-import {
-  Clapperboard,
-  Copy,
-  Eye,
-  FileImage,
-  FileText,
-  type LucideIcon,
-  PencilLine,
-  Plus,
-  Trash2,
-} from "lucide-react";
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 
 const getDedicatedEditorCtaIcon = (projectType?: string | null): LucideIcon => {
   const normalizedType = String(projectType || "").trim();
@@ -1223,22 +1223,26 @@ const DashboardProjectsEditor = () => {
                                   size="icon-sm"
                                   title="Editor dedicado"
                                   asChild
+                                  aria-label={`Abrir editor dedicado de ${project.title}`}
                                 >
-                                  <Link
-                                    to={dedicatedEditorHref}
-                                    aria-label={`Abrir editor dedicado de ${project.title}`}
-                                  >
+                                  <Link to={dedicatedEditorHref}>
                                     <DedicatedEditorIcon className="h-4 w-4" aria-hidden="true" />
                                   </Link>
                                 </DashboardActionButton>
-                                <DashboardActionButton size="icon-sm" title="Visualizar" asChild>
+                                <DashboardActionButton
+                                  size="icon-sm"
+                                  title="Visualizar"
+                                  asChild
+                                  aria-label={`Visualizar projeto ${project.title}`}
+                                >
                                   <Link to={buildProjectPublicHref(project.id)}>
-                                    <Eye className="h-4 w-4" />
+                                    <Eye className="h-4 w-4" aria-hidden="true" />
                                   </Link>
                                 </DashboardActionButton>
                                 <DashboardActionButton
                                   size="icon-sm"
                                   title="Copiar link"
+                                  aria-label={`Copiar link do projeto ${project.title}`}
                                   onClick={() => {
                                     const url = `${window.location.origin}${buildProjectPublicHref(project.id)}`;
                                     navigator.clipboard.writeText(url).catch(() => {
@@ -1251,17 +1255,18 @@ const DashboardProjectsEditor = () => {
                                     });
                                   }}
                                 >
-                                  <Copy className="h-4 w-4" />
+                                  <Copy className="h-4 w-4" aria-hidden="true" />
                                 </DashboardActionButton>
                                 <DashboardActionButton
                                   tone="destructive"
                                   size="icon-sm"
                                   title="Excluir"
+                                  aria-label={`Excluir projeto ${project.title}`}
                                   onClick={() => {
                                     setDeleteTarget(project);
                                   }}
                                 >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                  <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
                                 </DashboardActionButton>
                               </div>
                             </div>
