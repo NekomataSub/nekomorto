@@ -11,3 +11,7 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+
+## $(date +%Y-%m-%d) - Pre-instantiated Intl.Collator for Sorting
+**Learning:** Using `String.prototype.localeCompare` inline inside an `Array.prototype.sort()` comparator instantiates a new `Intl.Collator` object for every single element comparison. This causes significant performance degradation (O(N log N) collator instantiations) on large lists, which is particularly relevant in dashboard settings components mapping large taxonomy datasets.
+**Action:** When implementing localized string sorting across the application, always import and use the pre-instantiated collator functions (`comparePtBrVariant` and `compareEnVariant`) exported from `src/lib/search-ranking.ts` to perform O(1) object instantiations instead.
