@@ -1,3 +1,5 @@
+import { Plus, Trash2 } from "lucide-react";
+import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
 import { Input } from "@/components/dashboard/dashboard-form-controls";
 import {
   dashboardStrongFocusFieldClassName,
@@ -5,14 +7,12 @@ import {
   dashboardStrongFocusTriggerClassName,
   dashboardStrongSurfaceHoverClassName,
 } from "@/components/dashboard/dashboard-page-tokens";
-import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
 import ThemedSvgLogo from "@/components/ThemedSvgLogo";
 import { Card, CardContent } from "@/components/ui/card";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2 } from "lucide-react";
 import { useDashboardSettingsContext } from "./dashboard-settings-context";
 import {
   dashboardSettingsCardClassName,
@@ -184,6 +184,7 @@ export const DashboardSettingsDownloadsTab = () => {
                         type="button"
                         size="icon"
                         className={responsiveSvgCardMobileRemoveButtonClass}
+                        aria-label={"Remover download " + (source.label || index + 1)}
                         onClick={() =>
                           setSettings((prev) => ({
                             ...prev,
@@ -194,7 +195,7 @@ export const DashboardSettingsDownloadsTab = () => {
                           }))
                         }
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </DashboardActionButton>
                     </div>
                   </div>
@@ -202,6 +203,7 @@ export const DashboardSettingsDownloadsTab = () => {
                     type="button"
                     size="icon"
                     className={responsiveSvgCardDesktopRemoveButtonClass}
+                    aria-label={"Remover download " + (source.label || index + 1)}
                     onClick={() =>
                       setSettings((prev) => ({
                         ...prev,
@@ -212,7 +214,7 @@ export const DashboardSettingsDownloadsTab = () => {
                       }))
                     }
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </DashboardActionButton>
                 </div>
               );
