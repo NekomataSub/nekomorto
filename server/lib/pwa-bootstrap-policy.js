@@ -19,15 +19,7 @@ export const isLoopbackHostname = (value) => {
 };
 
 export const resolveBootstrapPwaRequestHostname = (req) => {
-  const requestHostname = normalizeHostname(req?.hostname);
-  if (requestHostname) {
-    return requestHostname;
-  }
-
-  const rawForwardedHost = String(req?.headers?.["x-forwarded-host"] || "")
-    .split(",")[0]
-    .trim();
-  const rawHost = rawForwardedHost || String(req?.headers?.host || "").trim();
+  const rawHost = String(req?.hostname || req?.headers?.host || "").trim();
   if (!rawHost) {
     return "";
   }
