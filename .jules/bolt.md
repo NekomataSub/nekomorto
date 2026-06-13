@@ -11,3 +11,6 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+## 2024-06-13 - Optimize String.prototype.localeCompare inside sort arrays
+**Learning:** `String.prototype.localeCompare()` instantiates a new `Intl.Collator` instance on every call, which is very slow inside `Array.prototype.sort()` because it executes O(N log N) times.
+**Action:** When strings need locale-aware sorting, pre-instantiate the `Intl.Collator` outside the array sort callback and reuse its `.compare()` method. Ensure the sensitivity option (e.g. `variant`) matches the default behavior of `localeCompare()` so sorting behavior doesn't break.
