@@ -1,3 +1,5 @@
+const PT_BR_VARIANT_COLLATOR = new Intl.Collator("pt-BR", { sensitivity: "variant" });
+const EN_VARIANT_COLLATOR = new Intl.Collator("en", { sensitivity: "variant" });
 const PT_BR_COLLATOR = new Intl.Collator("pt-BR", { sensitivity: "base" });
 
 export type ProjectSearchItem = {
@@ -197,3 +199,9 @@ export const rankPosts = (items: PostSearchItem[], query: string): PostSearchIte
   });
   return ranked.map((entry) => entry.item);
 };
+
+export const compareEnVariant = (a: string, b: string): number =>
+  EN_VARIANT_COLLATOR.compare(String(a || ""), String(b || ""));
+
+export const comparePtBrVariant = (a: string, b: string): number =>
+  PT_BR_VARIANT_COLLATOR.compare(String(a || ""), String(b || ""));

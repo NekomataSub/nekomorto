@@ -1,5 +1,7 @@
+import { ArrowLeft, ExternalLink, ImagePlus, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import DashboardShell from "@/components/DashboardShell";
-import type { ImageLibraryOptions } from "@/components/ImageLibraryDialog";
 import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
 import DashboardDedicatedEditorHeader from "@/components/dashboard/DashboardDedicatedEditorHeader";
 import DashboardFieldStack from "@/components/dashboard/DashboardFieldStack";
@@ -13,11 +15,11 @@ import {
   useDedicatedEditorSidebarHeight,
 } from "@/components/dashboard/dedicated-editor-sidebar";
 import DownloadSourcesEditor from "@/components/dashboard/project-editor/DownloadSourcesEditor";
+import type { ImageLibraryOptions } from "@/components/ImageLibraryDialog";
 import LazyImageLibraryDialog from "@/components/lazy/LazyImageLibraryDialog";
 import ProjectEditorSectionCard from "@/components/project-reader/ProjectEditorSectionCard";
 import AsyncState from "@/components/ui/async-state";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
 import type { Project, ProjectEpisode } from "@/data/projects";
 import { useDashboardCurrentUser } from "@/hooks/use-dashboard-current-user";
@@ -82,9 +85,7 @@ import {
   resolveProjectEpisodePublicationState,
 } from "@/lib/project-publication";
 import { isChapterBasedType } from "@/lib/project-utils";
-import { ArrowLeft, ExternalLink, ImagePlus, Loader2, Plus, Search, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { comparePtBrVariant } from "@/lib/search-ranking";
 
 const animeEpisodeFilterOptions = [
   { value: "all", label: "Todos" },
@@ -184,7 +185,7 @@ const sortEpisodes = (episodes: ProjectEpisode[]) =>
     if (left.number !== right.number) {
       return (left.number || 0) - (right.number || 0);
     }
-    return String(left.title || "").localeCompare(String(right.title || ""), "pt-BR");
+    return comparePtBrVariant(String(left.title || ""), String(right.title || ""));
   });
 
 const matchesEpisodeSearch = (episode: ProjectEpisode, query: string) => {

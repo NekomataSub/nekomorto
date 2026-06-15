@@ -7,6 +7,7 @@ import { syncProjectProgress } from "@/lib/project-progress";
 import { isLightNovelType, isMangaType } from "@/lib/project-utils";
 import { buildVolumeCoverKey } from "@/lib/project-volume-cover-key";
 import { normalizeProjectVolumeEntries } from "@/lib/project-volume-entries";
+import { comparePtBrVariant } from "@/lib/search-ranking";
 import {
   hasProjectEpisodeReadableContent,
   normalizeProjectEpisodeContentFormat,
@@ -97,7 +98,7 @@ export const sortChapters = (episodes: ProjectEpisode[]) =>
     if (numberDelta !== 0) {
       return numberDelta;
     }
-    return String(left.title || "").localeCompare(String(right.title || ""), "pt-BR");
+    return comparePtBrVariant(String(left.title || ""), String(right.title || ""));
   });
 
 export const buildChapterVolumeLabel = (value: unknown) => {

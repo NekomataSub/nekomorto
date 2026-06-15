@@ -1,8 +1,9 @@
+import { type DragEvent, useCallback, useMemo, useState } from "react";
 import { useDashboardSettingsAutosave } from "@/components/dashboard/settings/use-dashboard-settings-autosave";
 import { useDashboardSettingsLoading } from "@/components/dashboard/settings/use-dashboard-settings-loading";
 import { useDashboardSettingsQuerySync } from "@/components/dashboard/settings/use-dashboard-settings-query-sync";
+import { compareEnVariant } from "@/lib/search-ranking";
 import type { SiteSettings } from "@/types/site-settings";
-import { type DragEvent, useCallback, useMemo, useState } from "react";
 import {
   getProjectReaderPresetByType,
   mergeProjectReaderConfig,
@@ -141,7 +142,7 @@ export const useDashboardSettingsResource = ({
     );
     return allTags
       .filter((tag) => !query || tag.toLowerCase().includes(query))
-      .sort((a, b) => a.localeCompare(b, "en"));
+      .sort((a, b) => compareEnVariant(a, b));
   }, [loading.knownTags, loading.tagTranslations, tagQuery]);
 
   const filteredGenres = useMemo(() => {
@@ -151,7 +152,7 @@ export const useDashboardSettingsResource = ({
     );
     return allGenres
       .filter((genre) => !query || genre.toLowerCase().includes(query))
-      .sort((a, b) => a.localeCompare(b, "en"));
+      .sort((a, b) => compareEnVariant(a, b));
   }, [genreQuery, loading.genreTranslations, loading.knownGenres]);
 
   const filteredStaffRoles = useMemo(() => {
@@ -161,7 +162,7 @@ export const useDashboardSettingsResource = ({
     );
     return allRoles
       .filter((role) => !query || role.toLowerCase().includes(query))
-      .sort((a, b) => a.localeCompare(b, "en"));
+      .sort((a, b) => compareEnVariant(a, b));
   }, [loading.knownStaffRoles, loading.staffRoleTranslations, staffRoleQuery]);
 
   const readerPresets = useMemo(
