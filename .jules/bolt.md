@@ -11,3 +11,9 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+## 2026-06-16 - Fast String Sorting with Intl.Collator
+**Learning:**  is an O(N log N) performance trap when used inline inside  callbacks on large arrays because it implicitly instantiates a new  on every comparison. The codebase already had a  in  but settings components were still using inline .
+**Action:** When comparing arrays of strings that require locale-aware sorting, always pre-instantiate the  outside of the  function (or reuse centralized cached collators like ) to avoid massive unnecessary overhead.
+## 2025-02-12 - Fast String Sorting with Intl.Collator
+**Learning:** `String.prototype.localeCompare` is an O(N log N) performance trap when used inline inside `.sort()` callbacks on large arrays because it implicitly instantiates a new `Intl.Collator` on every comparison. The codebase already had a `PT_BR_COLLATOR` in `search-ranking.ts` but settings components were still using inline `a.localeCompare(b, "en")`.
+**Action:** When comparing arrays of strings that require locale-aware sorting, always pre-instantiate the `Intl.Collator` outside of the `.sort()` function (or reuse centralized cached collators like `compareEnVariant`) to avoid massive unnecessary overhead.
