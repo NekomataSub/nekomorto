@@ -92,6 +92,7 @@ export const DashboardSettingsTeamTab = () => {
                 <DashboardActionButton
                   type="button"
                   size="icon"
+                  aria-label="Remover função da equipe"
                   className={responsiveCompactRowDeleteButtonClass}
                   onClick={() =>
                     setSettings((prev) => ({

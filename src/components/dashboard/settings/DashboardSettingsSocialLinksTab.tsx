@@ -1,10 +1,10 @@
-import { Input } from "@/components/dashboard/dashboard-form-controls";
+import { Plus, Save, Trash2 } from "lucide-react";
 import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
+import { Input } from "@/components/dashboard/dashboard-form-controls";
 import ThemedSvgLogo from "@/components/ThemedSvgLogo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { TabsContent } from "@/components/ui/tabs";
-import { Plus, Save, Trash2 } from "lucide-react";
 import { useDashboardSettingsContext } from "./dashboard-settings-context";
 import {
   dashboardSettingsCardClassName,
@@ -133,6 +133,7 @@ export const DashboardSettingsSocialLinksTab = () => {
                       <DashboardActionButton
                         type="button"
                         size="icon"
+                        aria-label="Remover rede social"
                         className={responsiveSvgCardMobileRemoveButtonClass}
                         onClick={() =>
                           setLinkTypes((prev) => prev.filter((_, idx) => idx !== index))
@@ -145,6 +146,7 @@ export const DashboardSettingsSocialLinksTab = () => {
                   <DashboardActionButton
                     type="button"
                     size="icon"
+                    aria-label="Remover rede social"
                     className={responsiveSvgCardDesktopRemoveButtonClass}
                     onClick={() => setLinkTypes((prev) => prev.filter((_, idx) => idx !== index))}
                   >
