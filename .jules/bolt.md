@@ -11,3 +11,6 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+## 2025-06-17 - [Replacing String.prototype.localeCompare with Intl.Collator for Sorting]
+**Learning:** `String.prototype.localeCompare` has high initialization overhead, which makes it slow when used directly within `.sort()` comparators that fire repeatedly (O(N log N)). Pre-initializing an `Intl.Collator` instance outside the loop and calling `.compare()` is significantly faster. `localeCompare` uses variant sensitivity (case and accent sensitive) by default, so replacements must use `{ sensitivity: "variant" }` to match the exact previous behavior unless `{ sensitivity: "base" }` is explicitly desired.
+**Action:** Replaced inline `localeCompare(..., "pt-BR")` and `localeCompare(..., "en")` calls with pre-instantiated collators (`comparePtBrVariant` and `compareEnVariant`) exported from `src/lib/search-ranking.ts` across multiple dashboard pages to speed up sort operations.
