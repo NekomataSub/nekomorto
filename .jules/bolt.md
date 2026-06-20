@@ -11,3 +11,7 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+
+## 2024-06-20 - Intl.Collator Caching
+**Learning:** `String.prototype.localeCompare()` forces v8 to parse locales and re-instantiate `Intl.Collator` instances on every execution within the `.sort()` comparator, yielding massive performance penalties (60x slower in tight loops).
+**Action:** Always pre-instantiate `Intl.Collator` instances in module scope (`const EN_COLLATOR = new Intl.Collator("en", ...);`) and export standard caching wrappers instead of relying on inline `localeCompare` across the repository.
