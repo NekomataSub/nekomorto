@@ -11,6 +11,7 @@ import AsyncState from "@/components/ui/async-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePublicBootstrap } from "@/hooks/use-public-bootstrap";
+import { comparePtBrVariant } from "@/lib/search-ranking";
 
 const TOP_PROJECTS_LIMIT = 10;
 const TOP_PROJECTS_LAST_7_DAYS = 7;
