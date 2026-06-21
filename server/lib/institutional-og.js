@@ -160,6 +160,32 @@ export const loadInstitutionalOgBackgroundDataUrl = async ({ backgroundUrl, orig
     try {
       const url = new URL(normalizedBackgroundUrl);
       if (url.protocol === "https:" || url.protocol === "http:") {
+        const isLocalOrPrivateHost = (hostname) => {
+          const normalized = String(hostname || "")
+            .toLowerCase()
+            .trim();
+          if (!normalized || normalized === "localhost" || normalized.endsWith(".localhost"))
+            return true;
+          if (
+            normalized.startsWith("127.") ||
+            normalized.startsWith("10.") ||
+            normalized.startsWith("192.168.") ||
+            normalized.startsWith("169.254.") ||
+            normalized.startsWith("0.0.0.0")
+          )
+            return true;
+          if (
+            normalized === "::1" ||
+            normalized === "[::1]" ||
+            normalized === "0:0:0:0:0:0:0:1" ||
+            normalized === "[0:0:0:0:0:0:0:1]"
+          )
+            return true;
+          return false;
+        };
+        if (isLocalOrPrivateHost(url.hostname)) {
+          return "";
+        }
         const response = await fetch(url.toString(), { redirect: "error" });
         if (response.ok) {
           inputBuffer = Buffer.from(await response.arrayBuffer());

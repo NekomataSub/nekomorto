@@ -12,3 +12,7 @@
 **Vulnerability:** Raw HTML strings were assigned to `innerHTML` sinks without sanitization within `src/lexical-playground/nodes/ImageNode.tsx` and `src/lexical-playground/hooks/useReport.ts`.
 **Learning:** Even within an encapsulated rich-text editor setup or helper hooks, directly passing HTML strings to `innerHTML` exposes an XSS risk if those strings can be populated with user content.
 **Prevention:** Always sanitize strings with `DOMPurify.sanitize` (using strict profiles like `{ USE_PROFILES: { html: true } }` where appropriate) before rendering them via `innerHTML` or `dangerouslySetInnerHTML`.
+## 2025-02-27 - [SSRF] SSRF bypass due to incorrect IPv6 localhost validation
+**Vulnerability:** The previous SSRF validation logic used a strict string comparison `normalized === "::1"` to block IPv6 localhost addresses.
+**Learning:** Node.js URL parsing retains brackets around IPv6 addresses in the `hostname` property (e.g., `http://[::1]` parses to a hostname of `[::1]`). A strict string comparison against `::1` fails to catch the bracketed form, allowing bypass.
+**Prevention:** When validating IP addresses for SSRF prevention, especially IPv6, always account for the possibility of bracketed notation in the input string, e.g., checking for both `::1` and `[::1]`.

@@ -208,6 +208,31 @@ const loadLocalArtworkAsset = (artworkUrl) => {
   }
 };
 
+const isLocalOrPrivateHost = (hostname) => {
+  const normalized = String(hostname || "")
+    .toLowerCase()
+    .trim();
+  if (!normalized || normalized === "localhost" || normalized.endsWith(".localhost")) return true;
+  // Basic check for common private IPv4
+  if (
+    normalized.startsWith("127.") ||
+    normalized.startsWith("10.") ||
+    normalized.startsWith("192.168.") ||
+    normalized.startsWith("169.254.") ||
+    normalized.startsWith("0.0.0.0")
+  )
+    return true;
+  // Basic check for IPv6 localhost
+  if (
+    normalized === "::1" ||
+    normalized === "[::1]" ||
+    normalized === "0:0:0:0:0:0:0:1" ||
+    normalized === "[0:0:0:0:0:0:0:1]"
+  )
+    return true;
+  return false;
+};
+
 const loadRemoteArtworkAsset = async (artworkUrl) => {
   const normalized = String(artworkUrl || "").trim();
   if (!normalized) {
@@ -220,6 +245,9 @@ const loadRemoteArtworkAsset = async (artworkUrl) => {
     return null;
   }
   if (url.protocol !== "https:" && url.protocol !== "http:") {
+    return null;
+  }
+  if (isLocalOrPrivateHost(url.hostname)) {
     return null;
   }
   try {
