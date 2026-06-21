@@ -1,3 +1,14 @@
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronRight,
+  ExternalLink,
+  FileArchive,
+  Loader2,
+  Plus,
+  Search,
+} from "lucide-react";
+import { memo, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
 import { Combobox, Input } from "@/components/dashboard/dashboard-form-controls";
 import {
@@ -15,27 +26,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { ComboboxOption } from "@/components/ui/combobox";
 import {
-  chapterHasContent,
-  chapterStatusLabel,
   type ChapterFilterMode,
   type ChapterStructureGroup,
+  chapterHasContent,
+  chapterStatusLabel,
 } from "@/lib/dashboard-project-chapter";
 import {
   buildDashboardProjectChapterEditorHref,
   buildProjectPublicReadingHref,
 } from "@/lib/project-editor-routes";
 import { buildEpisodeKey } from "@/lib/project-episode-key";
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronRight,
-  ExternalLink,
-  FileArchive,
-  Loader2,
-  Plus,
-  Search,
-} from "lucide-react";
-import { memo, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   normalizeProjectEpisodeContentFormat,
   normalizeProjectEpisodePages,
@@ -168,7 +168,7 @@ export const ChapterEditorStructureSection = memo(
                   onClick={onAddVolume}
                   className="w-full justify-center"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4" aria-hidden="true" />
                   <span>Adicionar volume</span>
                 </DashboardActionButton>
               </div>
@@ -282,6 +282,7 @@ export const ChapterEditorStructureSection = memo(
                         >
                           <ChevronRight
                             className={`h-4 w-4 transition-transform ${isOpen ? "rotate-90" : ""}`}
+                            aria-hidden="true"
                           />
                         </DashboardActionButton>
                       </div>
@@ -298,7 +299,7 @@ export const ChapterEditorStructureSection = memo(
                           }}
                           className="flex-1 justify-center rounded-xl"
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-4 w-4" aria-hidden="true" />
                           <span>Adicionar capítulo</span>
                         </DashboardActionButton>
                         {hasExportablePublishedVolumeChapter && group.volume !== null ? (
@@ -313,9 +314,9 @@ export const ChapterEditorStructureSection = memo(
                             className="shrink-0 justify-center rounded-xl px-3"
                           >
                             {isExportingVolume ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                             ) : (
-                              <FileArchive className="h-4 w-4" />
+                              <FileArchive className="h-4 w-4" aria-hidden="true" />
                             )}
                             <span>ZIP</span>
                           </DashboardActionButton>
@@ -518,7 +519,7 @@ export const ChapterEditorStructureSection = memo(
                                                 size="icon"
                                                 tone="neutral"
                                                 data-testid={`chapter-structure-episode-move-up-${episodeKey}`}
-                                                aria-label="Mover item para cima"
+                                                aria-label={`Mover capítulo ${episode.number} para cima`}
                                                 className="h-9 w-9 rounded-xl bg-background/92"
                                                 onClick={(event) => {
                                                   event.stopPropagation();
@@ -530,9 +531,12 @@ export const ChapterEditorStructureSection = memo(
                                                 }
                                               >
                                                 {isReorderingEpisodeUp ? (
-                                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                                  <Loader2
+                                                    className="h-4 w-4 animate-spin"
+                                                    aria-hidden="true"
+                                                  />
                                                 ) : (
-                                                  <ArrowUp className="h-4 w-4" />
+                                                  <ArrowUp className="h-4 w-4" aria-hidden="true" />
                                                 )}
                                               </DashboardActionButton>
                                               <DashboardActionButton
@@ -540,7 +544,7 @@ export const ChapterEditorStructureSection = memo(
                                                 size="icon"
                                                 tone="neutral"
                                                 data-testid={`chapter-structure-episode-move-down-${episodeKey}`}
-                                                aria-label="Mover item para baixo"
+                                                aria-label={`Mover capítulo ${episode.number} para baixo`}
                                                 className="h-9 w-9 rounded-xl bg-background/92"
                                                 onClick={(event) => {
                                                   event.stopPropagation();
@@ -555,9 +559,15 @@ export const ChapterEditorStructureSection = memo(
                                                 }
                                               >
                                                 {isReorderingEpisodeDown ? (
-                                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                                  <Loader2
+                                                    className="h-4 w-4 animate-spin"
+                                                    aria-hidden="true"
+                                                  />
                                                 ) : (
-                                                  <ArrowDown className="h-4 w-4" />
+                                                  <ArrowDown
+                                                    className="h-4 w-4"
+                                                    aria-hidden="true"
+                                                  />
                                                 )}
                                               </DashboardActionButton>
                                             </>
@@ -575,7 +585,10 @@ export const ChapterEditorStructureSection = memo(
                                                 handleOpenReadingPage();
                                               }}
                                             >
-                                              <ExternalLink className="h-4 w-4" />
+                                              <ExternalLink
+                                                className="h-4 w-4"
+                                                aria-hidden="true"
+                                              />
                                             </DashboardActionButton>
                                           ) : null}
                                         </div>

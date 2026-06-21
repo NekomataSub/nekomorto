@@ -1,3 +1,5 @@
+import { Loader2 } from "lucide-react";
+import type { ChangeEvent, RefObject } from "react";
 import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
 import { Input } from "@/components/dashboard/dashboard-form-controls";
 import {
@@ -8,8 +10,6 @@ import {
 } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2 } from "lucide-react";
-import type { ChangeEvent, RefObject } from "react";
 
 import ChapterEditorAccordionHeader from "./ChapterEditorAccordionHeader";
 
@@ -195,7 +195,9 @@ export const ChapterEditorEpubToolsSection = ({
                 onClick={onImportEpub}
                 disabled={isImportingEpub || !backendSupportsEpubImport}
               >
-                {isImportingEpub ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {isImportingEpub ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : null}
                 Importar EPUB
               </DashboardActionButton>
             </div>
@@ -237,7 +239,9 @@ export const ChapterEditorEpubToolsSection = ({
                 onClick={onExportEpub}
                 disabled={isExportingEpub || !backendSupportsEpubExport}
               >
-                {isExportingEpub ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {isExportingEpub ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : null}
                 Exportar volume em EPUB
               </DashboardActionButton>
             </div>

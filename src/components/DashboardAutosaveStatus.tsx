@@ -1,11 +1,11 @@
+import { AlertCircle, CheckCircle2, Loader2, Save } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
 import { dashboardPageLayoutTokens } from "@/components/dashboard/dashboard-page-tokens";
 import { Switch } from "@/components/ui/switch";
 import type { AutosaveStatus } from "@/hooks/use-autosave";
 import { uiCopy } from "@/lib/ui-copy";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Loader2, Save } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
 
 type DashboardAutosaveStatusProps = {
   title?: string;
@@ -125,7 +125,7 @@ const DashboardAutosaveStatus = ({
             title={errorFeedbackText}
             aria-hidden={!showErrorFeedback}
           >
-            <AlertCircle className="h-3.5 w-3.5" />
+            <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
           </span>
         </div>
 
@@ -155,21 +155,21 @@ const DashboardAutosaveStatus = ({
                 className="invisible col-start-1 row-start-1 inline-flex items-center justify-center gap-2 whitespace-nowrap"
                 aria-hidden="true"
               >
-                <Save className="h-4 w-4" />
+                <Save className="h-4 w-4" aria-hidden="true" />
                 {manualActionLabel}
               </span>
               <span
                 className="invisible col-start-1 row-start-1 inline-flex items-center justify-center gap-2 whitespace-nowrap"
                 aria-hidden="true"
               >
-                <Loader2 className="h-4 w-4" />
+                <Loader2 className="h-4 w-4" aria-hidden="true" />
                 {uiCopy.actions.saving}
               </span>
               <span
                 className="invisible col-start-1 row-start-1 inline-flex items-center justify-center gap-2 whitespace-nowrap"
                 aria-hidden="true"
               >
-                <CheckCircle2 className="h-4 w-4" />
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                 {uiCopy.actions.saved}
               </span>
               <span
@@ -179,7 +179,7 @@ const DashboardAutosaveStatus = ({
                 )}
                 aria-hidden={buttonMode !== "default"}
               >
-                <Save className="h-4 w-4" />
+                <Save className="h-4 w-4" aria-hidden="true" />
                 {manualActionLabel}
               </span>
               <span
@@ -189,7 +189,7 @@ const DashboardAutosaveStatus = ({
                 )}
                 aria-hidden={buttonMode !== "saving"}
               >
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                 {uiCopy.actions.saving}
               </span>
               <span
@@ -199,7 +199,7 @@ const DashboardAutosaveStatus = ({
                 )}
                 aria-hidden={buttonMode !== "saved"}
               >
-                <CheckCircle2 className="h-4 w-4" />
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                 {uiCopy.actions.saved}
               </span>
             </span>
