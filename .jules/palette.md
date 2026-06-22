@@ -1,3 +1,9 @@
 ## $(date +%Y-%m-%d) - Added ARIA labels to Settings Dashboard Trash Buttons
 **Learning:** Found several icon-only action buttons (e.g. Delete/Trash) in the dashboard settings layout missing `aria-label`s, indicating this might be a pattern across internal dashboard components where functionality is prioritized over a11y.
 **Action:** Always verify icon-only buttons (`DashboardActionButton` using Lucide icons) have appropriate `aria-label`s, especially in complex list/array configuration forms. Keep them in Portuguese to match the app's language context.
+## 2026-06-22 - Added dynamic aria-labels to icon-only Delete buttons
+**Learning:** Icon-only buttons (like `DashboardActionButton` wrapping `Trash2` icons) inside mapped  lists require distinct, dynamic `aria-label`s (e.g. `aria-label={`Remover fonte ${source.label}`}`) so screen reader users can differentiate between items in the list. Additionally, the nested SVG icons must use `aria-hidden="true"` to avoid redundant announcements.
+**Action:** When implementing or reviewing dashboard lists with action icons, explicitly check for both the presence of dynamic `aria-label`s on the button wrapper and `aria-hidden="true"` on the underlying SVG icon components.
+## 2024-05-14 - Added dynamic aria-labels to icon-only Delete buttons
+**Learning:** Icon-only buttons (like `DashboardActionButton` wrapping `Trash2` icons) inside mapped `.map()` lists require distinct, dynamic `aria-label`s (e.g. `aria-label={"Remover fonte ${source.label}"}`) so screen reader users can differentiate between items in the list. Additionally, the nested SVG icons must use `aria-hidden="true"` to avoid redundant announcements.
+**Action:** When implementing or reviewing dashboard lists with action icons, explicitly check for both the presence of dynamic `aria-label`s on the button wrapper and `aria-hidden="true"` on the underlying SVG icon components.
