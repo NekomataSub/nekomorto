@@ -72,7 +72,8 @@ const isPrivateIpv6 = (value) => {
 const isPrivateHost = (host) => {
   const normalized = String(host || "")
     .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "");
   if (!normalized) {
     return true;
   }
