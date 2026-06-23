@@ -1,3 +1,6 @@
+import { ArrowDown, ArrowUp, SlidersHorizontal } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import DashboardShell from "@/components/DashboardShell";
 import DashboardActionButton from "@/components/dashboard/DashboardActionButton";
 import DashboardPageBadge from "@/components/dashboard/DashboardPageBadge";
@@ -26,14 +29,11 @@ import { toast } from "@/components/ui/use-toast";
 import { useDashboardCurrentUser } from "@/hooks/use-dashboard-current-user";
 import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
 import { usePageMeta } from "@/hooks/use-page-meta";
+import { isDashboardHrefAllowed, resolveAccessRole, resolveGrants } from "@/lib/access-control";
 import { getApiBase } from "@/lib/api-base";
 import { apiFetch } from "@/lib/api-client";
-import { isDashboardHrefAllowed, resolveAccessRole, resolveGrants } from "@/lib/access-control";
 import { formatDateTime } from "@/lib/date";
 import type { OperationalAlertsResponse } from "@/types/operational-alerts";
-import { ArrowDown, ArrowUp, SlidersHorizontal } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 
 type DashboardPost = {
   id: string;
@@ -1409,16 +1409,18 @@ const Dashboard = () => {
                       size="icon"
                       onClick={() => moveDraftWidget(widgetId, -1)}
                       disabled={!isSelected || index <= 0}
+                      aria-label={`Mover widget ${DASHBOARD_WIDGET_LABELS[widgetId]} para cima`}
                     >
-                      <ArrowUp className="h-4 w-4" />
+                      <ArrowUp className="h-4 w-4" aria-hidden="true" />
                     </DashboardActionButton>
                     <DashboardActionButton
                       type="button"
                       size="icon"
                       onClick={() => moveDraftWidget(widgetId, 1)}
                       disabled={!isSelected || index < 0 || index >= customDraftWidgets.length - 1}
+                      aria-label={`Mover widget ${DASHBOARD_WIDGET_LABELS[widgetId]} para baixo`}
                     >
-                      <ArrowDown className="h-4 w-4" />
+                      <ArrowDown className="h-4 w-4" aria-hidden="true" />
                     </DashboardActionButton>
                     <DashboardActionButton
                       type="button"
