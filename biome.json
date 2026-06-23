@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
   "files": {
     "includes": [
       "**",
@@ -22,6 +22,7 @@
       "!**/.vitest-*.json",
       "!**/vitest-*.json",
       "!**/package-lock.json",
+      "!**/*.svg",
       "!**/tsconfig*.json"
     ]
   },
@@ -34,7 +35,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": false,
+      "preset": "none",
       "correctness": {
         "noUnusedVariables": "warn"
       }

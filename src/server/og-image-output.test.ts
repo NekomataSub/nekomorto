@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import sharp, { type Metadata } from "sharp";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -175,8 +175,7 @@ describe("og image output helper", () => {
       mode: "lossless",
     });
     const metadata = await sharp(optimized).metadata();
-    const paletteBitDepth = (metadata as sharp.Metadata & { paletteBitDepth?: number })
-      .paletteBitDepth;
+    const paletteBitDepth = (metadata as Metadata & { paletteBitDepth?: number }).paletteBitDepth;
 
     expect(optimized.length).toBeLessThan(uncompressed.length);
     expect(paletteBitDepth).toBeUndefined();

@@ -46,7 +46,7 @@ const renderDialog = (props: Partial<ComponentProps<typeof ImageLibraryDialog>> 
 
 const expectTriggerExpanded = async (name: RegExp | string, expanded: boolean) => {
   const triggers = await screen.findAllByRole("button", { name });
-  const trigger = triggers.find((candidate) => candidate.hasAttribute("aria-controls"));
+  const trigger = triggers.find((candidate) => candidate.hasAttribute("aria-expanded"));
   expect(trigger).toBeTruthy();
   await waitFor(() => {
     expect(trigger).toHaveAttribute("aria-expanded", expanded ? "true" : "false");
