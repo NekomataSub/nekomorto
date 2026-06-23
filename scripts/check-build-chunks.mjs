@@ -20,7 +20,7 @@ const fail = (message) => {
 const assetFiles = fs.readdirSync(distAssetsDir);
 const lexicalCoreChunks = assetFiles.filter(
   (fileName) =>
-    fileName.startsWith("lexical-") &&
+    (fileName.startsWith("lexical-") || fileName.startsWith("lexical~")) &&
     fileName.endsWith(".js") &&
     !fileName.startsWith("lexical-editor-") &&
     !fileName.startsWith("lexical-viewer-"),

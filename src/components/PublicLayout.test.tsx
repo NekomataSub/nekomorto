@@ -15,7 +15,7 @@ vi.mock("@/components/Footer", () => ({
 }));
 
 describe("PublicLayout", () => {
-  it("renders header, main outlet, and footer without skip links", () => {
+  it("renders header, skip link, main outlet, and footer", () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
@@ -32,10 +32,10 @@ describe("PublicLayout", () => {
     expect(screen.getByTestId("public-outlet")).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAttribute("id", "public-main-content");
     expect(screen.getByRole("main")).toHaveClass("a11y-focus-target");
-    expect(
-      screen.queryByRole("navigation", { name: /Atalhos de acessibilidade/i }),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Pular para o conte/iu })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Pular para o conteúdo" })).toHaveAttribute(
+      "href",
+      "#public-main-content",
+    );
     expect(screen.getByRole("main").parentElement).toHaveClass("bg-background", "text-foreground");
     expect(screen.getByRole("main").parentElement).not.toHaveClass("bg-gradient-surface");
   });

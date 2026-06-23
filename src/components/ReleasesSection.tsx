@@ -97,7 +97,7 @@ const ReleasesSection = () => {
   return (
     <section
       id="lancamentos"
-      className="scroll-mt-32 bg-background px-6 py-16 reveal md:px-12"
+      className="public-below-fold scroll-mt-32 bg-background px-6 py-16 reveal md:px-12"
       data-reveal
     >
       <div className="mx-auto max-w-7xl">

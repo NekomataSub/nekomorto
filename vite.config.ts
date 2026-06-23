@@ -29,11 +29,22 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1250,
       sourcemap: env.VITE_BUILD_SOURCEMAP === "true",
       rolldownOptions: {
+        preserveEntrySignatures: "allow-extension",
         checks: {
           pluginTimings: false,
         },
         output: {
-          manualChunks: classifyManualChunk,
+          strictExecutionOrder: true,
+          codeSplitting: {
+            includeDependenciesRecursively: false,
+            groups: [
+              {
+                name: "react-core",
+                test: (id) => classifyManualChunk(id) === "react-core",
+                priority: 300,
+              },
+            ],
+          },
         },
       },
     },

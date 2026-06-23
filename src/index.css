@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss/index.css";
 @import "./styles/home-public-cards.css";
 @import "./styles/vendor/tw-animate.css";
 @import "./styles/combobox.css";
@@ -157,6 +157,41 @@
   --interactive-ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
   --interactive-duration-fast: 180ms;
   --interactive-duration-medium: 220ms;
+}
+
+.public-skip-link {
+  position: fixed;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  z-index: 60;
+  max-width: calc(100vw - 1.5rem);
+  padding: 0.75rem 1rem;
+  border: 1px solid hsl(var(--primary));
+  border-radius: 0.625rem;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-150%);
+  transition:
+    opacity var(--interactive-duration-fast) var(--interactive-ease-standard),
+    transform var(--interactive-duration-fast) var(--interactive-ease-standard);
+}
+
+.public-skip-link:focus-visible {
+  opacity: 1;
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.public-below-fold {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 80rem;
 }
 
 @layer components {

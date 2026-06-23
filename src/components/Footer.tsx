@@ -172,7 +172,7 @@ const Footer = ({ shellClassName = "" }: FooterProps) => {
             ))}
           </div>
           <div className="flex flex-col gap-3 rounded-2xl border border-primary/20 bg-gradient-card p-5 text-sm text-foreground">
-            <p className="font-semibold text-primary">{footer.highlightTitle}</p>
+            <p className="font-semibold text-foreground">{footer.highlightTitle}</p>
             <p className="text-muted-foreground">{footer.highlightDescription}</p>
           </div>
         </div>

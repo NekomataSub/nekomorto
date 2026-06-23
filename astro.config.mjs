@@ -2,7 +2,6 @@ import path from "node:path";
 import { defineConfig } from "astro/config";
 import node from "@astrojs/node";
 import react from "@astrojs/react";
-import { classifyManualChunk } from "./src/lib/build-chunking";
 
 const buildSourcemap = process.env.VITE_BUILD_SOURCEMAP === "true";
 
@@ -30,11 +29,6 @@ export default defineConfig({
       // intentionally isolated editor bundles don't trigger generic warnings.
       chunkSizeWarningLimit: 1250,
       sourcemap: buildSourcemap,
-      rolldownOptions: {
-        output: {
-          manualChunks: classifyManualChunk,
-        },
-      },
     },
   },
 });

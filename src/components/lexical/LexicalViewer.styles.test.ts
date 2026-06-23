@@ -13,7 +13,9 @@ describe("Lexical viewer styles", () => {
     expect(viewerSource).toContain("editor-shell editor-shell--read-only");
     expect(viewerSource).toContain('className="ContentEditable__root"');
     expect(viewerCss).not.toContain("LexicalViewerTheme__");
-    expect(viewerCss).toContain(".lexical-playground.lexical-playground--viewer .ContentEditable__root");
+    expect(viewerCss).toContain(
+      ".lexical-playground.lexical-playground--viewer .ContentEditable__root",
+    );
     expect(viewerCss).toContain(".PlaygroundEditorTheme__layoutItem");
   });
 
@@ -21,9 +23,7 @@ describe("Lexical viewer styles", () => {
     const editorThemeCss = readSource(
       "src/components/lexical/editor/themes/PlaygroundEditorTheme.css",
     );
-    const editorOverridesCss = readSource(
-      "src/components/lexical/editor/playground-overrides.css",
-    );
+    const editorOverridesCss = readSource("src/components/lexical/editor/playground-overrides.css");
     const editableCss = readSource("src/components/lexical/editor/ui/ContentEditable.css");
 
     expect(editorThemeCss).toContain(".PlaygroundEditorTheme__table");
@@ -32,10 +32,12 @@ describe("Lexical viewer styles", () => {
     expect(editorThemeCss).toContain(".PlaygroundEditorTheme__code");
     expect(editorThemeCss).toContain(".PlaygroundEditorTheme__hr:after");
     expect(editorOverridesCss).toContain(".ContentEditable__root > * + *");
-    expect(editorOverridesCss).toContain(".editor-shell.editor-shell--read-only .ContentEditable__root");
+    expect(editorOverridesCss).toContain(
+      ".editor-shell.editor-shell--read-only .ContentEditable__root",
+    );
     expect(editorOverridesCss).toContain(".lexical-tweet__target");
     expect(editorOverridesCss).toContain(
-      "clip-path: inset(-3px round calc(var(--lexical-content-embed-radius, 16px) + 3px));",
+      "clip-path: inset(-3px round calc(var(--lexical-content-embed-radius, 16px) + 8px));",
     );
     expect(editableCss).toContain("font-size: var(--lexical-content-font-size, 15px);");
     expect(editableCss).toContain("line-height: var(--lexical-content-line-height, 1.75);");

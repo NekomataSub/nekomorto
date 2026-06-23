@@ -33,6 +33,14 @@ if (/<link[^>]+rel=["']modulepreload["'][^>]+href=["'][^"']*mui-[^"']*\.js["']/i
   fail("index.html contém modulepreload de chunk mui-*.js no entry público.");
 }
 
+if (
+  /<link[^>]+rel=["']modulepreload["'][^>]+href=["'][^"']*(?:charts|lexical)(?:-|~)[^"']*\.js["']/i.test(
+    html,
+  )
+) {
+  fail("index.html contém modulepreload de editor ou gráficos no entry público.");
+}
+
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const readDistAsset = (relativeAssetPath) => {
@@ -50,15 +58,46 @@ if (!fs.existsSync(assetsDir)) {
   process.exit();
 }
 
+const astroClientAssetsDir = path.join(workspaceRoot, "dist-astro", "client", "_astro");
+if (!fs.existsSync(astroClientAssetsDir)) {
+  fail(`diretório de assets Astro não encontrado: ${astroClientAssetsDir}`);
+  process.exit();
+}
+
+const criticalAstroIslandPrefixes = ["PublicChromeIsland.", "PublicHomeIsland."];
+const criticalAstroIslandFiles = fs
+  .readdirSync(astroClientAssetsDir)
+  .filter(
+    (fileName) =>
+      fileName.endsWith(".js") &&
+      criticalAstroIslandPrefixes.some((prefix) => fileName.startsWith(prefix)),
+  );
+
+for (const prefix of criticalAstroIslandPrefixes) {
+  if (!criticalAstroIslandFiles.some((fileName) => fileName.startsWith(prefix))) {
+    fail(`island Astro crítico não encontrado para o prefixo ${prefix}`);
+  }
+}
+
+for (const fileName of criticalAstroIslandFiles) {
+  const source = fs.readFileSync(path.join(astroClientAssetsDir, fileName), "utf8");
+  if (/from["']\.\/(?:charts|lexical)[.~_-][^"']+\.js["']/.test(source)) {
+    fail(`island Astro crítico importa editor ou gráficos. Arquivo: ${fileName}`);
+  }
+}
+
 const allAssetFiles = fs.readdirSync(assetsDir);
 const allJavaScriptAssets = allAssetFiles.filter((fileName) => fileName.endsWith(".js"));
 
 const findChunkFilesByPrefix = (prefix, excludePrefixes = []) =>
   allJavaScriptAssets.filter((fileName) => {
-    if (!fileName.startsWith(`${prefix}-`)) {
+    if (!fileName.startsWith(`${prefix}-`) && !fileName.startsWith(`${prefix}~`)) {
       return false;
     }
-    return !excludePrefixes.some((excludedPrefix) => fileName.startsWith(`${excludedPrefix}-`));
+    return !excludePrefixes.some(
+      (excludedPrefix) =>
+        fileName.startsWith(`${excludedPrefix}-`) || fileName.startsWith(`${excludedPrefix}~`),
+    );
   });
 
 const entryScriptMatch = html.match(/<script[^>]+type=["']module["'][^>]+src=["']([^"']+)["']/i);

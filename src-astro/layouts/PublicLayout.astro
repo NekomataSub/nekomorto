@@ -146,6 +146,13 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
     {_imageAlt ? <meta name="twitter:image:alt" content={_imageAlt} /> : null}
     <link rel="canonical" href={_canonicalUrl} />
     {_absoluteFavicon ? <link rel="icon" href={_absoluteFavicon} /> : null}
+    <link
+      rel="preload"
+      href="/fonts/inter/InterLatin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <script is:inline set:html={themeModeBootstrapScript} />
     <ClientRouter />
     {
@@ -164,6 +171,7 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
     }
   </head>
   <body class="public-scrollbar-gutter-stable min-h-screen bg-background text-foreground">
+    <a class="public-skip-link" href="#public-main-content">Pular para o conteúdo</a>
     <div class:list={["flex min-h-screen flex-col bg-background text-foreground", _hasSurfaceGradient && "bg-gradient-surface"]}>
       <PublicChromeIsland
         client:idle
