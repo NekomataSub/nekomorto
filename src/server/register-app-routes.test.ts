@@ -124,4 +124,17 @@ describe("registerAppRoutes", () => {
     );
     expect(body).toEqual({ error: "not_found" });
   });
+
+  it("returns index-safe HTML with a real 404 for unknown application routes", async () => {
+    const started = await createTestServer();
+    activeServer = started.server;
+
+    const response = await fetch(`${started.baseUrl}/rota-inexistente`);
+    const body = await response.text();
+
+    expect(response.status).toBe(404);
+    expect(String(response.headers.get("content-type") || "").toLowerCase()).toContain("text/html");
+    expect(body).toContain("<title>Página não encontrada</title>");
+    expect(body).toContain('<meta name="robots" content="noindex, nofollow" />');
+  });
 });

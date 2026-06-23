@@ -22,6 +22,9 @@ const routePayload =
     ? (locals.routePayload as PublicRouteProjectDetailPayload)
     : null;
 const project = routePayload?.project || null;
+if (!project) {
+  Astro.response.status = 404;
+}
 const tagTranslationMap = buildTranslationMap(routePayload?.tagTranslations?.tags || {});
 const translatedTags = project
   ? sortByTranslatedLabel(project.tags || [], (tag) => translateTag(tag, tagTranslationMap)).map(
@@ -126,6 +129,7 @@ const _meta = resolveProjectPageMeta({
   description={_meta.description}
   image={_meta.image}
   imageAlt={_meta.imageAlt}
+  robots={_meta.robots}
   structuredData={_meta.structuredData}
   title={_meta.title}
 >

@@ -2,7 +2,7 @@
 import "../../src/index.css";
 import "../../src/styles/fonts.css";
 import { ClientRouter } from "astro:transitions";
-import { serializeSchemaOrgEntry } from "../../server/lib/schema-org.js";
+import { buildSchemaOrgPayload, serializeSchemaOrgEntry } from "../../server/lib/schema-org.js";
 import {
   buildThemeModeBootstrapScript,
   getThemeModeDocumentAttributes,
@@ -16,6 +16,7 @@ interface Props {
   description: string;
   image?: string;
   imageAlt?: string;
+  openGraphType?: "article" | "website";
   robots?: string;
   structuredData?: unknown[];
   title: string;
@@ -25,6 +26,7 @@ const {
   description: _description,
   image: _image = "",
   imageAlt: _imageAlt = "",
+  openGraphType: _openGraphType = "website",
   robots: _robots = "index, follow",
   canonicalUrl: _canonicalUrlProp = "",
   structuredData: _structuredData = [],
@@ -109,6 +111,16 @@ const _absoluteImage = _image ? new URL(_image, _canonicalUrl).toString() : "";
 const _absoluteFavicon = chrome.siteFaviconUrl
   ? new URL(chrome.siteFaviconUrl, _canonicalUrl).toString()
   : "";
+const _resolvedStructuredData =
+  Array.isArray(_structuredData) && _structuredData.length > 0
+    ? _structuredData
+    : buildSchemaOrgPayload({
+        canonicalUrl: _canonicalUrl,
+        origin: new URL(_canonicalUrl).origin,
+        pages: locals?.pages || locals?.publicBootstrap?.pages,
+        pathname: Astro.url.pathname,
+        settings: siteSettings,
+      } as any);
 const _location = `${Astro.url.pathname}${Astro.url.search}`;
 const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
 ---
@@ -133,7 +145,7 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
     <meta name="theme-color" content={chrome.themeColor} />
     <meta property="og:title" content={_pageTitle} />
     <meta property="og:description" content={_description} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={_openGraphType} />
     <meta property="og:url" content={_canonicalUrl} />
     <meta property="og:site_name" content={chrome.siteName} />
     <meta property="og:locale" content="pt_BR" />
@@ -156,8 +168,8 @@ const _hasSurfaceGradient = Astro.url.pathname === "/projetos";
     <script is:inline set:html={themeModeBootstrapScript} />
     <ClientRouter />
     {
-      Array.isArray(_structuredData)
-        ? _structuredData
+      Array.isArray(_resolvedStructuredData)
+        ? _resolvedStructuredData
             .filter((entry) => entry && typeof entry === "object")
             .map((entry) => (
               <script

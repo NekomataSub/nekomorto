@@ -30,6 +30,7 @@
     "db:backfill:normalized": "node --env-file=.env scripts/backfill-normalized-runtime.mjs",
     "projects:backfill:anilist": "node --env-file=.env scripts/backfill-project-anilist-metadata.mjs",
     "api:smoke": "node scripts/smoke-api.mjs",
+    "seo:public:check": "node scripts/check-public-seo.mjs",
     "api:health:check": "node scripts/check-health.mjs",
     "staging:parity:check": "node scripts/check-staging-parity.mjs",
     "reports:outdated": "node scripts/save-outdated-report.mjs",

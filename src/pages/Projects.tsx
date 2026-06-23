@@ -1193,6 +1193,14 @@ const Projects = ({ initialPath = "/projetos" }: { initialPath?: string }) => {
           className={`${publicPageLayoutTokens.sectionBase} max-w-6xl pb-20 reveal`}
           data-reveal
         >
+          <header className="mb-8 max-w-3xl space-y-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+              Projetos
+            </h1>
+            <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
+              Explore o catálogo publicado e encontre projetos por formato, gênero ou título.
+            </p>
+          </header>
           <ProjectsFiltersPanel
             isMobile={isMobile}
             isMobileFiltersOpen={isMobileFiltersOpen}

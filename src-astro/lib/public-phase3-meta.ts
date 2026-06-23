@@ -21,7 +21,7 @@ import type {
 import type { SiteSettings } from "../../src/types/site-settings";
 
 const DEFAULT_DESCRIPTION =
-  "Nekomata e uma fansub e scan feita por fas, com traducoes cuidadosas, carinho pela comunidade e respeito aos autores.";
+  "Nekomata é uma fansub e scan feita por fãs, com traduções cuidadosas, carinho pela comunidade e respeito aos autores.";
 
 const stripHtml = (value: string) =>
   String(value || "")
@@ -45,6 +45,27 @@ const resolvePageImage = (origin: string, image: string) => {
   } catch {
     return value;
   }
+};
+
+const countMatchingTitles = (items: Array<{ title?: string }> | undefined, title: string) =>
+  (Array.isArray(items) ? items : []).filter(
+    (item) =>
+      String(item?.title || "")
+        .trim()
+        .toLocaleLowerCase("pt-BR") === title.toLocaleLowerCase("pt-BR"),
+  ).length;
+
+const formatPublishedDate = (value: unknown) => {
+  const date = new Date(String(value || ""));
+  if (!Number.isFinite(date.getTime())) {
+    return "";
+  }
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "UTC",
+    year: "numeric",
+  }).format(date);
 };
 
 export const resolveHomePageMeta = ({
@@ -77,7 +98,7 @@ export const resolveHomePageMeta = ({
       pathname,
       settings: siteSettings,
     } as any),
-    title: "Inicio",
+    title: "Início",
   };
 };
 
@@ -141,6 +162,12 @@ export const resolveProjectPageMeta = ({
   const origin = resolveOrigin("", fallbackOrigin);
   const canonicalUrl = resolveCanonicalUrl(origin, pathname);
   const project = (routePayload?.project || null) as PublicBootstrapProject | null;
+  const projectTitle = String(project?.title || "Projeto").trim() || "Projeto";
+  const projectType = String(project?.type || "").trim();
+  const title =
+    project && projectType && countMatchingTitles(publicBootstrap?.projects, projectTitle) > 1
+      ? `${projectTitle} (${projectType})`
+      : projectTitle;
   const image = project?.id
     ? buildVersionedProjectOgImagePath({
         projectId: project.id,
@@ -169,7 +196,8 @@ export const resolveProjectPageMeta = ({
       project,
       settings: siteSettings,
     } as any),
-    title: String(project?.title || "Projeto").trim() || "Projeto",
+    robots: project ? "index, follow" : "noindex, nofollow",
+    title,
   };
 };
 
@@ -187,6 +215,14 @@ export const resolvePostPageMeta = ({
   const origin = resolveOrigin("", fallbackOrigin);
   const canonicalUrl = resolveCanonicalUrl(origin, pathname);
   const post = publicBootstrap?.currentPostDetail as PublicBootstrapPostDetail | null;
+  const postTitle = String(post?.seoTitle || post?.title || "Postagem").trim() || "Postagem";
+  const publishedDate = formatPublishedDate(post?.publishedAt);
+  const title =
+    post &&
+    publishedDate &&
+    countMatchingTitles(publicBootstrap?.posts, String(post.title || "")) > 1
+      ? `${postTitle} — ${publishedDate}`
+      : postTitle;
   const firstPostImage = extractFirstImageFromPostContent(post?.content, post?.contentFormat);
   const postRevision = buildPostOgRevision({
     coverImageUrl: post?.coverImageUrl,
@@ -216,6 +252,7 @@ export const resolvePostPageMeta = ({
       post,
       settings: siteSettings,
     } as any),
-    title: String(post?.seoTitle || post?.title || "Postagem").trim() || "Postagem",
+    robots: post ? "index, follow" : "noindex, nofollow",
+    title,
   };
 };

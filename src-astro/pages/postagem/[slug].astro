@@ -6,6 +6,10 @@ import { resolvePostPageMeta } from "../../lib/public-phase3-meta";
 const locals = Astro.locals.nekomata;
 const publicBootstrap = locals?.publicBootstrap || null;
 const siteSettings = locals?.siteSettings;
+const post = publicBootstrap?.currentPostDetail || null;
+if (!post) {
+  Astro.response.status = 404;
+}
 const _meta = resolvePostPageMeta({
   fallbackOrigin: locals?.primaryAppOrigin || Astro.url.origin,
   pathname: Astro.url.pathname,
@@ -19,6 +23,8 @@ const _meta = resolvePostPageMeta({
   description={_meta.description}
   image={_meta.image}
   imageAlt={_meta.imageAlt}
+  openGraphType="article"
+  robots={_meta.robots}
   structuredData={_meta.structuredData}
   title={_meta.title}
 >

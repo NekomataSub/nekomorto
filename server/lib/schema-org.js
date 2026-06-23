@@ -83,11 +83,6 @@ const buildWebSiteSchema = ({ origin, settings }) => {
     url: `${origin}/`,
     name: siteName,
     publisher: { "@id": `${origin}#organization` },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${origin}/projetos?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
   };
   if (description) {
     schema.description = description;
@@ -142,7 +137,7 @@ const buildBreadcrumbSchema = ({ origin, pathname, canonicalUrl, post, project }
   const parts = buildBreadcrumbParts({ origin, pathname, canonicalUrl, post, project }).filter(
     (item) => asTrimmedString(item?.name) && asTrimmedString(item?.item),
   );
-  if (parts.length === 0) {
+  if (parts.length < 2) {
     return null;
   }
   return {

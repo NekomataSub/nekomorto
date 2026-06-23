@@ -10,6 +10,13 @@ const chapterNumber = Number.isFinite(parsedChapterNumber) ? parsedChapterNumber
 const parsedVolume = Number(Astro.url.searchParams.get("volume"));
 const volume = Number.isFinite(parsedVolume) ? parsedVolume : undefined;
 const publicBootstrap = locals?.publicBootstrap || null;
+const routePayload =
+  locals?.routePayload && locals.routePayload.kind === "project-reading"
+    ? locals.routePayload
+    : null;
+if (!routePayload) {
+  Astro.response.status = 404;
+}
 const _meta = resolveProjectReadingPageMeta({
   chapterNumber,
   fallbackOrigin: locals?.primaryAppOrigin || Astro.url.origin,

@@ -49,6 +49,13 @@ describe("schema.org payload", () => {
     expect(payload.some((entry) => entry["@type"] === "WebSite")).toBe(true);
     expect(payload.some((entry) => entry["@type"] === "BreadcrumbList")).toBe(true);
 
+    const website = payload.find((entry) => entry["@type"] === "WebSite");
+    expect(website?.potentialAction).toBeUndefined();
+
+    const breadcrumb = payload.find((entry) => entry["@type"] === "BreadcrumbList");
+    expect(breadcrumb?.itemListElement).toHaveLength(2);
+    expect(breadcrumb?.itemListElement?.map((item) => item.position)).toEqual([1, 2]);
+
     const article = payload.find((entry) => entry["@type"] === "Article");
     expect(article).toBeDefined();
     expect(article?.headline).toBe("Titulo do post");
@@ -121,6 +128,18 @@ describe("schema.org payload", () => {
     });
     expect(dashboardPayload).toEqual([]);
     expect(readerPayload).toEqual([]);
+  });
+
+  it("omite breadcrumb quando a trilha tem menos de dois itens", () => {
+    const payload = buildSchemaOrgPayload({
+      origin: "https://nekomata.moe",
+      pathname: "/",
+      canonicalUrl: "https://nekomata.moe/",
+      settings: settingsFixture,
+      pages: {},
+    });
+
+    expect(payload.some((entry) => entry["@type"] === "BreadcrumbList")).toBe(false);
   });
 });
 
