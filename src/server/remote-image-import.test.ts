@@ -35,6 +35,18 @@ afterEach(() => {
 });
 
 describe("importRemoteImageFile", () => {
+  it("rejeita hostnames privados em IPv6 bracketed bypass", async () => {
+    const fetchMock = vi.fn();
+    const result = await importRemoteImageFile({
+      remoteUrl: "http://[::1]/imagem.png",
+      uploadsDir: createTempUploadsDir(),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.ok === false ? result.error?.code : null).toBe("host_not_allowed");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("baixa imagem valida e salva em /uploads com metadados", async () => {
     const uploadsDir = createTempUploadsDir();
     const fetchMock = vi.fn(

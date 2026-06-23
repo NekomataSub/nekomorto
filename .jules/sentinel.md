@@ -12,3 +12,7 @@
 **Vulnerability:** Raw HTML strings were assigned to `innerHTML` sinks without sanitization within `src/lexical-playground/nodes/ImageNode.tsx` and `src/lexical-playground/hooks/useReport.ts`.
 **Learning:** Even within an encapsulated rich-text editor setup or helper hooks, directly passing HTML strings to `innerHTML` exposes an XSS risk if those strings can be populated with user content.
 **Prevention:** Always sanitize strings with `DOMPurify.sanitize` (using strict profiles like `{ USE_PROFILES: { html: true } }` where appropriate) before rendering them via `innerHTML` or `dangerouslySetInnerHTML`.
+## 2025-05-24 - [SSRF Bypass via IPv6 Brackets]
+**Vulnerability:** Server-Side Request Forgery (SSRF) bypass due to `net.isIP` failing to recognize IPv6 addresses enclosed in square brackets (e.g., `[::1]`). Node.js `URL` parsing retains the brackets in `url.hostname`, so `isPrivateHost("[::1]")` evaluated to false, allowing private IP targets.
+**Learning:** Checking hostnames directly from `URL.hostname` against `net.isIP()` can be bypassed if IPv6 brackets are present because `net.isIP("[::1]")` returns 0.
+**Prevention:** Always strip leading and trailing square brackets (`.replace(/^\[|\]$/g, '')`) from parsed hostnames before evaluating them with `net.isIP()` or custom IP parsing logic.
