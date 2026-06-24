@@ -41,11 +41,14 @@ const isPrivateIpv4 = (value) => {
   return false;
 };
 
-const isPrivateIpv6 = (value) => {
-  const normalized = String(value || "")
+const unbracket = (val) =>
+  String(val || "")
     .trim()
     .toLowerCase()
-    .replace(/%.+$/, "");
+    .replace(/^\[|\]$/g, "");
+
+const isPrivateIpv6 = (value) => {
+  const normalized = unbracket(value).replace(/%.+$/, "");
   if (!net.isIP(normalized) || net.isIP(normalized) !== 6) {
     return false;
   }
@@ -70,9 +73,7 @@ const isPrivateIpv6 = (value) => {
 };
 
 const isPrivateHost = (host) => {
-  const normalized = String(host || "")
-    .trim()
-    .toLowerCase();
+  const normalized = unbracket(host);
   if (!normalized) {
     return true;
   }

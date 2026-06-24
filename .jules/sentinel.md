@@ -12,3 +12,7 @@
 **Vulnerability:** Raw HTML strings were assigned to `innerHTML` sinks without sanitization within `src/lexical-playground/nodes/ImageNode.tsx` and `src/lexical-playground/hooks/useReport.ts`.
 **Learning:** Even within an encapsulated rich-text editor setup or helper hooks, directly passing HTML strings to `innerHTML` exposes an XSS risk if those strings can be populated with user content.
 **Prevention:** Always sanitize strings with `DOMPurify.sanitize` (using strict profiles like `{ USE_PROFILES: { html: true } }` where appropriate) before rendering them via `innerHTML` or `dangerouslySetInnerHTML`.
+## $(date +%Y-%m-%d) - [SSRF] IPv6 Bracket Bypass in URL Hostname Validation
+**Vulnerability:** The `isPrivateHost` and `isPrivateIpv6` checks bypassed private IP validation when an IPv6 URL is constructed (e.g., `http://[::1]`) because `new URL()` retains the brackets. Consequently, `net.isIP("[::1]")` evaluated to 0 (false), allowing SSRF.
+**Learning:** `new URL(url).hostname` retains the brackets around IPv6 addresses (as per standard). Node's `net.isIP()` function expects the raw IPv6 address without brackets, thus evaluating to 0.
+**Prevention:** To prevent SSRF bypasses via bracketed IPv6 URLs, always strip leading and trailing brackets from the hostname before evaluating against `net.isIP()` or local domain denylists.
