@@ -11,3 +11,7 @@
 ## 2025-05-01 - Avoid precomputing timestamps unconditionally
 **Learning:** Precomputing timestamps for sorting avoids O(N log N) date parsing, but precomputing them unconditionally when the array might be sorted by non-date keys (e.g., alphabetically or by views) introduces unnecessary O(N) date parsing overhead.
 **Action:** Only precompute timestamps inside `useMemo` hooks if the selected `sortMode` actually utilizes those timestamps for sorting.
+
+## 2025-05-01 - Replace localeCompare with Intl.Collator for Dashboard List Sorting
+**Learning:** `String.prototype.localeCompare` recreates `Intl.Collator` instances internally on every call, causing a massive performance hit (~3x slower) when used inside array sorting comparators (`O(N log N)`).
+**Action:** Always pre-instantiate `Intl.Collator` with the desired sensitivity (e.g., `variant` for `localeCompare` equivalence or `base` for insensitive comparisons) and use its `.compare()` method to optimize dashboard list sorting and filtering operations across large datasets.
