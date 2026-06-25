@@ -1211,7 +1211,7 @@ const DashboardUsers = () => {
     if (isAddingPasskey) return;
     setIsAddingPasskey(true);
     try {
-      const result = await authClient.passkey.addPasskey({ name: "Passkey Nekomorto" });
+      const result = await authClient.passkey.addPasskey({ name: "Nekomata" });
       if (result.error) {
         toast({ title: "Não foi possível cadastrar a passkey", variant: "destructive" });
         return;

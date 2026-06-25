@@ -195,7 +195,7 @@ const setupApiMock = ({
         passkeys: [
           {
             id: "passkey-existing",
-            name: "Passkey Nekomorto",
+            name: "Nekomata",
             deviceType: "singleDevice",
             backedUp: false,
             createdAt: "2026-04-12T21:44:00.000Z",
@@ -284,7 +284,7 @@ describe("DashboardUsers connected accounts", () => {
     renderDashboardUsers("/dashboard/usuarios?edit=me");
 
     fireEvent.click(await screen.findByRole("button", { name: "Adicionar passkey" }));
-    await waitFor(() => expect(addPasskeyMock).toHaveBeenCalledWith({ name: "Passkey Nekomorto" }));
+    await waitFor(() => expect(addPasskeyMock).toHaveBeenCalledWith({ name: "Nekomata" }));
 
     fireEvent.click(screen.getByRole("button", { name: "Remover" }));
     fireEvent.click(await screen.findByRole("button", { name: "Remover passkey" }));
