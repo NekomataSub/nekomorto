@@ -1,6 +1,7 @@
 ---
 import "../../src/index.css";
 import "../../src/styles/fonts.css";
+import { buildAstroAssetRecoveryBootstrapScript } from "../../src/lib/astro-asset-recovery-bootstrap";
 import {
   buildThemeModeBootstrapScript,
   getThemeModeDocumentAttributes,
@@ -36,6 +37,7 @@ const canonicalUrl =
 const absoluteImage = _image ? new URL(_image, canonicalUrl).toString() : "";
 const themeModeDocument = getThemeModeDocumentAttributes(locals?.siteSettings);
 const themeModeBootstrapScript = buildThemeModeBootstrapScript(locals?.siteSettings);
+const astroAssetRecoveryBootstrapScript = buildAstroAssetRecoveryBootstrapScript();
 ---
 
 <!doctype html>
@@ -71,6 +73,7 @@ const themeModeBootstrapScript = buildThemeModeBootstrapScript(locals?.siteSetti
     {_imageAlt ? <meta name="twitter:image:alt" content={_imageAlt} /> : null}
     <link rel="canonical" href={canonicalUrl} />
     <script is:inline set:html={themeModeBootstrapScript} />
+    <script is:inline set:html={astroAssetRecoveryBootstrapScript} />
   </head>
   <body class="min-h-screen bg-background text-foreground">
     <slot />

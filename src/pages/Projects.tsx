@@ -706,7 +706,7 @@ const Projects = ({ initialPath = "/projetos" }: { initialPath?: string }) => {
         setHasProjectsLoadError(false);
       }
       try {
-        const response = await apiFetch(apiBase, "/api/public/projects");
+        const response = await apiFetch(apiBase, "/api/public/projects?view=catalog");
         if (!response.ok) {
           if (isActive) {
             setHasProjectsLoadError(true);

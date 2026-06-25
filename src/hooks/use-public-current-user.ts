@@ -70,6 +70,27 @@ const primePublicCurrentUserCache = (value: PublicBootstrapCurrentUser | null) =
   return true;
 };
 
+const hasAccessGrantsSnapshot = (user: PublicBootstrapCurrentUser | null | undefined) =>
+  Boolean(
+    user?.grants &&
+      typeof user.grants === "object" &&
+      !Array.isArray(user.grants) &&
+      Object.keys(user.grants).length > 0,
+  );
+
+const resolveSnapshotCurrentUser = (
+  bootstrapUser: PublicBootstrapCurrentUser | null,
+  options: { allowCache?: boolean } = {},
+) => {
+  const cachedUser = options.allowCache === false ? null : publicCurrentUserCache.currentUser;
+  const isSameUser =
+    !bootstrapUser || String(bootstrapUser.id || "") === String(cachedUser?.id || "");
+  if (cachedUser && isSameUser && (!bootstrapUser || hasAccessGrantsSnapshot(cachedUser))) {
+    return cachedUser;
+  }
+  return bootstrapUser || cachedUser;
+};
+
 const resetPublicCurrentUserCache = () => {
   const inFlightPromise = publicCurrentUserCache.inFlightPromise;
   publicCurrentUserCache = createPublicCurrentUserCache();
@@ -90,8 +111,7 @@ const buildSnapshot = (
   bootstrapUser: PublicBootstrapCurrentUser | null = null,
   options: { allowCache?: boolean } = {},
 ): PublicCurrentUserSnapshot => {
-  const currentUser =
-    bootstrapUser || (options.allowCache === false ? null : publicCurrentUserCache.currentUser);
+  const currentUser = resolveSnapshotCurrentUser(bootstrapUser, options);
   return {
     currentUser,
     error: publicCurrentUserCache.error,
@@ -217,6 +237,13 @@ export const usePublicCurrentUser = () => {
   }, [bootstrapCurrentUser, hasBootstrapProvider]);
 
   useEffect(() => {
+    if (
+      publicCurrentUserCache.currentUser &&
+      !hasAccessGrantsSnapshot(publicCurrentUserCache.currentUser)
+    ) {
+      void requestPublicCurrentUser(apiBase, { force: true });
+      return;
+    }
     if (!shouldFetchPublicCurrentUser()) {
       return;
     }

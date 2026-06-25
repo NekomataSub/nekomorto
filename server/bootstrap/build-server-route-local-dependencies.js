@@ -63,6 +63,8 @@ export const buildServerRouteLocalDependencies = (dependencies = {}) => ({
   createUploadStagingWorkspace: dependencies.createUploadStagingWorkspace,
   crypto: dependencies.crypto,
   dataEncryptionKeyring: dependencies.dataEncryptionKeyring,
+  resetBetterAuthPasskeysForUser: dependencies.resetBetterAuthPasskeysForUser,
+  resetBetterAuthTotpForUser: dependencies.resetBetterAuthTotpForUser,
   deleteManagedUploadEntryAssets: dependencies.deleteManagedUploadEntryAssets,
   deletePrivateUploadByUrl: dependencies.deletePrivateUploadByUrl,
   deriveAniListMediaOrganization: dependencies.deriveAniListMediaOrganization,

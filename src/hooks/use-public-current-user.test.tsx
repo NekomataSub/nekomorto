@@ -25,6 +25,17 @@ const Consumer = ({ testId }: { testId: string }) => {
   return <div data-testid={testId}>{currentUser?.name || "anon"}</div>;
 };
 
+const GrantsConsumer = () => {
+  const { currentUser } = usePublicCurrentUser();
+  return (
+    <div data-testid="grants-state">
+      {currentUser?.grants?.posts === true && currentUser?.grants?.configuracoes === true
+        ? "hydrated"
+        : "partial"}
+    </div>
+  );
+};
+
 describe("usePublicCurrentUser", () => {
   it("dedupes /api/public/me across concurrent consumers", async () => {
     apiFetchMock.mockReset();
@@ -67,5 +78,45 @@ describe("usePublicCurrentUser", () => {
 
     expect(await screen.findByTestId("consumer-a")).toHaveTextContent("Admin");
     expect(await screen.findByTestId("consumer-b")).toHaveTextContent("Admin");
+  });
+
+  it("prefers /api/public/me over partial bootstrap when access grants are missing", async () => {
+    apiFetchMock.mockReset();
+    apiFetchMock.mockImplementation(
+      async (_apiBase: string, endpoint: string, options?: RequestInit) => {
+        const method = String(options?.method || "GET").toUpperCase();
+        if (endpoint === "/api/public/me" && method === "GET") {
+          return mockJsonResponse(true, {
+            user: {
+              id: "user-1",
+              name: "Admin",
+              username: "admin",
+              grants: {
+                posts: true,
+                configuracoes: true,
+              },
+            },
+          });
+        }
+        return mockJsonResponse(false, { error: "not_found" }, 404);
+      },
+    );
+
+    (
+      window as Window & {
+        __BOOTSTRAP_PUBLIC_ME__?: unknown;
+      }
+    ).__BOOTSTRAP_PUBLIC_ME__ = {
+      id: "user-1",
+      name: "Admin",
+      username: "admin",
+    };
+
+    render(<GrantsConsumer />);
+
+    expect(screen.getByTestId("grants-state")).toHaveTextContent("partial");
+    await waitFor(() => {
+      expect(screen.getByTestId("grants-state")).toHaveTextContent("hydrated");
+    });
   });
 });

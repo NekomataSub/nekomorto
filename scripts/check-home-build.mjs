@@ -10,7 +10,7 @@ const MAX_HOME_CRITICAL_CSS_BYTES =
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, "..");
-const distDir = path.join(workspaceRoot, "dist");
+const distDir = path.resolve(process.env.CLIENT_DIST_DIR || path.join(workspaceRoot, "dist"));
 const indexHtmlPath = path.join(distDir, "index.html");
 
 const fail = (message) => {
@@ -58,7 +58,10 @@ if (!fs.existsSync(assetsDir)) {
   process.exit();
 }
 
-const astroClientAssetsDir = path.join(workspaceRoot, "dist-astro", "client", "_astro");
+const astroDistDir = path.resolve(
+  process.env.ASTRO_DIST_DIR || path.join(workspaceRoot, "dist-astro"),
+);
+const astroClientAssetsDir = path.join(astroDistDir, "client", "_astro");
 if (!fs.existsSync(astroClientAssetsDir)) {
   fail(`diretório de assets Astro não encontrado: ${astroClientAssetsDir}`);
   process.exit();

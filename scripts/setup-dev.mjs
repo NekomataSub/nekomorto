@@ -335,6 +335,8 @@ const createAppEnvInteractive = async (databaseUrl) => {
   const googleClientSecret = await ask("GOOGLE_CLIENT_SECRET");
   const sessionSecret =
     (await ask("SESSION_SECRET (leave blank to generate)", "")) || randomSecret();
+  const betterAuthSecret =
+    (await ask("BETTER_AUTH_SECRET (leave blank to generate)", "")) || randomSecret();
   const ownerIds = await ask("OWNER_IDS (comma-separated, optional)");
 
   let bootstrapToken = "";
@@ -357,6 +359,7 @@ const createAppEnvInteractive = async (databaseUrl) => {
     GOOGLE_CLIENT_SECRET: googleClientSecret,
     GOOGLE_REDIRECT_URI: googleRedirectUri,
     SESSION_SECRET: sessionSecret,
+    BETTER_AUTH_SECRET: betterAuthSecret,
     OWNER_IDS: ownerIds,
     BOOTSTRAP_TOKEN: bootstrapToken,
   });

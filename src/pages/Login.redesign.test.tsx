@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const apiFetchMock = vi.hoisted(() => vi.fn());
 const navigateMock = vi.hoisted(() => vi.fn());
+const signInSocialMock = vi.hoisted(() => vi.fn());
+const signInPasskeyMock = vi.hoisted(() => vi.fn());
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -37,6 +39,19 @@ vi.mock("@/lib/api-base", () => ({
 
 vi.mock("@/lib/api-client", () => ({
   apiFetch: (...args: unknown[]) => apiFetchMock(...args),
+}));
+
+vi.mock("@/lib/auth-client", () => ({
+  authClient: {
+    signIn: {
+      social: (...args: unknown[]) => signInSocialMock(...args),
+      passkey: (...args: unknown[]) => signInPasskeyMock(...args),
+    },
+    twoFactor: {
+      verifyTotp: vi.fn(),
+      verifyBackupCode: vi.fn(),
+    },
+  },
 }));
 
 const originalLocation = window.location;
@@ -96,6 +111,10 @@ describe("Login redesign", () => {
   beforeEach(() => {
     apiFetchMock.mockReset();
     navigateMock.mockReset();
+    signInSocialMock.mockReset();
+    signInPasskeyMock.mockReset();
+    signInSocialMock.mockResolvedValue({ data: { redirect: true }, error: null });
+    signInPasskeyMock.mockResolvedValue({ data: null, error: null });
     installLocationMock();
     apiFetchMock.mockResolvedValue(mockResponse(false));
   });
@@ -110,6 +129,9 @@ describe("Login redesign", () => {
   it("renderiza a estrutura principal com classes de redesign", async () => {
     await renderLogin();
 
+    expect(apiFetchMock).toHaveBeenCalledWith("http://api.local", "/api/public/me", {
+      auth: true,
+    });
     expect(document.querySelector(".login-shell")).not.toBeNull();
     expect(document.querySelector(".login-backdrop")).not.toBeNull();
     const card = document.querySelector(".login-card");
@@ -197,6 +219,18 @@ describe("Login redesign", () => {
     });
   });
 
+  it("não redireciona visitante retornado pelo endpoint público", async () => {
+    apiFetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ user: null }),
+    } as Response);
+
+    await renderLogin();
+
+    expect(navigateMock).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Entrar com Discord" })).toBeInTheDocument();
+  });
+
   it("permite resposta de /api/me com authMethods no bootstrap", async () => {
     apiFetchMock.mockResolvedValueOnce({
       ok: true,
@@ -221,7 +255,13 @@ describe("Login redesign", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Entrar com Discord" }));
 
-    expect(locationHref).toBe("http://api.local/auth/discord?next=%2Fdashboard%2Fposts");
+    await waitFor(() =>
+      expect(signInSocialMock).toHaveBeenCalledWith({
+        provider: "discord",
+        callbackURL: "/dashboard/posts",
+        errorCallbackURL: "/login?error=unauthorized",
+      }),
+    );
   });
 
   it("monta URL de autenticacao com next no clique de entrar com Discord", async () => {
@@ -229,7 +269,7 @@ describe("Login redesign", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Entrar com Discord" }));
 
-    expect(locationHref).toBe("http://api.local/auth/discord?next=%2Fdashboard%2Fposts");
+    await waitFor(() => expect(signInSocialMock).toHaveBeenCalled());
   });
 
   it("usa fallback de autenticacao sem next", async () => {
@@ -237,7 +277,11 @@ describe("Login redesign", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Entrar com Discord" }));
 
-    expect(locationHref).toBe("http://api.local/auth/discord");
+    await waitFor(() =>
+      expect(signInSocialMock).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: "discord", callbackURL: "/dashboard" }),
+      ),
+    );
   });
 
   it("monta URL de autenticacao do Google com next", async () => {
@@ -245,7 +289,11 @@ describe("Login redesign", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Entrar com Google" }));
 
-    expect(locationHref).toBe("http://api.local/auth/google?next=%2Fdashboard%2Fposts");
+    await waitFor(() =>
+      expect(signInSocialMock).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: "google", callbackURL: "/dashboard/posts" }),
+      ),
+    );
   });
 
   it("aplica foco forte fino ao campo de V2F publico", async () => {

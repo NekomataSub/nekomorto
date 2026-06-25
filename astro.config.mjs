@@ -17,7 +17,7 @@ export default defineConfig({
   }),
   srcDir: "./src-astro",
   publicDir: "./public",
-  outDir: "./dist-astro",
+  outDir: process.env.ASTRO_OUT_DIR || "./dist-astro",
   vite: {
     resolve: {
       alias: {

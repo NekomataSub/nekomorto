@@ -117,6 +117,7 @@ export const registerRuntimeMiddleware = ({
   pwaThemeColorLight,
   primaryAppHost,
   primaryAppOrigin,
+  registerBeforeBodyParsers,
   sessionCookieConfig,
   sessionStore,
   setStaticCacheHeaders,
@@ -268,8 +269,6 @@ export const registerRuntimeMiddleware = ({
   });
 
   app.use(compression());
-  app.use(express.json({ limit: "30mb" }));
-  app.use(cookieParser());
   const apiCorsMiddleware = cors((req, callback) => {
     const corsOptions = buildCorsOptionsForRequest({
       origin: req.headers.origin,
@@ -287,6 +286,11 @@ export const registerRuntimeMiddleware = ({
   app.use("/auth", apiCorsMiddleware);
 
   app.set("trust proxy", trustProxy);
+  if (typeof registerBeforeBodyParsers === "function") {
+    registerBeforeBodyParsers(app);
+  }
+  app.use(express.json({ limit: "30mb" }));
+  app.use(cookieParser());
 
   app.use((req, res, next) => {
     if (!isProduction) {

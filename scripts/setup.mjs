@@ -37,6 +37,8 @@ const main = async () => {
   const discordClientId = await ask("DISCORD_CLIENT_ID");
   const discordClientSecret = await ask("DISCORD_CLIENT_SECRET");
   const sessionSecret = (await ask("SESSION_SECRET (leave blank to generate)")) || randomSecret();
+  const betterAuthSecret =
+    (await ask("BETTER_AUTH_SECRET (leave blank to generate)")) || randomSecret();
   const ownerIds = await ask("OWNER_IDS (comma-separated, optional)");
 
   let bootstrapToken = "";
@@ -56,6 +58,7 @@ const main = async () => {
     `DISCORD_CLIENT_SECRET=${discordClientSecret}`,
     `DISCORD_REDIRECT_URI=${redirectUri}`,
     `SESSION_SECRET=${sessionSecret}`,
+    `BETTER_AUTH_SECRET=${betterAuthSecret}`,
     `OWNER_IDS=${ownerIds}`,
     `BOOTSTRAP_TOKEN=${bootstrapToken}`,
     "",

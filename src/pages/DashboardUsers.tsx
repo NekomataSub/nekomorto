@@ -55,6 +55,7 @@ import {
 } from "@/lib/access-control";
 import { getApiBase } from "@/lib/api-base";
 import { apiFetch } from "@/lib/api-client";
+import { authClient } from "@/lib/auth-client";
 import { buildAvatarRenderUrl } from "@/lib/avatar-render-url";
 import { filterImageLibraryFoldersByAccess } from "@/lib/image-library-scope";
 import {
@@ -72,7 +73,6 @@ import {
   Palette,
   PenTool,
   Play,
-  ShieldOff,
   Sparkles,
   Trash2,
   UserRound,
@@ -236,6 +236,13 @@ type SecuritySummary = {
     linkedAt?: string | null;
     lastUsedAt?: string | null;
     disabledAt?: string | null;
+  }>;
+  passkeys?: Array<{
+    id: string;
+    name: string;
+    deviceType?: string;
+    backedUp?: boolean;
+    createdAt?: string | null;
   }>;
 };
 
@@ -585,6 +592,8 @@ const DashboardUsers = () => {
   const [deleteTarget, setDeleteTarget] = useState<UserRecord | null>(null);
   const [resetMfaTarget, setResetMfaTarget] = useState<UserRecord | null>(null);
   const [isResettingMfa, setIsResettingMfa] = useState(false);
+  const [resetPasskeysTarget, setResetPasskeysTarget] = useState<UserRecord | null>(null);
+  const [isResettingPasskeys, setIsResettingPasskeys] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [editorAvatarPreviewRevision, setEditorAvatarPreviewRevision] = useState<string | null>(
     null,
@@ -607,6 +616,11 @@ const DashboardUsers = () => {
   const [securityEnrollCode, setSecurityEnrollCode] = useState("");
   const [securityDisableCode, setSecurityDisableCode] = useState("");
   const [securityRecoveryCodes, setSecurityRecoveryCodes] = useState<string[]>([]);
+  const [isAddingPasskey, setIsAddingPasskey] = useState(false);
+  const [removePasskeyTarget, setRemovePasskeyTarget] = useState<
+    NonNullable<SecuritySummary["passkeys"]>[number] | null
+  >(null);
+  const [removingPasskeyId, setRemovingPasskeyId] = useState<string | null>(null);
   const [isDisconnectingIdentityProvider, setIsDisconnectingIdentityProvider] = useState<
     string | null
   >(null);
@@ -754,14 +768,28 @@ const DashboardUsers = () => {
       setOwnerToggle(isOwnerUser(user));
       setResetMfaTarget(null);
       setIsResettingMfa(false);
-      setEditorAccordionValue(
-        getDefaultUserEditorAccordionValue(Boolean(currentUser && user.id === currentUser.id)),
+      setResetPasskeysTarget(null);
+      setIsResettingPasskeys(false);
+      const isSelf = Boolean(currentUser && user.id === currentUser.id);
+      const canRecoverCredentials = Boolean(
+        !isSelf && (isPrimaryOwnerActor || (isSecondaryOwnerActor && !isOwnerUser(user))),
       );
+      setEditorAccordionValue([
+        ...getDefaultUserEditorAccordionValue(isSelf),
+        ...(canRecoverCredentials ? ["recuperacao-acesso"] : []),
+      ]);
       setIsEditorDialogScrolled(false);
       clearSocialDragState();
       setIsDialogOpen(true);
     },
-    [clearSocialDragState, currentUser, isOwnerUser, resolveUserAccessRole],
+    [
+      clearSocialDragState,
+      currentUser,
+      isOwnerUser,
+      isPrimaryOwnerActor,
+      isSecondaryOwnerActor,
+      resolveUserAccessRole,
+    ],
   );
   const clearSelfEditQuery = useCallback(() => {
     if (!isSelfEditQuery(searchParams)) {
@@ -787,7 +815,7 @@ const DashboardUsers = () => {
       if (!nextOpen && isLibraryOpen) {
         return;
       }
-      if (!nextOpen && resetMfaTarget) {
+      if (!nextOpen && (resetMfaTarget || resetPasskeysTarget || removePasskeyTarget)) {
         return;
       }
       setIsDialogOpen(nextOpen);
@@ -796,7 +824,13 @@ const DashboardUsers = () => {
         clearSelfEditRetentionQuery();
       }
     },
-    [clearSelfEditRetentionQuery, isLibraryOpen, resetMfaTarget],
+    [
+      clearSelfEditRetentionQuery,
+      isLibraryOpen,
+      removePasskeyTarget,
+      resetMfaTarget,
+      resetPasskeysTarget,
+    ],
   );
 
   const activeUsers = useMemo(
@@ -828,6 +862,8 @@ const DashboardUsers = () => {
     [currentUser?.grants, isEditingSelf],
   );
   const showSelfSecuritySection = isEditingSelf && isDialogOpen;
+  const supportsPasskeys =
+    typeof window !== "undefined" && typeof window.PublicKeyCredential !== "undefined";
   const canCreateUsers = canManageUsers;
   const canEditBasicFields = !editingUser
     ? canCreateUsers
@@ -847,8 +883,11 @@ const DashboardUsers = () => {
     : isPrimaryOwnerActor;
   const canEditStatus = canEditRoles && !isEditingSelf && !isPrimaryOwnerRecord;
   const basicProfileOnlyEdit = Boolean(editingUser && canEditBasicFields && !canEditAccessControls);
-  const canResetManagedUserTotp = Boolean(
-    editingUser && isDialogOpen && !isEditingSelf && (isPrimaryOwnerActor || isSecondaryOwnerActor),
+  const canResetManagedCredentials = Boolean(
+    editingUser &&
+      isDialogOpen &&
+      !isEditingSelf &&
+      (isPrimaryOwnerActor || (isSecondaryOwnerActor && !isOwnerRecord)),
   );
 
   useEffect(() => {
@@ -1102,35 +1141,21 @@ const DashboardUsers = () => {
   };
 
   const startSelfEnrollment = async () => {
-    const response = await apiFetch(apiBase, "/api/me/security/totp/enroll/start", {
-      method: "POST",
-      auth: true,
-    });
-    if (!response.ok) {
+    const result = await authClient.twoFactor.enable({});
+    if (result.error || !result.data?.totpURI) {
       toast({ title: "Falha ao iniciar V2F", variant: "destructive" });
       return;
     }
-    const body = await response.json();
-    const enrollmentToken = String(body.enrollmentToken || body.token || "").trim();
-    if (!enrollmentToken) {
-      setSecurityEnrollment(null);
-      toast({
-        title: "Falha ao iniciar V2F",
-        description: "Token de ativação ausente.",
-        variant: "destructive",
-      });
-      return;
-    }
+    const totpUrl = new URL(result.data.totpURI);
     setSecurityEnrollment({
-      enrollmentToken,
-      manualSecret: String(body.manualSecret || ""),
-      otpauthUrl: String(body.otpauthUrl || ""),
-      issuer: String(body.issuer || ""),
-      accountLabel: String(body.accountLabel || ""),
-      iconUrl: String(body.iconUrl || ""),
+      enrollmentToken: "better-auth",
+      manualSecret: totpUrl.searchParams.get("secret") || "",
+      otpauthUrl: result.data.totpURI,
+      issuer: totpUrl.searchParams.get("issuer") || "Nekomorto",
+      accountLabel: decodeURIComponent(totpUrl.pathname.split(":").slice(1).join(":")),
     });
     setSecurityEnrollCode("");
-    setSecurityRecoveryCodes([]);
+    setSecurityRecoveryCodes(Array.isArray(result.data.backupCodes) ? result.data.backupCodes : []);
   };
 
   const confirmSelfEnrollment = async () => {
@@ -1148,48 +1173,11 @@ const DashboardUsers = () => {
       }
       return;
     }
-    const response = await apiFetch(apiBase, "/api/me/security/totp/enroll/confirm", {
-      method: "POST",
-      auth: true,
-      json: {
-        enrollmentToken,
-        code: normalizedCode,
-        codeOrRecoveryCode: normalizedCode,
-      },
-    });
-    if (!response.ok) {
-      let errorCode = "";
-      try {
-        const errorPayload = await response.json();
-        errorCode = String(errorPayload?.error || "").trim();
-      } catch {
-        errorCode = "";
-      }
-      if (errorCode === "invalid_or_expired_enrollment") {
-        setSecurityEnrollment(null);
-        toast({
-          title: "Sessão de ativação expirada",
-          description: "Inicie novamente para confirmar a V2F.",
-          variant: "destructive",
-        });
-        return;
-      }
-      if (errorCode === "enrollment_token_and_code_required") {
-        toast({
-          title: "Dados de confirmação ausentes",
-          variant: "destructive",
-        });
-        return;
-      }
-      if (errorCode === "invalid_totp_code") {
-        toast({ title: "Código da V2F inválido", variant: "destructive" });
-        return;
-      }
+    const result = await authClient.twoFactor.verifyTotp({ code: normalizedCode });
+    if (result.error) {
       toast({ title: "Não foi possível confirmar a V2F", variant: "destructive" });
       return;
     }
-    const body = await response.json();
-    setSecurityRecoveryCodes(Array.isArray(body.recoveryCodes) ? body.recoveryCodes : []);
     setSecurityEnrollment(null);
     setSecurityEnrollCode("");
     toast({ title: "V2F ativada" });
@@ -1200,12 +1188,16 @@ const DashboardUsers = () => {
     if (!securityDisableCode.trim()) {
       return;
     }
-    const response = await apiFetch(apiBase, "/api/me/security/totp/disable", {
-      method: "POST",
-      auth: true,
-      json: { codeOrRecoveryCode: securityDisableCode.trim() },
-    });
-    if (!response.ok) {
+    const code = securityDisableCode.trim();
+    const verification = /^\d{6}$/.test(code)
+      ? await authClient.twoFactor.verifyTotp({ code })
+      : await authClient.twoFactor.verifyBackupCode({ code });
+    if (verification.error) {
+      toast({ title: "Código de segurança inválido", variant: "destructive" });
+      return;
+    }
+    const result = await authClient.twoFactor.disable({});
+    if (result.error) {
       toast({ title: "Não foi possível desativar", variant: "destructive" });
       return;
     }
@@ -1213,6 +1205,42 @@ const DashboardUsers = () => {
     setSecurityEnrollment(null);
     toast({ title: "V2F desativada" });
     await refreshSelfSecurity();
+  };
+
+  const addSelfPasskey = async () => {
+    if (isAddingPasskey) return;
+    setIsAddingPasskey(true);
+    try {
+      const result = await authClient.passkey.addPasskey({ name: "Passkey Nekomorto" });
+      if (result.error) {
+        toast({ title: "Não foi possível cadastrar a passkey", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Passkey cadastrada" });
+      await refreshSelfSecurity();
+    } finally {
+      setIsAddingPasskey(false);
+    }
+  };
+
+  const removeSelfPasskey = async (id: string) => {
+    if (removingPasskeyId) return;
+    setRemovingPasskeyId(id);
+    try {
+      const result = await authClient.$fetch("/passkey/delete-passkey", {
+        method: "POST",
+        body: { id },
+      });
+      if (result.error) {
+        toast({ title: "Não foi possível remover a passkey", variant: "destructive" });
+        return;
+      }
+      setRemovePasskeyTarget(null);
+      toast({ title: "Passkey removida" });
+      await refreshSelfSecurity();
+    } finally {
+      setRemovingPasskeyId(null);
+    }
   };
 
   const revokeSelfSession = async (sid: string) => {
@@ -1239,9 +1267,14 @@ const DashboardUsers = () => {
     await refreshSelfSecurity();
   };
 
-  const connectIdentityProvider = (provider: "google" | "discord") => {
-    const next = "/dashboard/usuarios?edit=me";
-    window.location.href = `${apiBase}/api/me/security/identities/${provider}/link/start?next=${encodeURIComponent(next)}`;
+  const connectIdentityProvider = async (provider: "google" | "discord") => {
+    const result = await authClient.linkSocial({
+      provider,
+      callbackURL: "/dashboard/usuarios?edit=me",
+    });
+    if (result?.error) {
+      toast({ title: "Não foi possível conectar a conta", variant: "destructive" });
+    }
   };
 
   const disconnectIdentityProvider = async (provider: string) => {
@@ -1250,26 +1283,8 @@ const DashboardUsers = () => {
     }
     setIsDisconnectingIdentityProvider(provider);
     try {
-      const response = await apiFetch(
-        apiBase,
-        `/api/me/security/identities/${encodeURIComponent(provider)}`,
-        {
-          method: "DELETE",
-          auth: true,
-        },
-      );
-      if (!response.ok) {
-        let errorCode = "";
-        try {
-          const payload = await response.json();
-          errorCode = String(payload?.error || "").trim();
-        } catch {
-          errorCode = "";
-        }
-        if (errorCode === "last_login_method") {
-          toast({ title: "Não é possível desconectar o último login", variant: "destructive" });
-          return;
-        }
+      const result = await authClient.unlinkAccount({ providerId: provider });
+      if (result.error) {
         toast({ title: "Não foi possível desconectar a conta", variant: "destructive" });
         return;
       }
@@ -1729,6 +1744,31 @@ const DashboardUsers = () => {
       title: "V2F redefinida",
       description: `${targetName} pode entrar novamente sem o dispositivo anterior.`,
     });
+  };
+
+  const handleResetUserPasskeys = async () => {
+    if (!resetPasskeysTarget || isResettingPasskeys) return;
+    setIsResettingPasskeys(true);
+    const targetName = resetPasskeysTarget.name;
+    try {
+      const response = await apiFetch(
+        apiBase,
+        `/api/admin/users/${encodeURIComponent(resetPasskeysTarget.id)}/security/passkeys/reset`,
+        { method: "POST", auth: true },
+      );
+      if (!response.ok) {
+        toast({ title: "Não foi possível remover as passkeys", variant: "destructive" });
+        return;
+      }
+      const body = await response.json();
+      setResetPasskeysTarget(null);
+      toast({
+        title: "Passkeys removidas",
+        description: `${body.removedPasskeys || 0} passkey(s) removida(s) de ${targetName}; sessões ativas encerradas.`,
+      });
+    } finally {
+      setIsResettingPasskeys(false);
+    }
   };
 
   const toggleRole = (role: string) => {
@@ -2703,6 +2743,61 @@ const DashboardUsers = () => {
 
                           {renderConnectedAccountsCard()}
 
+                          <div
+                            className={`space-y-2 rounded-xl p-2.5 sm:rounded-2xl sm:p-3 ${subtleInsetSurfaceClassName}`}
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-medium">Passkeys</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Login resistente a phishing, sem solicitar V2F adicional.
+                                </p>
+                              </div>
+                              <DashboardActionButton
+                                size="sm"
+                                onClick={addSelfPasskey}
+                                disabled={!supportsPasskeys || isAddingPasskey}
+                              >
+                                {isAddingPasskey ? "Adicionando..." : "Adicionar passkey"}
+                              </DashboardActionButton>
+                            </div>
+                            {!supportsPasskeys ? (
+                              <p role="status" className="text-xs text-amber-300">
+                                Este navegador não oferece suporte a passkeys/WebAuthn.
+                              </p>
+                            ) : null}
+                            {(securitySummary?.passkeys || []).length ? (
+                              <div className="space-y-2">
+                                {(securitySummary?.passkeys || []).map((passkey) => (
+                                  <div
+                                    key={passkey.id}
+                                    className="flex flex-wrap items-center justify-between gap-2"
+                                  >
+                                    <Badge className="bg-card/80 text-muted-foreground">
+                                      {passkey.name}
+                                    </Badge>
+                                    <span className="text-[11px] text-muted-foreground">
+                                      {passkey.deviceType || "Dispositivo"} •{" "}
+                                      {formatSecurityDateTime(passkey.createdAt || null)}
+                                    </span>
+                                    <DashboardActionButton
+                                      size="sm"
+                                      tone="destructive"
+                                      onClick={() => setRemovePasskeyTarget(passkey)}
+                                      disabled={Boolean(removingPasskeyId)}
+                                    >
+                                      Remover
+                                    </DashboardActionButton>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                Nenhuma passkey cadastrada.
+                              </p>
+                            )}
+                          </div>
+
                           {!securitySummary?.totpEnabled ? (
                             <div
                               className={`space-y-3 rounded-xl p-2.5 sm:rounded-2xl sm:p-3 ${subtleInsetSurfaceClassName}`}
@@ -2948,6 +3043,47 @@ const DashboardUsers = () => {
                       </AccordionContent>
                     </AccordionItem>
                   ) : null}
+                  {canResetManagedCredentials ? (
+                    <AccordionItem value="recuperacao-acesso" className={editorSectionClassName}>
+                      <AccordionTrigger className={editorSectionTriggerClassName}>
+                        <ProjectEditorAccordionHeader
+                          title="Segurança"
+                          subtitle="Recuperação de acesso"
+                        />
+                      </AccordionTrigger>
+                      <AccordionContent className={editorSectionContentClassName}>
+                        <div
+                          className={`grid gap-3 rounded-xl p-3 sm:rounded-2xl sm:p-4 ${subtleSurfaceClassName}`}
+                        >
+                          <div className="space-y-1">
+                            <Label className="text-sm font-medium">Recuperação de acesso</Label>
+                            <p className="text-xs text-muted-foreground">
+                              Use somente quando a pessoa perdeu acesso aos dispositivos. Cada ação
+                              também encerra as sessões ativas da conta.
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <DashboardActionButton
+                              size="sm"
+                              tone="destructive"
+                              onClick={() => setResetMfaTarget(editingUser)}
+                              disabled={isResettingMfa}
+                            >
+                              Redefinir V2F
+                            </DashboardActionButton>
+                            <DashboardActionButton
+                              size="sm"
+                              tone="destructive"
+                              onClick={() => setResetPasskeysTarget(editingUser)}
+                              disabled={isResettingPasskeys}
+                            >
+                              Remover todas as passkeys
+                            </DashboardActionButton>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ) : null}
                   {canEditAccessControls ? (
                     <AccordionItem value="acesso-permissoes" className={editorSectionClassName}>
                       <AccordionTrigger className={editorSectionTriggerClassName}>
@@ -3129,17 +3265,6 @@ const DashboardUsers = () => {
                 </Accordion>
               </div>
               <div className="project-editor-footer sticky bottom-0 z-20 flex items-center justify-end gap-2 border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur-sm supports-backdrop-filter:bg-background/80 md:px-6 md:py-3 lg:px-8">
-                {editingUser && canResetManagedUserTotp ? (
-                  <DashboardActionButton
-                    size="icon"
-                    tone="destructive"
-                    onClick={() => setResetMfaTarget(editingUser)}
-                    disabled={isResettingMfa}
-                    aria-label="Redefinir V2F"
-                  >
-                    <ShieldOff className="h-4 w-4" />
-                  </DashboardActionButton>
-                ) : null}
                 {editingUser ? (
                   <DashboardActionButton
                     size="icon"
@@ -3203,6 +3328,79 @@ const DashboardUsers = () => {
               disabled={isResettingMfa}
             >
               {isResettingMfa ? "Redefinindo..." : "Redefinir V2F"}
+            </DashboardActionButton>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(resetPasskeysTarget)}
+        onOpenChange={(open) => {
+          if (!open && !isResettingPasskeys) setResetPasskeysTarget(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remover todas as passkeys?</DialogTitle>
+            <DialogDescription>
+              {resetPasskeysTarget
+                ? `Remover todas as passkeys de "${resetPasskeysTarget.name}"?`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            A pessoa precisará entrar novamente por Discord ou Google e cadastrar novas passkeys.
+            Todas as sessões ativas também serão encerradas.
+          </p>
+          <div className="flex justify-end gap-3">
+            <DashboardActionButton
+              size="sm"
+              onClick={() => setResetPasskeysTarget(null)}
+              disabled={isResettingPasskeys}
+            >
+              Cancelar
+            </DashboardActionButton>
+            <DashboardActionButton
+              size="sm"
+              tone="destructive"
+              onClick={handleResetUserPasskeys}
+              disabled={isResettingPasskeys}
+            >
+              {isResettingPasskeys ? "Removendo..." : "Remover passkeys"}
+            </DashboardActionButton>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(removePasskeyTarget)}
+        onOpenChange={(open) => {
+          if (!open && !removingPasskeyId) setRemovePasskeyTarget(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remover passkey?</DialogTitle>
+            <DialogDescription>
+              {removePasskeyTarget ? `Remover "${removePasskeyTarget.name}" da sua conta?` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Este dispositivo não poderá mais ser usado para entrar.
+          </p>
+          <div className="flex justify-end gap-3">
+            <DashboardActionButton
+              size="sm"
+              onClick={() => setRemovePasskeyTarget(null)}
+              disabled={Boolean(removingPasskeyId)}
+            >
+              Cancelar
+            </DashboardActionButton>
+            <DashboardActionButton
+              size="sm"
+              tone="destructive"
+              onClick={() => removePasskeyTarget && void removeSelfPasskey(removePasskeyTarget.id)}
+              disabled={Boolean(removingPasskeyId)}
+            >
+              {removingPasskeyId ? "Removendo..." : "Remover passkey"}
             </DashboardActionButton>
           </div>
         </DialogContent>

@@ -64,7 +64,7 @@ export const PWA_MANIFEST_BASE = Object.freeze({
 
 export const hasHashedAssetName = (filePath) => {
   const fileName = path.basename(String(filePath || ""));
-  return /-[A-Za-z0-9_-]{6,}\./.test(fileName);
+  return /(?:-|\.)[A-Za-z0-9_-]{6,}\./.test(fileName);
 };
 
 export const setStaticCacheHeaders = (res, filePath) => {
@@ -82,7 +82,8 @@ export const setStaticCacheHeaders = (res, filePath) => {
   }
 
   if (
-    normalizedPath.includes(`${path.sep}assets${path.sep}`) &&
+    (normalizedPath.includes(`${path.sep}assets${path.sep}`) ||
+      normalizedPath.includes(`${path.sep}_astro${path.sep}`)) &&
     hasHashedAssetName(normalizedPath)
   ) {
     res.setHeader("Cache-Control", STATIC_IMMUTABLE_CACHE_CONTROL);

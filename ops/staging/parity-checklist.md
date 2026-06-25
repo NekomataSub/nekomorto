@@ -9,6 +9,7 @@ Garantir que staging represente producao nos fluxos de seguranca e operacao.
 2. Confirmar mesmas versoes de runtime (Node/NPM) e mesma topologia de servicos.
 3. Confirmar variaveis de seguranca configuradas:
    - `SESSION_SECRETS`
+   - `BETTER_AUTH_SECRET`
    - `DATA_ENCRYPTION_KEYS_JSON`
    - `SECURITY_RECOVERY_CODE_PEPPER`
    - `METRICS_TOKEN`

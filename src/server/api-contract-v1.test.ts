@@ -98,7 +98,7 @@ describe("buildApiContractV1", () => {
     });
   });
 
-  it("marks the admin TOTP reset endpoint as owner_only", () => {
+  it("marks the administrative credential reset endpoints as owner_only", () => {
     const contract = buildApiContractV1();
 
     expect(contract.endpoints).toEqual(
@@ -106,6 +106,11 @@ describe("buildApiContractV1", () => {
         expect.objectContaining({
           method: "POST",
           path: "/api/admin/users/:id/security/totp/reset",
+          auth: "owner_only",
+        }),
+        expect.objectContaining({
+          method: "POST",
+          path: "/api/admin/users/:id/security/passkeys/reset",
           auth: "owner_only",
         }),
       ]),

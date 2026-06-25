@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      outDir: process.env.VITE_OUT_DIR || "dist",
       manifest: true,
       // Large lazy editor/tooling bundles are validated by custom build guards,
       // so we raise Vite's generic warning threshold to reduce false-positive noise.

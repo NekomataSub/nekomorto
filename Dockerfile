@@ -32,7 +32,7 @@ ENV VITE_APP_BUILD_TIME=${VITE_APP_BUILD_TIME}
 COPY . .
 # .dockerignore handles excluding public/uploads and other heavy dev files
 RUN npm run prisma:generate && \
-    npm run build
+    BUILD_PUBLISH_CLEAN=true npm run build
 
 # ---- Production Dependencies Stage ----
 FROM base AS prod-deps

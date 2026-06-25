@@ -1,4 +1,8 @@
 import { collectBootstrapPublicMediaUrls } from "./lib/public-bootstrap-media.mjs";
+import {
+  extractAstroAssetUrls,
+  extractAstroModuleImportUrls,
+} from "./lib/astro-asset-graph.mjs";
 
 const args = process.argv.slice(2);
 
@@ -155,12 +159,75 @@ const assertRootHtmlEndpoint = async ({ path, expectProdHtml }) => {
     throw new Error(`${path} returned Vite dev HTML with /src/main.tsx on a prod-like target`);
   }
   return {
+    body,
     path,
+    url: `${baseUrl}${path}`,
     status: response.status,
     contentType,
     containsViteClient,
     containsLegacyPwaModule,
     containsSrcMainTsx,
+  };
+};
+
+const assertAstroAssetGraph = async (htmlChecks) => {
+  const pending = [];
+  const visited = new Set();
+  const checks = [];
+  const maxAssets = 400;
+
+  htmlChecks.forEach(({ body, url }) => {
+    pending.push(...extractAstroAssetUrls(body, url));
+  });
+
+  while (pending.length > 0) {
+    const assetUrl = pending.shift();
+    if (!assetUrl || visited.has(assetUrl)) {
+      continue;
+    }
+    if (visited.size >= maxAssets) {
+      throw new Error(`Astro asset graph exceeded ${maxAssets} assets`);
+    }
+    visited.add(assetUrl);
+
+    const response = await withTimeout(assetUrl, {
+      headers: {
+        accept: "text/javascript,text/css,*/*;q=0.8",
+      },
+    });
+    const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+    const body = await response.text();
+    if (!response.ok) {
+      throw new Error(`${assetUrl} returned ${response.status} in Astro asset graph`);
+    }
+    if (contentType.includes("text/html") || /^\s*<!doctype html>/i.test(body)) {
+      throw new Error(`${assetUrl} returned HTML in Astro asset graph`);
+    }
+    const isJavaScript = new URL(assetUrl).pathname.endsWith(".js");
+    if (isJavaScript && !contentType.includes("javascript")) {
+      throw new Error(`${assetUrl} expected JavaScript content-type, got "${contentType}"`);
+    }
+    if (!isJavaScript && !contentType.includes("text/css")) {
+      throw new Error(`${assetUrl} expected CSS content-type, got "${contentType}"`);
+    }
+    if (isJavaScript) {
+      pending.push(...extractAstroModuleImportUrls(body, assetUrl));
+    }
+    checks.push({
+      path: new URL(assetUrl).pathname,
+      status: response.status,
+      contentType,
+    });
+  }
+
+  if (checks.length === 0) {
+    throw new Error("No /_astro assets found in production HTML");
+  }
+  return {
+    path: "/_astro/*",
+    status: 200,
+    contentType: "asset-graph",
+    assetsChecked: checks.length,
   };
 };
 
@@ -361,7 +428,30 @@ const main = async () => {
     path: "/",
     expectProdHtml,
   });
-  checks.push(rootHtmlCheck);
+  checks.push({
+    path: rootHtmlCheck.path,
+    status: rootHtmlCheck.status,
+    contentType: rootHtmlCheck.contentType,
+    containsViteClient: rootHtmlCheck.containsViteClient,
+    containsLegacyPwaModule: rootHtmlCheck.containsLegacyPwaModule,
+    containsSrcMainTsx: rootHtmlCheck.containsSrcMainTsx,
+  });
+
+  if (expectProdHtml) {
+    const projectsHtmlCheck = await assertRootHtmlEndpoint({
+      path: "/projetos",
+      expectProdHtml,
+    });
+    checks.push({
+      path: projectsHtmlCheck.path,
+      status: projectsHtmlCheck.status,
+      contentType: projectsHtmlCheck.contentType,
+      containsViteClient: projectsHtmlCheck.containsViteClient,
+      containsLegacyPwaModule: projectsHtmlCheck.containsLegacyPwaModule,
+      containsSrcMainTsx: projectsHtmlCheck.containsSrcMainTsx,
+    });
+    checks.push(await assertAstroAssetGraph([rootHtmlCheck, projectsHtmlCheck]));
+  }
 
   checks.push(await assertManifestEndpoint("/manifest.webmanifest"));
 

@@ -90,7 +90,7 @@ const setupApiMock = ({
   apiFetchMock.mockImplementation(
     async (_apiBase: string, endpoint: string, options?: RequestInit) => {
       const method = String(options?.method || "GET").toUpperCase();
-      if (endpoint === "/api/public/projects" && method === "GET") {
+      if (endpoint === "/api/public/projects?view=catalog" && method === "GET") {
         return mockJsonResponse(true, { projects, mediaVariants });
       }
       if (endpoint === "/api/public/tag-translations" && method === "GET") {
@@ -766,7 +766,7 @@ describe("Projects query sync", () => {
     apiFetchMock.mockImplementation(
       async (_apiBase: string, endpoint: string, options?: RequestInit) => {
         const method = String(options?.method || "GET").toUpperCase();
-        if (endpoint === "/api/public/projects" && method === "GET") {
+        if (endpoint === "/api/public/projects?view=catalog" && method === "GET") {
           projectsRequests += 1;
           if (projectsRequests === 1) {
             return mockJsonResponse(false, { error: "server_error" }, 500);

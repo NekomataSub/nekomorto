@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, "..");
-const distAssetsDir = path.join(workspaceRoot, "dist", "assets");
+const clientDistDir = path.resolve(process.env.CLIENT_DIST_DIR || path.join(workspaceRoot, "dist"));
+const distAssetsDir = path.join(clientDistDir, "assets");
 
 if (!fs.existsSync(distAssetsDir)) {
   console.error(`[build-chunk-check] assets nao encontrados em ${distAssetsDir}`);

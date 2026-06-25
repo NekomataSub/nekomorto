@@ -103,6 +103,9 @@ const configureApiFetch = ({
     if (path.endsWith("/security/totp/reset") && method === "POST") {
       return resetResponse;
     }
+    if (path.endsWith("/security/passkeys/reset") && method === "POST") {
+      return mockJsonResponse(true, { ok: true, removedPasskeys: 2, revokedSessions: 1 });
+    }
     return mockJsonResponse(false, { error: "not_found" }, 404);
   });
 };
@@ -170,6 +173,75 @@ describe("DashboardUsers admin V2F reset", () => {
       screen.queryByText(/cancelar o login atual e entrar novamente/i),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: /Editar usu.*rio/i })).toBeInTheDocument();
+  });
+
+  it("lets an owner remove all passkeys of another user with confirmation", async () => {
+    configureApiFetch({
+      currentUser: {
+        id: "owner-1",
+        name: "Dona",
+        username: "owner1",
+        primaryOwnerId: "owner-1",
+        grants: { usuarios: true },
+      },
+      users: [
+        buildUser({ id: "owner-1", name: "Dona", order: 0 }),
+        buildUser({ id: "user-2", name: "Colaborador", order: 1 }),
+      ],
+      ownerIds: ["owner-1"],
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard/usuarios"]}>
+        <DashboardUsers />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /Abrir usu.*rio Colaborador/i }));
+    const editorDialog = await screen.findByRole("dialog", { name: /Editar usu.*rio/i });
+    fireEvent.click(
+      within(editorDialog).getByRole("button", { name: "Remover todas as passkeys" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Remover passkeys", hidden: false }));
+
+    await waitFor(() => {
+      expect(apiFetchMock).toHaveBeenCalledWith(
+        "http://api.local",
+        "/api/admin/users/user-2/security/passkeys/reset",
+        { method: "POST", auth: true },
+      );
+    });
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Passkeys removidas" }),
+    );
+  });
+
+  it("does not let a secondary owner reset credentials of the primary owner", async () => {
+    configureApiFetch({
+      currentUser: {
+        id: "owner-2",
+        name: "Dona Secundaria",
+        username: "owner2",
+        primaryOwnerId: "owner-1",
+        grants: { usuarios: true },
+      },
+      users: [
+        buildUser({ id: "owner-1", name: "Dono Primario", order: 0 }),
+        buildUser({ id: "owner-2", name: "Dona Secundaria", order: 1 }),
+      ],
+      ownerIds: ["owner-1", "owner-2"],
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard/usuarios"]}>
+        <DashboardUsers />
+      </MemoryRouter>,
+    );
+
+    await screen.findByTestId("dashboard-user-card-owner-1");
+    expect(
+      screen.queryByRole("button", { name: /Abrir usu.*rio Dono Primario/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("does not show the reset action for admins who are not owners", async () => {

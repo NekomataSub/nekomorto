@@ -38,6 +38,8 @@ export const registerSecurityRoutes = ({
   canManageSecurityAdmin,
   dataEncryptionKeyring,
   deleteUserMfaTotpRecord,
+  resetBetterAuthPasskeysForUser,
+  resetBetterAuthTotpForUser,
   emitSecurityEvent,
   isOwner,
   isPrimaryOwner,
@@ -54,6 +56,35 @@ export const registerSecurityRoutes = ({
   toSecurityEventApiResponse,
   updateSecurityEventStatus,
 } = {}) => {
+  const authorizeCredentialReset = ({ req, res }) => {
+    const actorId = String(req.session?.user?.id || "").trim();
+    if (!isOwner(actorId)) {
+      res.status(403).json({ error: "forbidden" });
+      return null;
+    }
+    const targetId = String(req.params.id || "").trim();
+    if (!targetId) {
+      res.status(400).json({ error: "invalid_target_id" });
+      return null;
+    }
+    if (actorId === targetId) {
+      res.status(400).json({ error: "cannot_reset_self" });
+      return null;
+    }
+    const targetExists = normalizeUsers(loadUsers()).some(
+      (entry) => String(entry?.id || "") === targetId,
+    );
+    if (!targetExists) {
+      res.status(404).json({ error: "not_found" });
+      return null;
+    }
+    if (isOwner(targetId) && !isPrimaryOwner(actorId)) {
+      res.status(403).json({ error: "forbidden" });
+      return null;
+    }
+    return { actorId, targetId };
+  };
+
   app.get("/api/admin/security/events", requireAuth, (req, res) => {
     if (!canManageSecurityAdmin(req.session?.user?.id)) {
       return res.status(403).json({ error: "forbidden" });
@@ -170,27 +201,55 @@ export const registerSecurityRoutes = ({
     return res.status(201).json({ ok: true, rotation: entry });
   });
 
-  app.post("/api/admin/users/:id/security/totp/reset", requireAuth, (req, res) => {
-    const actorId = String(req.session?.user?.id || "").trim();
-    if (!isOwner(actorId)) {
-      return res.status(403).json({ error: "forbidden" });
+  app.post("/api/admin/users/:id/security/totp/reset", requireAuth, async (req, res, next) => {
+    const authorized = authorizeCredentialReset({ req, res });
+    if (!authorized) return;
+    const { actorId, targetId } = authorized;
+    try {
+      const result = await resetBetterAuthTotpForUser(targetId);
+      if (!result.userFound) {
+        return res.status(404).json({ error: "auth_user_not_found" });
+      }
+      deleteUserMfaTotpRecord(targetId);
+      appendAuditLog(req, "auth.mfa.reset_admin", "users", { targetId, ...result });
+      emitSecurityEvent({
+        req,
+        type: "mfa_reset_admin",
+        severity: SecurityEventSeverity.WARNING,
+        riskScore: 60,
+        actorUserId: actorId || null,
+        targetUserId: targetId,
+        data: { targetId, ...result },
+      });
+      return res.json({ ok: true, ...result });
+    } catch (error) {
+      return next(error);
     }
-    const targetId = String(req.params.id || "").trim();
-    if (!targetId) {
-      return res.status(400).json({ error: "invalid_target_id" });
+  });
+
+  app.post("/api/admin/users/:id/security/passkeys/reset", requireAuth, async (req, res, next) => {
+    const authorized = authorizeCredentialReset({ req, res });
+    if (!authorized) return;
+    const { actorId, targetId } = authorized;
+    try {
+      const result = await resetBetterAuthPasskeysForUser(targetId);
+      if (!result.userFound) {
+        return res.status(404).json({ error: "auth_user_not_found" });
+      }
+      appendAuditLog(req, "auth.passkeys.reset_admin", "users", { targetId, ...result });
+      emitSecurityEvent({
+        req,
+        type: "passkey_reset_admin",
+        severity: SecurityEventSeverity.WARNING,
+        riskScore: 65,
+        actorUserId: actorId || null,
+        targetUserId: targetId,
+        data: { targetId, ...result },
+      });
+      return res.json({ ok: true, ...result });
+    } catch (error) {
+      return next(error);
     }
-    deleteUserMfaTotpRecord(targetId);
-    appendAuditLog(req, "auth.mfa.reset_admin", "users", { targetId });
-    emitSecurityEvent({
-      req,
-      type: "mfa_reset_admin",
-      severity: SecurityEventSeverity.WARNING,
-      riskScore: 60,
-      actorUserId: actorId || null,
-      targetUserId: targetId,
-      data: { targetId },
-    });
-    return res.json({ ok: true });
   });
 
   app.get("/api/admin/users/:id/sessions", requireAuth, (req, res) => {

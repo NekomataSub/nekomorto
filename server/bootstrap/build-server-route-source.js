@@ -209,6 +209,8 @@ export const SERVER_ROUTE_SOURCE_FRAGMENT_KEYS = {
     "deleteManagedUploadEntryAssets",
     "deletePrivateUploadByUrl",
     "deleteUserMfaTotpRecord",
+    "resetBetterAuthPasskeysForUser",
+    "resetBetterAuthTotpForUser",
     "deriveAniListMediaOrganization",
     "deriveChapterSynopsis",
     "dispatchEditorialWebhookEvent",

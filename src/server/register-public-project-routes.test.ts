@@ -89,6 +89,41 @@ const createDependencies = ({ app, overrides = {} }) => ({
 });
 
 describe("registerPublicProjectRoutes", () => {
+  it("returns a lightweight project payload only for the catalog view", async () => {
+    const { app, routes } = createAppRecorder();
+    const project = {
+      id: "project-1",
+      title: "Projeto",
+      cover: "/uploads/cover.jpg",
+      episodeDownloads: [{ number: 1, content: "heavy-content" }],
+      volumeEntries: [{ volume: 1 }],
+    };
+    const dependencies = createDependencies({
+      app,
+      overrides: {
+        getPublicVisibleProjects: vi.fn(() => [project]),
+      },
+    });
+
+    registerPublicProjectRoutes(dependencies);
+    const route = getRoute(routes, "GET", "/api/public/projects");
+    const catalogResponse = await invokeFinalHandler(route, {
+      path: "/api/public/projects",
+      query: { view: "catalog" },
+    });
+    const defaultResponse = await invokeFinalHandler(route, {
+      path: "/api/public/projects",
+      query: {},
+    });
+
+    expect(catalogResponse.body.projects[0]).not.toHaveProperty("episodeDownloads");
+    expect(catalogResponse.body.projects[0]).not.toHaveProperty("volumeEntries");
+    expect(defaultResponse.body.projects[0]).toMatchObject({
+      episodeDownloads: [{ number: 1, content: "heavy-content" }],
+      volumeEntries: [{ volume: 1 }],
+    });
+  });
+
   it("uses the trusted request ip helper for public project throttling", async () => {
     const { app, routes } = createAppRecorder();
     const dependencies = createDependencies({

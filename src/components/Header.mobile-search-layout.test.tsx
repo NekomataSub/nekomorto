@@ -99,12 +99,19 @@ const setWindowScrollY = (value: number) => {
 
 const setupApiMock = (options?: {
   logoutOk?: boolean;
+  publicUser?: unknown;
   searchSuggestOk?: boolean;
   searchSuggestions?: unknown[];
   searchMediaVariants?: unknown;
 }) => {
   const {
     logoutOk = true,
+    publicUser = {
+      id: "user-1",
+      name: "Admin",
+      username: "admin",
+      avatarUrl: null,
+    },
     searchSuggestOk = false,
     searchSuggestions = [],
     searchMediaVariants = {},
@@ -115,12 +122,7 @@ const setupApiMock = (options?: {
       const method = String(options?.method || "GET").toUpperCase();
       if (endpoint === "/api/public/me" && method === "GET") {
         return mockJsonResponse(true, {
-          user: {
-            id: "user-1",
-            name: "Admin",
-            username: "admin",
-            avatarUrl: null,
-          },
+          user: publicUser,
         });
       }
       if (endpoint === "/api/logout" && method === "POST") {
@@ -377,6 +379,7 @@ describe("Header mobile search layout", () => {
       name: "Bootstrap Admin",
       username: "bootstrap-admin",
       avatarUrl: null,
+      grants: { posts: true },
     };
 
     render(
@@ -431,7 +434,7 @@ describe("Header mobile search layout", () => {
     expect(getScheduleOnBrowserLoadIdleCallsByDelay(2500)).toHaveLength(0);
   });
 
-  it("agenda revalidacao de /api/public/me quando bootstrap SSR possui usuario", async () => {
+  it("revalida imediatamente /api/public/me quando bootstrap SSR possui usuario sem grants", async () => {
     (window as Window & { __BOOTSTRAP_PUBLIC__?: unknown }).__BOOTSTRAP_PUBLIC__ = {
       projects: [],
       posts: [],
@@ -453,6 +456,38 @@ describe("Header mobile search layout", () => {
     );
 
     await waitFor(() => {
+      expect(apiFetchMock).toHaveBeenCalledWith(
+        "http://api.local",
+        "/api/public/me",
+        expect.objectContaining({ auth: true }),
+      );
+    });
+    expect(getScheduleOnBrowserLoadIdleCallsByDelay(2500)).toHaveLength(0);
+  });
+
+  it("agenda revalidacao de /api/public/me quando bootstrap SSR possui grants", async () => {
+    (window as Window & { __BOOTSTRAP_PUBLIC__?: unknown }).__BOOTSTRAP_PUBLIC__ = {
+      projects: [],
+      posts: [],
+      updates: [],
+      settings: {},
+      pages: {},
+    };
+    (window as Window & { __BOOTSTRAP_PUBLIC_ME__?: unknown }).__BOOTSTRAP_PUBLIC_ME__ = {
+      id: "bootstrap-user-1",
+      name: "Bootstrap Admin",
+      username: "bootstrap-admin",
+      avatarUrl: null,
+      grants: { posts: true },
+    };
+
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Header />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
       expect(getScheduleOnBrowserLoadIdleCallsByDelay(2500)).toHaveLength(1);
     });
     await waitFor(() => {
@@ -462,6 +497,64 @@ describe("Header mobile search layout", () => {
         expect.objectContaining({ auth: true }),
       );
     });
+  });
+
+  it("mostra links autorizados no perfil publico depois de hidratar grants", async () => {
+    const user = userEvent.setup();
+    setupApiMock({
+      publicUser: {
+        id: "user-1",
+        name: "Admin",
+        username: "admin",
+        avatarUrl: null,
+        grants: {
+          posts: true,
+          projetos: false,
+          comentarios: false,
+          paginas: false,
+          uploads: false,
+          analytics: false,
+          usuarios: false,
+          configuracoes: true,
+          audit_log: false,
+          integracoes: false,
+        },
+      },
+    });
+    (window as Window & { __BOOTSTRAP_PUBLIC_ME__?: unknown }).__BOOTSTRAP_PUBLIC_ME__ = {
+      id: "user-1",
+      name: "Admin",
+      username: "admin",
+      avatarUrl: null,
+    };
+
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Header />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(getPublicMeCalls()).toHaveLength(1);
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Admin").closest("button")).toBeTruthy();
+    });
+
+    await user.click(screen.getByText("Admin").closest("button") as HTMLButtonElement);
+    const profileMenu = await screen.findByRole("menu");
+
+    expect(within(profileMenu).getByRole("menuitem", { name: /Início/i })).toBeInTheDocument();
+    expect(
+      within(profileMenu).getByRole("menuitem", { name: /Postagens/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(profileMenu).getByRole("menuitem", { name: /Configurações/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(profileMenu).queryByRole("menuitem", { name: /Projetos/i }),
+    ).not.toBeInTheDocument();
+    expect(within(profileMenu).getByRole("menuitem", { name: /Sair/i })).toBeInTheDocument();
   });
 
   it("oculta clusters, centraliza busca e restaura estado ao fechar no mobile", async () => {

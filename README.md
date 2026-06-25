@@ -220,7 +220,7 @@ npm run dev
 - O HMR do modo integrado usa a mesma origem da pagina. Nao publique nem encaminhe a porta `24678`.
 - Para cloudflared, aponte o tunel inteiro para `http://127.0.0.1:8080`.
 - O OAuth do Discord e do Google retorna para a mesma origem que iniciou o login nesse modo.
-- O callback esperado do Google e `/auth/google/callback`.
+- Os callbacks esperados são `/api/auth/callback/discord` e `/api/auth/callback/google`.
 - O login com Google exige uma identity previamente vinculada/autorizada no backend; nao existe cadastro publico nem auto-signup.
 
 ### 6.2 Modo separado (backend e frontend em portas diferentes)
@@ -349,8 +349,10 @@ Convencoes usadas nas tabelas:
 | --- | --- | --- | --- | --- | --- |
 | `DISCORD_CLIENT_ID` | `dev base`, `prod compose`, `dev deploy` | `production` | vazio | string | Client ID do OAuth do Discord. |
 | `DISCORD_CLIENT_SECRET` | `dev base`, `prod compose`, `dev deploy` | `production` | vazio | string secreta | Client secret do OAuth do Discord. |
-| `DISCORD_REDIRECT_URI` | `dev base`, `prod compose`, `dev deploy` | nunca | `auto` | `auto` ou `URL http(s)` absoluta | Em `auto`, o callback vai para `<origem-permitida>/login`. Se definido manualmente, precisa ser URL absoluta valida. |
+| `DISCORD_REDIRECT_URI` | legado/rollback | nunca | `auto` | `auto` ou `URL http(s)` absoluta | Mantido somente para rollback do OAuth anterior; Better Auth usa `<APP_ORIGIN>/api/auth/callback/discord`. |
 | `SESSION_SECRET` | `dev base`, `prod compose`, `dev deploy` | `production`, exceto quando `SESSION_SECRETS` estiver preenchido | vazio; em dev, se `SESSION_SECRETS` tambem estiver vazio, cai no fallback inseguro `dev-session-secret` | string secreta longa | Segredo principal de sessao HTTP. |
+| `BETTER_AUTH_SECRET` | `dev base`, `prod compose`, `dev deploy` | `production` | vazio | string secreta longa e independente | Assina cookies e material criptográfico do Better Auth. Rotacionar invalida estados OAuth/2FA pendentes; preserve o valor anterior durante rollback. |
+| `GOOGLE_REDIRECT_URI` | legado/rollback | nunca | `auto` | `auto` ou `URL http(s)` absoluta | Mantido somente para rollback; Better Auth usa `<APP_ORIGIN>/api/auth/callback/google`. |
 | `SESSION_SECRETS` | `dev base`, `prod compose`, `dev deploy` | nunca | vazio | `CSV` de secrets, mais novo primeiro | Lista de rotacao de secrets de sessao. Quando preenchida, substitui `SESSION_SECRET` como lista aceita e o primeiro valor vira o ativo. |
 | `SESSION_TABLE` | `dev base`, `prod compose`, `dev deploy` | nunca | `user_sessions` | nome de tabela SQL | Nome da tabela usada pelo `connect-pg-simple`. |
 | `OWNER_IDS` | `dev base`, `prod compose`, `dev deploy` | `production` quando `BOOTSTRAP_TOKEN` estiver vazio | vazio; em dev existe fallback interno para um owner local do projeto | `CSV` de IDs de usuario do Discord | Owners iniciais carregados no boot. |
@@ -1246,6 +1248,7 @@ Arquitetura e dados:
 
 - `docs/SCHEMA.md`
 - `docs/DB_MIGRATION_RUNBOOK.md`
+- `docs/BETTER_AUTH_CUTOVER.md`
 - `docs/astro-migration-architecture.md`
 - `docs/astro-migration-roadmap.md`
 - `ops/postgres/README.md`

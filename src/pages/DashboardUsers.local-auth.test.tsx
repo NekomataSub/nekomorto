@@ -7,6 +7,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const apiFetchMock = vi.hoisted(() => vi.fn());
 const toastMock = vi.hoisted(() => vi.fn());
+const linkSocialMock = vi.hoisted(() => vi.fn());
+const addPasskeyMock = vi.hoisted(() => vi.fn());
+const authFetchMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/components/DashboardShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -32,11 +35,27 @@ vi.mock("@/lib/api-client", () => ({
   apiFetch: (...args: unknown[]) => apiFetchMock(...args),
 }));
 
+vi.mock("@/lib/auth-client", () => ({
+  authClient: {
+    $fetch: (...args: unknown[]) => authFetchMock(...args),
+    linkSocial: (...args: unknown[]) => linkSocialMock(...args),
+    unlinkAccount: vi.fn(),
+    passkey: { addPasskey: (...args: unknown[]) => addPasskeyMock(...args) },
+    twoFactor: {
+      enable: vi.fn(),
+      verifyTotp: vi.fn(),
+      verifyBackupCode: vi.fn(),
+      disable: vi.fn(),
+    },
+  },
+}));
+
 vi.mock("@/components/ui/use-toast", () => ({
   toast: (...args: unknown[]) => toastMock(...args),
 }));
 
 const originalLocation = window.location;
+const originalPublicKeyCredential = Object.getOwnPropertyDescriptor(window, "PublicKeyCredential");
 let locationHref = "http://localhost/dashboard/usuarios?edit=me";
 
 const currentUserValue = {
@@ -123,6 +142,12 @@ const setupApiMock = ({
 } = {}) => {
   apiFetchMock.mockReset();
   toastMock.mockReset();
+  linkSocialMock.mockReset();
+  addPasskeyMock.mockReset();
+  authFetchMock.mockReset();
+  linkSocialMock.mockResolvedValue({ data: { redirect: true }, error: null });
+  addPasskeyMock.mockResolvedValue({ data: { id: "passkey-1" }, error: null });
+  authFetchMock.mockResolvedValue({ data: { status: true }, error: null });
   apiFetchMock.mockImplementation(async (_base: string, path: string, options?: RequestInit) => {
     const method = String(options?.method || "GET").toUpperCase();
 
@@ -165,6 +190,15 @@ const setupApiMock = ({
             emailVerified: true,
             linkedAt: "2026-04-12T21:44:00.000Z",
             lastUsedAt: "2026-04-12T21:45:09.000Z",
+          },
+        ],
+        passkeys: [
+          {
+            id: "passkey-existing",
+            name: "Passkey Nekomorto",
+            deviceType: "singleDevice",
+            backedUp: false,
+            createdAt: "2026-04-12T21:44:00.000Z",
           },
         ],
       });
@@ -239,6 +273,29 @@ describe("DashboardUsers connected accounts", () => {
     expect(screen.queryByText(/configurar login com senha/i)).not.toBeInTheDocument();
   });
 
+  it("cadastra e remove passkeys no editor do próprio perfil", async () => {
+    Object.defineProperty(window, "PublicKeyCredential", {
+      configurable: true,
+      value: class PublicKeyCredential {},
+    });
+    installLocationMock();
+    setupApiMock();
+
+    renderDashboardUsers("/dashboard/usuarios?edit=me");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar passkey" }));
+    await waitFor(() => expect(addPasskeyMock).toHaveBeenCalledWith({ name: "Passkey Nekomorto" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Remover" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Remover passkey" }));
+    await waitFor(() =>
+      expect(authFetchMock).toHaveBeenCalledWith("/passkey/delete-passkey", {
+        method: "POST",
+        body: { id: "passkey-existing" },
+      }),
+    );
+  });
+
   it("inicia o fluxo manual de conexão de provider", async () => {
     installLocationMock();
     setupApiMock();
@@ -254,8 +311,11 @@ describe("DashboardUsers connected accounts", () => {
     expect(accessSection).not.toBeNull();
     fireEvent.click(within(accessSection as HTMLElement).getByRole("button", { name: "Conectar" }));
 
-    expect(locationHref).toBe(
-      "http://api.local/api/me/security/identities/google/link/start?next=%2Fdashboard%2Fusuarios%3Fedit%3Dme",
+    await waitFor(() =>
+      expect(linkSocialMock).toHaveBeenCalledWith({
+        provider: "google",
+        callbackURL: "/dashboard/usuarios?edit=me",
+      }),
     );
   });
 
@@ -437,5 +497,10 @@ describe("DashboardUsers connected accounts", () => {
       configurable: true,
       value: originalLocation,
     });
+    if (originalPublicKeyCredential) {
+      Object.defineProperty(window, "PublicKeyCredential", originalPublicKeyCredential);
+    } else {
+      Reflect.deleteProperty(window, "PublicKeyCredential");
+    }
   });
 });

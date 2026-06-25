@@ -411,6 +411,13 @@ const CONTRACT_BASE = Object.freeze({
     },
     {
       method: "POST",
+      path: "/api/admin/users/:id/security/passkeys/reset",
+      auth: "owner_only",
+      cache: "no-store",
+      idempotent: "optional_by_header",
+    },
+    {
+      method: "POST",
       path: "/api/admin/exports",
       auth: "admin_or_owner",
       cache: "no-store",

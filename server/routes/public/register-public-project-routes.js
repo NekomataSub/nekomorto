@@ -1,49 +1,9 @@
 import { resolvePublishedEpisodeLookup } from "../../lib/project-episodes.js";
+import {
+  serializePublicProjectCatalog,
+  serializePublicProjectList,
+} from "../../lib/public-project-list.js";
 import { resolveProjectEpisodeContentFormat } from "../../../shared/project-reader.js";
-
-const serializePublicProjectListItem = (project) => ({
-  id: project.id,
-  title: project.title,
-  titleOriginal: project.titleOriginal,
-  titleEnglish: project.titleEnglish,
-  synopsis: project.synopsis,
-  description: project.description,
-  type: project.type,
-  status: project.status,
-  year: project.year,
-  studio: project.studio,
-  animationStudios: project.animationStudios,
-  episodes: project.episodes,
-  tags: project.tags,
-  genres: project.genres,
-  cover: project.cover,
-  coverAlt: project.coverAlt,
-  banner: project.banner,
-  bannerAlt: project.bannerAlt,
-  season: project.season,
-  schedule: project.schedule,
-  rating: project.rating,
-  country: project.country,
-  source: project.source,
-  producers: project.producers,
-  score: project.score,
-  startDate: project.startDate,
-  endDate: project.endDate,
-  relations: project.relations,
-  staff: project.staff,
-  animeStaff: project.animeStaff,
-  trailerUrl: project.trailerUrl,
-  forceHero: project.forceHero,
-  heroImageUrl: project.heroImageUrl,
-  heroImageAlt: project.heroImageAlt,
-  heroLogoUrl: project.heroLogoUrl,
-  heroLogoAlt: project.heroLogoAlt,
-  volumeEntries: project.volumeEntries,
-  volumeCovers: project.volumeCovers,
-  episodeDownloads: project.episodeDownloads,
-  views: project.views,
-  commentsCount: project.commentsCount,
-});
 
 const buildPublicProjectsPayload = ({
   buildPublicMediaVariants,
@@ -51,8 +11,11 @@ const buildPublicProjectsPayload = ({
   page,
   projects,
   usePagination,
+  useCatalogView,
 } = {}) => {
-  const serializedProjects = projects.map(serializePublicProjectListItem);
+  const serializedProjects = useCatalogView
+    ? serializePublicProjectCatalog(projects)
+    : serializePublicProjectList(projects);
   const payload = !usePagination
     ? { projects: serializedProjects }
     : {
@@ -245,6 +208,7 @@ export const registerPublicProjectRoutes = ({
     const limitRaw = Number(req.query.limit);
     const pageRaw = Number(req.query.page);
     const usePagination = Number.isFinite(limitRaw) || Number.isFinite(pageRaw);
+    const useCatalogView = String(req.query.view || "").trim() === "catalog";
     const limit = usePagination ? Math.min(Math.max(limitRaw || 20, 1), 200) : null;
     const page = usePagination ? Math.max(pageRaw || 1, 1) : null;
     const payload = buildPublicProjectsPayload({
@@ -253,6 +217,7 @@ export const registerPublicProjectRoutes = ({
       page,
       projects: getPublicVisibleProjects(),
       usePagination,
+      useCatalogView,
     });
     writePublicCachedJson(req, payload, {
       ttlMs: PUBLIC_READ_CACHE_TTL_MS,

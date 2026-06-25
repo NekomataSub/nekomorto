@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import { getApiBase } from "@/lib/api-base";
 import { apiFetch } from "@/lib/api-client";
+import { authClient } from "@/lib/auth-client";
 import {
   navigatePublicDocument,
   usePublicDocumentLocation,
@@ -59,30 +60,25 @@ const Login = () => {
     mfa === "required" ? "mfa" : "default",
   );
   const [mfaError, setMfaError] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [isStartingAuth, setIsStartingAuth] = useState(false);
   const apiBase = getApiBase();
 
   useEffect(() => {
     let isActive = true;
     const checkSession = async () => {
       try {
-        const response = await apiFetch(apiBase, "/api/me", { auth: true });
+        const response = await apiFetch(apiBase, "/api/public/me", { auth: true });
         if (!response.ok) {
-          if (response.status === 401) {
-            try {
-              const body = await response.json();
-              if (body?.error === "mfa_required" && isActive) {
-                setSessionState("mfa");
-              }
-            } catch {
-              // ignore parse errors
-            }
-          }
           if (isActive) setIsCheckingSession(false);
           return;
         }
-        if (isActive) {
+        const body = await response.json();
+        if (isActive && body?.user) {
           navigatePublicDocument("/dashboard", { replace: true });
+          return;
         }
+        if (isActive) setIsCheckingSession(false);
       } catch {
         if (isActive) setIsCheckingSession(false);
       }
@@ -133,38 +129,15 @@ const Login = () => {
     setIsVerifyingMfa(true);
     setMfaError("");
     try {
-      const response = await apiFetch(apiBase, "/api/auth/mfa/verify", {
-        method: "POST",
-        auth: true,
-        json: { codeOrRecoveryCode: normalizedCode },
-      });
-      if (!response.ok) {
-        let errorCode = "";
-        try {
-          const body = await response.json();
-          errorCode = String(body?.error || "").trim();
-        } catch {
-          errorCode = "";
-        }
-        if (errorCode === "invalid_mfa_code") {
-          setMfaError("Código inválido. Tente novamente.");
-          return;
-        }
-        if (errorCode === "mfa_not_pending" || errorCode === "unauthorized") {
-          setMfaError("Sessão de login expirou. Entre novamente.");
-          return;
-        }
-        if (errorCode === "mfa_required") {
-          setMfaError("Sua sessão ainda exige V2F. Tente novamente.");
-          return;
-        }
+      const isBackupCode = !/^\d{6}$/.test(normalizedCode);
+      const result = isBackupCode
+        ? await authClient.twoFactor.verifyBackupCode({ code: normalizedCode, trustDevice: false })
+        : await authClient.twoFactor.verifyTotp({ code: normalizedCode, trustDevice: false });
+      if (result.error) {
         setMfaError("Não foi possível validar o código de segurança.");
         return;
       }
-      const body = await response.json();
-      const redirect =
-        typeof body?.redirect === "string" && body.redirect ? body.redirect : "/dashboard";
-      window.location.href = redirect;
+      window.location.href = next || "/dashboard";
     } catch {
       setMfaError("Não foi possível validar o código de segurança.");
     } finally {
@@ -194,6 +167,34 @@ const Login = () => {
 
   if (isCheckingSession) return null;
 
+  const startSocialLogin = async (provider: "discord" | "google") => {
+    if (isStartingAuth) return;
+    setIsStartingAuth(true);
+    setAuthError("");
+    const result = await authClient.signIn.social({
+      provider,
+      callbackURL: next || "/dashboard",
+      errorCallbackURL: "/login?error=unauthorized",
+    });
+    if (result?.error) {
+      setAuthError("Não foi possível iniciar a autenticação.");
+      setIsStartingAuth(false);
+    }
+  };
+
+  const startPasskeyLogin = async () => {
+    if (isStartingAuth) return;
+    setIsStartingAuth(true);
+    setAuthError("");
+    const result = await authClient.signIn.passkey();
+    if (result.error) {
+      setAuthError("Nenhuma passkey válida foi encontrada.");
+      setIsStartingAuth(false);
+      return;
+    }
+    window.location.href = next || "/dashboard";
+  };
+
   return (
     <div className="login-shell text-foreground">
       <div aria-hidden className="login-backdrop" />
@@ -222,6 +223,11 @@ const Login = () => {
                   {errorMessage}
                 </div>
               )}
+              {authError ? (
+                <div role="alert" aria-live="polite" className="login-alert">
+                  {authError}
+                </div>
+              ) : null}
 
               {isOauthLoginVisible ? (
                 <div className="space-y-4">
@@ -229,12 +235,8 @@ const Login = () => {
                     <button
                       type="button"
                       className={cn("login-provider-btn login-provider-btn--discord")}
-                      onClick={() => {
-                        const target = next
-                          ? `${apiBase}/auth/discord?next=${encodeURIComponent(next)}`
-                          : `${apiBase}/auth/discord`;
-                        window.location.href = target;
-                      }}
+                      disabled={isStartingAuth}
+                      onClick={() => void startSocialLogin("discord")}
                     >
                       <span className="login-provider-icon">
                         <DiscordIcon className="h-5 w-5" />
@@ -245,17 +247,25 @@ const Login = () => {
                     <button
                       type="button"
                       className={cn("login-provider-btn login-provider-btn--google")}
-                      onClick={() => {
-                        const target = next
-                          ? `${apiBase}/auth/google?next=${encodeURIComponent(next)}`
-                          : `${apiBase}/auth/google`;
-                        window.location.href = target;
-                      }}
+                      disabled={isStartingAuth}
+                      onClick={() => void startSocialLogin("google")}
                     >
                       <span className="login-provider-icon">
                         <GoogleIcon className="h-5 w-5" />
                       </span>
                       <span className="login-provider-label">Entrar com Google</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={cn("login-provider-btn")}
+                      disabled={isStartingAuth}
+                      onClick={() => void startPasskeyLogin()}
+                    >
+                      <span className="login-provider-icon">
+                        <Lock className="h-5 w-5" />
+                      </span>
+                      <span className="login-provider-label">Entrar com passkey</span>
                     </button>
                   </div>
                 </div>

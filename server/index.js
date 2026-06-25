@@ -80,6 +80,13 @@ import { API_CONTRACT_VERSION } from "./lib/api-contract-v1.js";
 import { createAuditLogStore } from "./lib/audit-log-store.js";
 import * as authzLib from "./lib/authz.js";
 import {
+  betterAuthSessionBridge,
+  registerBetterAuthCompatibilityRoutes,
+  registerBetterAuthHandler,
+  resetBetterAuthPasskeysForUser,
+  resetBetterAuthTotpForUser,
+} from "./lib/better-auth-runtime.js";
+import {
   AccessRole,
   addOwnerRoleLabel,
   can,
@@ -1006,6 +1013,9 @@ const {
 if (!SESSION_SECRET && process.env.NODE_ENV === "production") {
   throw new Error("Missing SESSION_SECRET in env.");
 }
+if (!String(process.env.BETTER_AUTH_SECRET || "").trim() && process.env.NODE_ENV === "production") {
+  throw new Error("Missing BETTER_AUTH_SECRET in env.");
+}
 if ((!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) && process.env.NODE_ENV === "production") {
   throw new Error("Missing DISCORD_CLIENT_ID or DISCORD_CLIENT_SECRET in env.");
 }
@@ -1015,9 +1025,6 @@ const isGoogleOAuthConfigured = Boolean(
 if (isGoogleOAuthConfigured) {
   if (!String(GOOGLE_CLIENT_ID || "").trim() || !String(GOOGLE_CLIENT_SECRET || "").trim()) {
     throw new Error("Google OAuth requires both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.");
-  }
-  if (isProduction && !String(CONFIGURED_GOOGLE_REDIRECT_URI || "").trim()) {
-    throw new Error("Production Google OAuth requires an explicit GOOGLE_REDIRECT_URI.");
   }
 }
 if (isProduction && !OWNER_IDS.length && !BOOTSTRAP_TOKEN) {
@@ -1048,6 +1055,7 @@ registerRuntimeMiddleware({
   pwaThemeColorLight: PWA_THEME_COLOR_LIGHT,
   primaryAppHost: PRIMARY_APP_HOST,
   primaryAppOrigin: PRIMARY_APP_ORIGIN,
+  registerBeforeBodyParsers: registerBetterAuthHandler,
   sessionCookieConfig,
   sessionStore,
   setStaticCacheHeaders,
@@ -1056,6 +1064,9 @@ registerRuntimeMiddleware({
   uploadStorageService,
   viteDevServer,
 });
+
+app.use(betterAuthSessionBridge);
+registerBetterAuthCompatibilityRoutes(app);
 
 const USER_PREFERENCES_MAX_BYTES = 20 * 1024;
 const USER_PREFERENCES_THEME_MODE_SET = new Set(["light", "dark", "system"]);
@@ -2029,6 +2040,25 @@ const astroPublicRequestHandler = createAstroPublicRequestHandler({
     if (!isAstroPublicBootstrapPathname(pathname)) {
       return null;
     }
+    if (pathname === "/projetos") {
+      return null;
+    }
+    if (pathname === "/") {
+      const cached = readPublicCachedJson(req);
+      if (cached?.payload?.payloadMode === PUBLIC_BOOTSTRAP_MODE_CRITICAL_HOME) {
+        return cached.payload;
+      }
+      const payload = publicRuntime.buildPublicBootstrapResponsePayload({
+        pages,
+        payloadMode: PUBLIC_BOOTSTRAP_MODE_CRITICAL_HOME,
+        settings: siteSettings,
+      });
+      writePublicCachedJson(req, payload, {
+        tags: [PUBLIC_READ_CACHE_TAGS.BOOTSTRAP],
+        ttlMs: PUBLIC_READ_CACHE_TTL_MS,
+      });
+      return payload;
+    }
     const routeSlug = String(req?.params?.slug || "").trim();
     const currentPostDetail = routeSlug
       ? (() => {
@@ -2217,6 +2247,8 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   deleteManagedUploadEntryAssets,
   deletePrivateUploadByUrl,
   deleteUserMfaTotpRecord,
+  resetBetterAuthPasskeysForUser,
+  resetBetterAuthTotpForUser,
   deriveAniListMediaOrganization,
   deriveChapterSynopsis,
   dispatchWebhookMessage,

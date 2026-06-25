@@ -1,6 +1,7 @@
 ---
 import "../../src/index.css";
 import "../../src/styles/fonts.css";
+import { buildAstroAssetRecoveryBootstrapScript } from "../../src/lib/astro-asset-recovery-bootstrap";
 import {
   buildThemeModeBootstrapScript,
   getThemeModeDocumentAttributes,
@@ -25,6 +26,7 @@ const separator = siteSettings.site?.titleSeparator || " | ";
 const pageTitle = _title ? `${_title}${separator}${siteName}` : siteName;
 const themeModeDocument = getThemeModeDocumentAttributes(siteSettings);
 const themeModeBootstrapScript = buildThemeModeBootstrapScript(siteSettings);
+const astroAssetRecoveryBootstrapScript = buildAstroAssetRecoveryBootstrapScript();
 ---
 
 <!doctype html>
@@ -44,6 +46,7 @@ const themeModeBootstrapScript = buildThemeModeBootstrapScript(siteSettings);
     <meta name="robots" content={_robots} />
     <meta name="theme-color" content="hsl(var(--background))" />
     <script is:inline set:html={themeModeBootstrapScript} />
+    <script is:inline set:html={astroAssetRecoveryBootstrapScript} />
   </head>
   <body class="min-h-screen bg-background text-foreground">
     <slot />
