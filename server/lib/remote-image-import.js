@@ -70,9 +70,14 @@ const isPrivateIpv6 = (value) => {
 };
 
 const isPrivateHost = (host) => {
-  const normalized = String(host || "")
+  let normalized = String(host || "")
     .trim()
     .toLowerCase();
+
+  if (normalized.startsWith("[") && normalized.endsWith("]")) {
+    normalized = normalized.slice(1, -1);
+  }
+
   if (!normalized) {
     return true;
   }
