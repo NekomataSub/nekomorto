@@ -1,3 +1,59 @@
+import {
+  BadgeDollarSign,
+  Banknote,
+  Bitcoin,
+  CircleDollarSign,
+  Coins,
+  DollarSign,
+  Flame,
+  GripVertical,
+  HandCoins,
+  Heart,
+  HeartHandshake,
+  HelpCircle,
+  Info,
+  Landmark,
+  Languages,
+  Layers,
+  Paintbrush,
+  PenTool,
+  PiggyBank,
+  Plus,
+  QrCode,
+  Rocket,
+  ScanText,
+  Server,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Timer,
+  Trash2,
+  Users,
+  Video,
+  Wallet,
+  Wallet2,
+  WalletCards,
+  WalletMinimal,
+  Wand2,
+  Zap,
+} from "lucide-react";
+import {
+  type DragEvent,
+  type FocusEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import DashboardAutosaveStatus from "@/components/DashboardAutosaveStatus";
+import DashboardShell from "@/components/DashboardShell";
+import DashboardActionButton, {
+  default as Button,
+} from "@/components/dashboard/DashboardActionButton";
+import DashboardFieldStack from "@/components/dashboard/DashboardFieldStack";
+import DashboardPageBadge from "@/components/dashboard/DashboardPageBadge";
 import { Combobox, Input, Textarea } from "@/components/dashboard/dashboard-form-controls";
 import {
   dashboardAnimationDelay,
@@ -7,13 +63,6 @@ import {
   dashboardPageLayoutTokens,
   dashboardSubtleSurfaceHoverClassName,
 } from "@/components/dashboard/dashboard-page-tokens";
-import DashboardActionButton, {
-  default as Button,
-} from "@/components/dashboard/DashboardActionButton";
-import DashboardFieldStack from "@/components/dashboard/DashboardFieldStack";
-import DashboardPageBadge from "@/components/dashboard/DashboardPageBadge";
-import DashboardAutosaveStatus from "@/components/DashboardAutosaveStatus";
-import DashboardShell from "@/components/DashboardShell";
 import LazyImageLibraryDialog from "@/components/lazy/LazyImageLibraryDialog";
 import ReorderControls from "@/components/ReorderControls";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -53,55 +102,6 @@ import {
 import { getShareImageAltFallback, resolveAssetAltText } from "@/lib/image-alt";
 import { filterImageLibraryFoldersByAccess } from "@/lib/image-library-scope";
 import type { DonationsCryptoService } from "@/types/public-pages";
-import {
-  BadgeDollarSign,
-  Banknote,
-  Bitcoin,
-  CircleDollarSign,
-  Coins,
-  DollarSign,
-  Flame,
-  GripVertical,
-  Heart,
-  HeartHandshake,
-  HandCoins,
-  HelpCircle,
-  Info,
-  Landmark,
-  Languages,
-  Layers,
-  Paintbrush,
-  PenTool,
-  PiggyBank,
-  Plus,
-  QrCode,
-  Rocket,
-  ScanText,
-  Server,
-  Shield,
-  ShieldCheck,
-  Sparkles,
-  Timer,
-  Trash2,
-  Users,
-  Video,
-  Wallet,
-  Wallet2,
-  WalletCards,
-  WalletMinimal,
-  Wand2,
-  Zap,
-} from "lucide-react";
-import {
-  type DragEvent,
-  type FocusEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 type AboutHighlight = DashboardPagesEditorRecord & { label: string; text: string; icon: string };
 type AboutValue = DashboardPagesEditorRecord & { title: string; description: string; icon: string };
@@ -1423,6 +1423,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                     <Button
                                       variant="ghost"
                                       size="icon"
+                                      aria-label={`Remover selo ${index + 1}`}
                                       onClick={() => {
                                         const next = pages.about.heroBadges.filter(
                                           (_, i) => i !== index,
@@ -1430,7 +1431,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                         updateAbout({ heroBadges: next });
                                       }}
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                                     </Button>
                                   </div>
                                 ))}
@@ -1516,6 +1517,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                       <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label={`Remover destaque ${index + 1}`}
                                         onClick={() =>
                                           updateAbout({
                                             highlights: pages.about.highlights.filter(
@@ -1524,7 +1526,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                           })
                                         }
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                                       </Button>
                                     </div>
                                   </div>
@@ -1611,6 +1613,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                   <Button
                                     variant="ghost"
                                     size="icon"
+                                    aria-label={`Remover parágrafo do manifesto ${index + 1}`}
                                     onClick={() => {
                                       const next = pages.about.manifestoParagraphs.filter(
                                         (_, i) => i !== index,
@@ -1620,7 +1623,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                       });
                                     }}
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-4 w-4" aria-hidden="true" />
                                   </Button>
                                 </div>
                               ))}
@@ -1705,6 +1708,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                       <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label={`Remover pilar ${index + 1}`}
                                         onClick={() =>
                                           updateAbout({
                                             pillars: pages.about.pillars.filter(
@@ -1713,7 +1717,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                           })
                                         }
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                                       </Button>
                                     </div>
                                   </div>
@@ -1826,6 +1830,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                       <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label={`Remover valor ${index + 1}`}
                                         onClick={() =>
                                           updateAbout({
                                             values: pages.about.values.filter(
@@ -1834,7 +1839,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                           })
                                         }
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                                       </Button>
                                     </div>
                                   </div>
@@ -1979,6 +1984,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                       <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label={`Remover custo ${index + 1}`}
                                         onClick={() =>
                                           updateDonations({
                                             costs: pages.donations.costs.filter(
@@ -1987,7 +1993,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                           })
                                         }
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                                       </Button>
                                     </div>
                                   </div>
@@ -2309,7 +2315,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                           aria-label={`Remover serviço cripto ${index + 1}`}
                                           onClick={() => removeCryptoServiceAt(index)}
                                         >
-                                          <Trash2 className="h-4 w-4" />
+                                          <Trash2 className="h-4 w-4" aria-hidden="true" />
                                         </Button>
                                       </div>
                                     </div>
@@ -2574,6 +2580,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                       <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label={`Remover doador ${index + 1}`}
                                         onClick={() =>
                                           updateDonations({
                                             donors: pages.donations.donors.filter(
@@ -2582,7 +2589,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                           })
                                         }
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                                       </Button>
                                     </div>
                                   </div>
@@ -2733,6 +2740,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                       <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label={`Remover cartão de introdução ${index + 1}`}
                                         onClick={() =>
                                           updateFaq({
                                             introCards: pages.faq.introCards.filter(
@@ -2741,7 +2749,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                           })
                                         }
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                                       </Button>
                                     </div>
                                   </div>
@@ -2862,6 +2870,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                       <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label={`Remover grupo de FAQ ${groupIndex + 1}`}
                                         onClick={() =>
                                           updateFaq({
                                             groups: pages.faq.groups.filter(
@@ -2870,7 +2879,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                           })
                                         }
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                                       </Button>
                                     </div>
                                   </div>
@@ -2982,6 +2991,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                               <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                aria-label={`Remover pergunta ${itemIndex + 1}`}
                                                 onClick={() => {
                                                   const next = [...pages.faq.groups];
                                                   const items = group.items.filter(
@@ -2994,7 +3004,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                                   updateFaq({ groups: next });
                                                 }}
                                               >
-                                                <Trash2 className="h-4 w-4" />
+                                                <Trash2 className="h-4 w-4" aria-hidden="true" />
                                               </Button>
                                             </div>
                                           </div>
@@ -3205,6 +3215,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                       <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label={`Remover função ${index + 1}`}
                                         onClick={() =>
                                           updateRecruitment({
                                             roles: pages.recruitment.roles.filter(
@@ -3213,7 +3224,7 @@ const DashboardPagesContent = ({ currentUser }: DashboardPagesContentProps) => {
                                           })
                                         }
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                                       </Button>
                                     </div>
                                   </div>
