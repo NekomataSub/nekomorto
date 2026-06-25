@@ -151,7 +151,15 @@ export const syncPublicBootstrapCacheFromWindow = (options: { emit?: boolean } =
 export const buildPublicBootstrapSnapshot = (
   overrideData?: PublicBootstrapPayload | null,
 ): PublicBootstrapSnapshot => {
-  const data = overrideData || publicBootstrapCache.data || undefined;
+  const cachedData = publicBootstrapCache.data;
+  const shouldPromoteCachedFullPayload = Boolean(
+    isPartialPublicBootstrapPayload(overrideData) &&
+      cachedData &&
+      !isPartialPublicBootstrapPayload(cachedData),
+  );
+  const data = shouldPromoteCachedFullPayload
+    ? cachedData || undefined
+    : overrideData || cachedData || undefined;
   const status =
     overrideData && publicBootstrapCache.status === "idle" ? "success" : publicBootstrapCache.status;
   const hasFetched = Boolean(overrideData) || publicBootstrapCache.hasFetched;
@@ -321,6 +329,9 @@ export const refreshPublicBootstrapCacheIfStale = async ({
   apiBase?: string;
   minAgeMs?: number;
 } = {}) => {
+  if (isPartialPublicBootstrapPayload(publicBootstrapCache.data)) {
+    return await requestPublicBootstrap(apiBase, { force: true });
+  }
   const lastFetchedAt = getPublicBootstrapLastFetchedAt();
   if (lastFetchedAt > 0 && Date.now() - lastFetchedAt < minAgeMs) {
     return publicBootstrapCache.data || emptyPublicBootstrapPayload;

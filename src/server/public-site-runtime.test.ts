@@ -111,6 +111,7 @@ const createDeps = (overrides = {}) => ({
   loadSiteSettings: () => ({
     updatedAt: "2026-03-28T09:00:00.000Z",
     site: { defaultShareImage: "/uploads/default-og.jpg" },
+    theme: { accent: "#08D6FF", mode: "dark", useAccentInProgressCard: false },
   }),
   loadTagTranslations: () => ({ tags: {}, genres: {}, staffRoles: {} }),
   primaryAppOrigin: "https://example.com",
@@ -218,6 +219,13 @@ describe("public-site-runtime", () => {
     ]);
     expect(fullPayload.currentPostDetail).toBeNull();
     expect(criticalPayload.payloadMode).toBe("critical-home");
+    expect(criticalPayload.settings).toEqual({
+      theme: {
+        accent: "#08D6FF",
+        mode: "dark",
+        useAccentInProgressCard: false,
+      },
+    });
     expect(Array.isArray(criticalPayload.projects)).toBe(true);
     expect(criticalPayload.inProgressItems).toEqual(fullPayload.inProgressItems);
     expect(criticalPayload.homeHero).toEqual(

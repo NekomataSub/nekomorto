@@ -23,7 +23,7 @@ const _meta = resolveProjectsPageMeta({
   title={_meta.title}
 >
   <PublicProjectsIsland
-    client:idle
+    client:load
     initialPath={`${Astro.url.pathname}${Astro.url.search}`}
     initialCurrentUser={locals?.currentUser ?? null}
     initialPublicBootstrap={publicBootstrap}

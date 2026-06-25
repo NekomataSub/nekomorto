@@ -240,6 +240,7 @@ import {
   parseSearchScope,
   publicSearchConfig,
 } from "./lib/public-search.js";
+import { serializePublicProjectCatalog } from "./lib/public-project-list.js";
 import {
   PUBLIC_BOOTSTRAP_MODE_CRITICAL_HOME,
   PUBLIC_BOOTSTRAP_MODE_FULL,
@@ -2057,13 +2058,12 @@ const astroPublicRequestHandler = createAstroPublicRequestHandler({
           return null;
         }
         if (routeKind === "projects-list") {
-          const projects = getPublicVisibleProjects();
-          const tagTranslations = loadTagTranslations();
+          const projects = serializePublicProjectCatalog(getPublicVisibleProjects());
           return buildPublicRoutePayload({
             kind: "projects-list",
             projects,
-            tagTranslations,
-            mediaVariants: buildPublicMediaVariants([projects]),
+            tagTranslations: loadTagTranslations(),
+            mediaVariants: buildPublicMediaVariants(projects),
           });
         }
         if (routeKind === "project-detail") {

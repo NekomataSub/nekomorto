@@ -427,6 +427,14 @@ export const createPublicSiteRuntime = (dependencies = {}) => {
         : { shareImage: "", shareImageAlt: "" },
   });
 
+  const toCriticalHomeSettingsPayload = (settings) => ({
+    theme: {
+      accent: String(settings?.theme?.accent || "").trim(),
+      mode: String(settings?.theme?.mode || "").trim(),
+      useAccentInProgressCard: settings?.theme?.useAccentInProgressCard === true,
+    },
+  });
+
   const buildCriticalHomeBootstrapPayload = ({
     settings,
     pages,
@@ -447,7 +455,7 @@ export const createPublicSiteRuntime = (dependencies = {}) => {
       .map((update) => toCriticalHomeUpdatePayload(update));
 
     const payload = buildPublicBootstrapPayload({
-      settings,
+      settings: toCriticalHomeSettingsPayload(settings),
       pages: toCriticalHomePagesPayload(pages),
       projects: criticalProjects,
       inProgressItems,

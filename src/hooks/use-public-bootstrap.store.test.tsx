@@ -403,4 +403,46 @@ describe("usePublicBootstrap store", () => {
       expect(screen.getByTestId("hook")).toHaveTextContent("Projeto Atualizado|26000");
     });
   });
+
+  it("promove payload partial mesmo quando o cache ainda nao esta stale", async () => {
+    const dateNowSpy = vi.spyOn(Date, "now");
+    dateNowSpy.mockReturnValue(10_000);
+    apiFetchMock.mockResolvedValueOnce(
+      createJsonResponse(true, {
+        settings: { theme: { accent: "#08D6FF", mode: "dark" } },
+        pages: {},
+        projects: [{ id: "project-full", title: "Projeto Completo" }],
+        posts: [{ id: "post-1", title: "Post Completo" }],
+        updates: [],
+        mediaVariants: {},
+        tagTranslations: { tags: {}, genres: {}, staffRoles: {} },
+        generatedAt: "2026-03-05T00:01:00.000Z",
+        payloadMode: "full",
+      }),
+    );
+
+    const { primePublicBootstrapCache, refreshPublicBootstrapCacheIfStale } =
+      await loadHookModule();
+    primePublicBootstrapCache({
+      settings: { theme: { accent: "#08D6FF", mode: "dark" } },
+      pages: {},
+      projects: [{ id: "project-critical", title: "Projeto Critico" }],
+      posts: [],
+      updates: [],
+      mediaVariants: {},
+      tagTranslations: { tags: {}, genres: {}, staffRoles: {} },
+      generatedAt: "2026-03-05T00:00:00.000Z",
+      payloadMode: "critical-home",
+    });
+
+    const payload = await refreshPublicBootstrapCacheIfStale({
+      apiBase: "http://api.local",
+      minAgeMs: 60_000,
+    });
+
+    expect(apiFetchMock).toHaveBeenCalledWith("http://api.local", "/api/public/bootstrap");
+    expect(payload.payloadMode).toBe("full");
+    expect(payload.posts).toEqual([expect.objectContaining({ id: "post-1" })]);
+    expect(payload.settings.theme?.accent).toBe("#08D6FF");
+  });
 });
