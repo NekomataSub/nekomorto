@@ -1,12 +1,9 @@
 import "dotenv/config";
-import connectPgSimple from "connect-pg-simple";
 import crypto from "crypto";
 import express from "express";
-import session from "express-session";
 import fs from "fs";
 import multer from "multer";
 import path from "path";
-import { Pool } from "pg";
 import { fileURLToPath } from "url";
 import { deriveAniListMediaOrganization } from "../shared/anilist-media.js";
 import {
@@ -81,10 +78,14 @@ import { createAuditLogStore } from "./lib/audit-log-store.js";
 import * as authzLib from "./lib/authz.js";
 import {
   betterAuthSessionBridge,
+  listBetterAuthActiveSessionsForUser,
+  loadBetterAuthSessionIndexRecords,
   registerBetterAuthCompatibilityRoutes,
   registerBetterAuthHandler,
+  revokeBetterAuthSessionBySid,
   resetBetterAuthPasskeysForUser,
   resetBetterAuthTotpForUser,
+  touchBetterAuthSessionIndexFromRequest,
 } from "./lib/better-auth-runtime.js";
 import {
   AccessRole,
@@ -433,7 +434,6 @@ const uploadStorageService = createUploadStorageService({
 
 const app = express();
 app.disable("x-powered-by");
-const PgSessionStore = connectPgSimple(session);
 let dataRepository = null;
 const DEFAULT_PROJECT_TYPE_CATALOG = Object.freeze([
   "Anime",
@@ -750,7 +750,6 @@ const {
   PUBLIC_READ_CACHE_MAX_ENTRIES,
   PUBLIC_READ_CACHE_TTL_MS,
   SESSION_SECRET,
-  SESSION_TABLE,
   adminExportsDir,
   buildSiteSettingsStoragePayload,
   dataEncryptionKeyring,
@@ -784,12 +783,11 @@ const mfaFailedByUserCounter = createSlidingWindowCounter();
 if (!String(DATABASE_URL || "").trim()) {
   throw new Error("DATABASE_URL is required");
 }
-const sessionStore = new PgSessionStore({
-  pool: new Pool({ connectionString: DATABASE_URL }),
-  tableName: String(SESSION_TABLE || "user_sessions"),
-  createTableIfMissing: false,
-  ttl: 60 * 60 * 24 * 7,
-});
+const sessionStore = {
+  destroy: (_sid, callback) => {
+    if (typeof callback === "function") callback(null);
+  },
+};
 const AUTH_FAILED_BURST_WARNING = Object.freeze({ threshold: 8, windowMs: 5 * 60 * 1000 });
 const AUTH_FAILED_BURST_CRITICAL = Object.freeze({ threshold: 20, windowMs: 15 * 60 * 1000 });
 const MFA_FAILED_BURST_WARNING = Object.freeze({ threshold: 5, windowMs: 10 * 60 * 1000 });
@@ -1026,6 +1024,7 @@ if (isProduction && !OWNER_IDS.length && !BOOTSTRAP_TOKEN) {
 
 registerRuntimeMiddleware({
   app,
+  attachAuthSession: betterAuthSessionBridge,
   apiContractVersion: API_CONTRACT_VERSION,
   canReadPublicAsset: runtimeRateLimit.canReadPublicAsset,
   clientDistDir,
@@ -1040,7 +1039,7 @@ registerRuntimeMiddleware({
   isPwaDevEnabled,
   loadSiteSettings: () => loadSiteSettings(),
   loadUploads: () => loadUploads(),
-  maybeEmitAdminActionFromNewNetwork: (req) => maybeEmitAdminActionFromNewNetwork(req),
+  maybeEmitAdminActionFromNewNetwork: () => {},
   metricsRegistry,
   pwaManifestBase: PWA_MANIFEST_BASE,
   pwaManifestCacheControl: PWA_MANIFEST_CACHE_CONTROL,
@@ -1049,16 +1048,13 @@ registerRuntimeMiddleware({
   primaryAppHost: PRIMARY_APP_HOST,
   primaryAppOrigin: PRIMARY_APP_ORIGIN,
   registerBeforeBodyParsers: registerBetterAuthHandler,
-  sessionCookieConfig,
-  sessionStore,
   setStaticCacheHeaders,
   staticDefaultCacheControl: STATIC_DEFAULT_CACHE_CONTROL,
-  updateSessionIndexFromRequest: (...args) => updateSessionIndexFromRequest(...args),
+  updateSessionIndexFromRequest: (...args) => touchBetterAuthSessionIndexFromRequest(...args),
   uploadStorageService,
   viteDevServer,
 });
 
-app.use(betterAuthSessionBridge);
 registerBetterAuthCompatibilityRoutes(app);
 
 const USER_PREFERENCES_MAX_BYTES = 20 * 1024;
@@ -1466,7 +1462,6 @@ const {
   clearPendingMfaEnrollmentFromSession,
   clearPendingMfaEnrollmentRedirectTarget,
   completeRequiredMfaEnrollmentForSession,
-  deleteUserMfaTotpRecord,
   getPendingMfaEnrollmentRedirectTarget,
   getPendingMfaEnrollmentState,
   isPendingMfaEnrollmentRequiredForUser,
@@ -1476,25 +1471,22 @@ const {
   handleAuthFailureSecuritySignals,
   handleMfaFailureSecuritySignals,
   isTotpEnabledForUser,
-  listActiveSessionsForUser,
   loadUserPreferences,
-  loadUserSessionIndexRecords,
-  maybeEmitAdminActionFromNewNetwork,
-  maybeEmitExcessiveSessionsEvent,
-  maybeEmitNewNetworkLoginEvent,
   normalizeUserPreferences,
   normalizeUsers,
   resolveEnrollmentFromSession,
   resolveMfaMetadata,
-  revokeSessionBySid,
-  revokeUserSessionIndexRecord,
   startTotpEnrollment,
   syncPersistedDiscordAvatarForLogin,
-  updateSessionIndexFromRequest,
   verifyTotpOrRecoveryCode,
-  writeUserMfaTotpRecord,
   writeUserPreferences,
 } = userRuntime;
+
+const listActiveSessionsForUser = listBetterAuthActiveSessionsForUser;
+const loadUserSessionIndexRecords = loadBetterAuthSessionIndexRecords;
+const revokeSessionBySid = revokeBetterAuthSessionBySid;
+const revokeUserSessionIndexRecord = () => {};
+const updateSessionIndexFromRequest = touchBetterAuthSessionIndexFromRequest;
 
 const { evaluateOperationalMonitoring } = createOperationalMonitoringRuntime(
   buildOperationalMonitoringRuntimeDependencies({
@@ -2239,7 +2231,6 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   dataEncryptionKeyring,
   deleteManagedUploadEntryAssets,
   deletePrivateUploadByUrl,
-  deleteUserMfaTotpRecord,
   resetBetterAuthPasskeysForUser,
   resetBetterAuthTotpForUser,
   deriveAniListMediaOrganization,
@@ -2342,8 +2333,6 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   mapEpubImportExecutionError,
   mapProjectImageImportExecutionError,
   materializeUploadEntrySourceToStaging,
-  maybeEmitExcessiveSessionsEvent,
-  maybeEmitNewNetworkLoginEvent,
   metricsRegistry,
   migrateEditorialMentionPlaceholdersInSettings,
   normalizeAnalyticsTypeFilter,
@@ -2451,7 +2440,6 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   writeUpdates,
   writeUploadBufferToStaging,
   writeUploads,
-  writeUserMfaTotpRecord,
   writeUserPreferences,
   writeUsers,
 });

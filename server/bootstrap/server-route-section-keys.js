@@ -16,7 +16,6 @@ export const SERVER_ROUTE_SECTION_KEYS = {
     "canViewAnalytics",
     "canViewAuditLog",
     "dataEncryptionKeyring",
-    "deleteUserMfaTotpRecord",
     "resetBetterAuthPasskeysForUser",
     "resetBetterAuthTotpForUser",
     "emitSecurityEvent",

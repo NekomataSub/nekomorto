@@ -112,9 +112,9 @@ describe("registerRootServerRoutes", () => {
 
   it("fails fast when a direct-route dependency resolves to undefined", () => {
     const source = buildRootRouteSource();
-    source.startTotpEnrollment = undefined;
+    source.listActiveSessionsForUser = undefined;
 
-    expect(() => createRootServerRouteContexts(source)).toThrow(/startTotpEnrollment/);
+    expect(() => createRootServerRouteContexts(source)).toThrow(/listActiveSessionsForUser/);
   });
 
   it("fails fast when a grouped server-route dependency resolves to undefined", () => {

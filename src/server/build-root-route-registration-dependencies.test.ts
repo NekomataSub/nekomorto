@@ -117,7 +117,6 @@ describe("buildRootRouteRegistrationDependencies", () => {
       discordClientId: undefined,
       discordClientSecret: undefined,
       metricsTokenNormalized: undefined,
-      mfaRecoveryCodePepper: undefined,
       primaryAppOrigin: undefined,
       scopes: undefined,
       securityEventStatusOpen: undefined,
@@ -126,7 +125,7 @@ describe("buildRootRouteRegistrationDependencies", () => {
 
     const contexts = createRootServerRouteContexts(rootDependencies);
 
-    expect(contexts.directRouteDependencies.selfService.mfaRecoveryCodePepper).toBe("pepper");
+    expect(contexts.directRouteDependencies.selfService.userPreferencesMaxBytes).toBe(4096);
     expect(contexts.serverRouteDependencies.og.getProjectOgCachedRender).toEqual(
       createNamedValue("getProjectOgCachedRender"),
     );

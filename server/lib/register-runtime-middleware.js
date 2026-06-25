@@ -4,7 +4,6 @@ import cors from "cors";
 import crypto from "crypto";
 import express from "express";
 import { ipKeyGenerator, rateLimit } from "express-rate-limit";
-import session from "express-session";
 import fs from "fs";
 import path from "path";
 import { buildCorsOptionsForRequest } from "./cors-policy.js";
@@ -95,6 +94,7 @@ export const buildPwaManifestPayload = ({
 
 export const registerRuntimeMiddleware = ({
   app,
+  attachAuthSession,
   apiContractVersion,
   canReadPublicAsset,
   clientDistDir,
@@ -118,8 +118,6 @@ export const registerRuntimeMiddleware = ({
   primaryAppHost,
   primaryAppOrigin,
   registerBeforeBodyParsers,
-  sessionCookieConfig,
-  sessionStore,
   setStaticCacheHeaders,
   staticDefaultCacheControl,
   trustProxy = 1,
@@ -339,23 +337,9 @@ export const registerRuntimeMiddleware = ({
   };
   app.use("/api", requireSameOrigin);
 
-  const sessionCookieOptions = {
-    ...sessionCookieConfig.cookie,
-    httpOnly: true,
-    sameSite: "lax",
-    secure: true,
-    path: "/",
-  };
-  app.use(
-    session({
-      name: sessionCookieConfig.name,
-      secret: sessionCookieConfig.secret,
-      resave: false,
-      saveUninitialized: false,
-      store: sessionStore,
-      cookie: sessionCookieOptions,
-    }),
-  );
+  if (typeof attachAuthSession === "function") {
+    app.use(attachAuthSession);
+  }
 
   app.use((req, res, next) => {
     const requestIdHeader = String(req.headers["x-request-id"] || "").trim();

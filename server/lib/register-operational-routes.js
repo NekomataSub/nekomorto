@@ -119,7 +119,7 @@ export const registerOperationalRoutes = ({
     return sendOperationalHealth(req, res);
   });
 
-  router.get("/api/metrics", (req, res) => {
+  router.get("/api/metrics", async (req, res, next) => {
     if (!isMetricsEnabled || !metricsTokenNormalized) {
       return res.status(404).json({ error: "not_found" });
     }
@@ -132,9 +132,14 @@ export const registerOperationalRoutes = ({
       return res.status(401).json({ error: "unauthorized" });
     }
 
-    const activeSessionsCount = loadUserSessionIndexRecords({ includeRevoked: false }).filter(
-      (entry) => !entry.revokedAt,
-    ).length;
+    let activeSessionsCount = 0;
+    try {
+      activeSessionsCount = (await loadUserSessionIndexRecords({ includeRevoked: false })).filter(
+        (entry) => !entry.revokedAt,
+      ).length;
+    } catch (error) {
+      return next(error);
+    }
     metricsRegistry.setGauge("active_sessions_total", {}, activeSessionsCount);
     const openSecurityEvents = loadSecurityEvents().filter(
       (entry) => String(entry.status || "").toLowerCase() === securityEventStatusOpen,

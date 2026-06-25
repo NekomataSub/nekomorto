@@ -31,7 +31,7 @@ O Nekomorto e uma aplicacao web **DB-only**:
 - O PostgreSQL e a fonte unica de verdade dos dados.
 - O backend roda em Node.js/Express (`server/index.js`).
 - A superficie publica e parte da superficie autenticada rodam em um runtime hibrido: o legado React/Vite continua ativo, enquanto o Astro ja atende as rotas publicas principais, as paginas institucionais, o leitor publico e os hosts de `/login` e `/dashboard/**`.
-- As sessoes HTTP sao persistidas no PostgreSQL com `connect-pg-simple` (tabela padrao `user_sessions`).
+- As sessoes autenticadas sao gerenciadas pelo Better Auth no PostgreSQL (`auth_sessions`).
 - Uploads podem ser servidos localmente ou via object storage, preservando o contrato publico em `/uploads/...`.
 
 ### 1.3 Mapa rapido do repositorio
@@ -352,7 +352,6 @@ Convencoes usadas nas tabelas:
 | `SESSION_SECRET` | `dev base`, `prod compose`, `dev deploy` | `production`, exceto quando `SESSION_SECRETS` estiver preenchido | vazio; em dev, se `SESSION_SECRETS` tambem estiver vazio, cai no fallback inseguro `dev-session-secret` | string secreta longa | Segredo principal de sessao HTTP. |
 | `BETTER_AUTH_SECRET` | `dev base`, `prod compose`, `dev deploy` | `production` | vazio | string secreta longa e independente | Assina cookies e material criptográfico do Better Auth. Rotacionar invalida estados OAuth/2FA pendentes; preserve o valor anterior durante rollback. |
 | `SESSION_SECRETS` | `dev base`, `prod compose`, `dev deploy` | nunca | vazio | `CSV` de secrets, mais novo primeiro | Lista de rotacao de secrets de sessao. Quando preenchida, substitui `SESSION_SECRET` como lista aceita e o primeiro valor vira o ativo. |
-| `SESSION_TABLE` | `dev base`, `prod compose`, `dev deploy` | nunca | `user_sessions` | nome de tabela SQL | Nome da tabela usada pelo `connect-pg-simple`. |
 | `OWNER_IDS` | `dev base`, `prod compose`, `dev deploy` | `production` quando `BOOTSTRAP_TOKEN` estiver vazio | vazio; em dev existe fallback interno para um owner local do projeto | `CSV` de IDs de usuario do Discord | Owners iniciais carregados no boot. |
 | `BOOTSTRAP_TOKEN` | `dev base`, `prod compose`, `dev deploy` | `production` quando `OWNER_IDS` estiver vazio | vazio | string secreta | Token one-shot para `POST /api/bootstrap-owner` criar o primeiro owner. |
 
@@ -934,16 +933,6 @@ Get-NetTCPConnection -LocalPort 8080 | Select-Object LocalAddress,LocalPort,Owni
 Stop-Process -Id <PID> -Force
 ```
 
-### Erro: `Cannot find package 'connect-pg-simple' imported from ...`
-
-Causa: dependencias nao instaladas ou `node_modules` inconsistente.
-
-Correcao:
-
-```bash
-npm install
-```
-
 ### Erro: `The requested module '@prisma/client' does not provide an export named 'PrismaClient'`
 
 Causa: client do Prisma nao gerado (ausencia de `node_modules/.prisma/client`).
@@ -1068,11 +1057,11 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml -f "docker-compos
 
 Procure eventos `auth.login.failed` com codigos `state_mismatch`, `token_exchange_failed` ou `unauthorized`.
 
-Para verificar se a sessao esta sendo persistida:
+Para verificar se sessoes Better Auth estao sendo persistidas:
 
 ```bash
 docker compose --env-file .env.prod -f docker-compose.prod.yml -f "docker-compose.prod.${PROXY_PROVIDER:-caddy}.yml" exec postgres \
-  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "select count(*) as total_sessions from user_sessions;"
+  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "select count(*) as total_sessions from auth_sessions;"
 ```
 
 ### Erro: imagens quebradas em `/uploads` (home, projetos, posts, footer)

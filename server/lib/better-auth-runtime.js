@@ -159,6 +159,21 @@ const toLegacySessionUser = (user) => ({
   avatarUrl: user.image || null,
 });
 
+const createRequestSessionShim = () => ({
+  user: null,
+  pendingMfaUser: null,
+  pendingMfaEnrollmentUser: null,
+  save: (callback) => {
+    if (typeof callback === "function") callback(null);
+  },
+  destroy: (callback) => {
+    if (typeof callback === "function") callback(null);
+  },
+  regenerate: (callback) => {
+    if (typeof callback === "function") callback(null);
+  },
+});
+
 export const buildBetterAuthMethods = async (userId) => {
   const normalizedUserId = String(userId || "").trim();
   if (!normalizedUserId) {
@@ -190,11 +205,12 @@ export const buildBetterAuthMethods = async (userId) => {
 
 export const betterAuthSessionBridge = async (req, _res, next) => {
   if (!req.session) {
-    return next();
+    req.session = createRequestSessionShim();
   }
   const cookieHeader = String(req.headers?.cookie || "");
   if (!cookieHeader.includes("nekomorto-auth.session_token=")) {
     req.betterAuthSession = null;
+    req.sessionID = "";
     if (req.session.user || req.session.pendingMfaUser || req.session.pendingMfaEnrollmentUser) {
       req.session.user = null;
       req.session.pendingMfaUser = null;
@@ -205,6 +221,7 @@ export const betterAuthSessionBridge = async (req, _res, next) => {
   try {
     const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
     req.betterAuthSession = session || null;
+    req.sessionID = session?.session?.token ? String(session.session.token) : "";
     req.session.user = session?.user ? toLegacySessionUser(session.user) : null;
     req.session.pendingMfaUser = null;
     req.session.pendingMfaEnrollmentUser = null;
@@ -259,6 +276,50 @@ export const resetBetterAuthPasskeysForUser = async (userId) => {
   };
 };
 
+const toSessionIndexRecord = (entry, { currentToken = "" } = {}) => ({
+  sid: entry.token,
+  userId: entry.userId,
+  createdAt: entry.createdAt,
+  lastSeenAt: entry.updatedAt,
+  lastIp: entry.ipAddress || "",
+  userAgent: entry.userAgent || "",
+  revokedAt: null,
+  revokedBy: null,
+  revokeReason: null,
+  isPendingMfa: false,
+  current: currentToken ? entry.token === currentToken : false,
+  currentForViewer: currentToken ? entry.token === currentToken : false,
+});
+
+export const loadBetterAuthSessionIndexRecords = async ({
+  userId = null,
+  includeRevoked = false,
+} = {}) => {
+  const normalizedUserId = String(userId || "").trim();
+  const sessions = await prisma.authSession.findMany({
+    where: {
+      ...(normalizedUserId ? { userId: normalizedUserId } : {}),
+      ...(includeRevoked ? {} : { expiresAt: { gt: new Date() } }),
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+  return sessions.map((entry) => toSessionIndexRecord(entry));
+};
+
+export const listBetterAuthActiveSessionsForUser = async (userId) =>
+  loadBetterAuthSessionIndexRecords({ userId, includeRevoked: false });
+
+export const revokeBetterAuthSessionBySid = async ({ sid } = {}) => {
+  const token = String(sid || "").trim();
+  if (!token) {
+    return false;
+  }
+  const result = await prisma.authSession.deleteMany({ where: { token } });
+  return result.count > 0;
+};
+
+export const touchBetterAuthSessionIndexFromRequest = () => {};
+
 const requireBetterAuthSession = (req, res, next) => {
   if (!req.betterAuthSession?.user?.id) {
     return res.status(401).json({ error: "unauthorized" });
@@ -303,7 +364,7 @@ export const registerBetterAuthCompatibilityRoutes = (app) => {
       const [user, twoFactorRecord, sessions, accounts, passkeys] = await Promise.all([
         prisma.authUser.findUnique({ where: { id: userId } }),
         prisma.authTwoFactor.findFirst({ where: { userId } }),
-        prisma.authSession.findMany({ where: { userId } }),
+        prisma.authSession.findMany({ where: { userId, expiresAt: { gt: new Date() } } }),
         prisma.authAccount.findMany({ where: { userId } }),
         prisma.authPasskey.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
       ]);
@@ -339,7 +400,7 @@ export const registerBetterAuthCompatibilityRoutes = (app) => {
   app.get("/api/me/sessions", requireBetterAuthSession, async (req, res, next) => {
     try {
       const sessions = await prisma.authSession.findMany({
-        where: { userId: String(req.betterAuthSession.user.id) },
+        where: { userId: String(req.betterAuthSession.user.id), expiresAt: { gt: new Date() } },
         orderBy: { updatedAt: "desc" },
       });
       const currentToken = String(req.betterAuthSession.session?.token || "");

@@ -62,7 +62,6 @@ const createDependencies = ({ app, overrides = {} }) => ({
   appendSecretRotation: vi.fn(),
   canManageSecurityAdmin: vi.fn(() => false),
   dataEncryptionKeyring: { currentKeyId: "key-1", secretKeys: [] },
-  deleteUserMfaTotpRecord: vi.fn(),
   resetBetterAuthPasskeysForUser: vi.fn(async () => ({
     userFound: true,
     removedPasskeys: 2,
@@ -108,7 +107,6 @@ describe("registerSecurityRoutes", () => {
 
     expect(res.statusCode).toBe(403);
     expect(res.body).toEqual({ error: "forbidden" });
-    expect(dependencies.deleteUserMfaTotpRecord).not.toHaveBeenCalled();
     expect(dependencies.appendAuditLog).not.toHaveBeenCalled();
     expect(dependencies.emitSecurityEvent).not.toHaveBeenCalled();
   });

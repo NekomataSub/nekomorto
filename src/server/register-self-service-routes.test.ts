@@ -89,47 +89,21 @@ const createDependencies = (overrides: Record<string, unknown> = {}) => {
       oauthEmailSuggested: "user@example.com",
       identities: [],
     })),
-    canManageMfa: vi.fn(async () => true),
-    clearEnrollmentFromSession: vi.fn(),
-    clearPendingMfaEnrollmentFromSession: vi.fn(),
-    clearPendingMfaEnrollmentRedirectTarget: vi.fn(),
-    completeRequiredMfaEnrollmentForSession: vi.fn(() => ({ id: "user-1" })),
-    dataEncryptionKeyring: { activeKeyId: "key-1" },
-    deleteUserMfaTotpRecord: vi.fn(),
-    encryptStringWithKeyring: vi.fn(() => "encrypted"),
-    generateRecoveryCodes: vi.fn(() => ["code-1"]),
-    getPendingMfaEnrollmentRedirectTarget: vi.fn(() => "/dashboard"),
     getPendingMfaEnrollmentState: vi.fn(() => ({
       pending: false,
       user: null,
       redirectTarget: "/dashboard",
     })),
-    getRequestIp: vi.fn(() => "198.51.100.40"),
-    handleMfaFailureSecuritySignals: vi.fn(),
-    hashRecoveryCode: vi.fn(({ code }) => `hash:${code}`),
     isPlainObject: vi.fn((value) => value && typeof value === "object" && !Array.isArray(value)),
-    isPendingMfaEnrollmentRequiredForUser: vi.fn(() => false),
-    isTotpEnabledForUser: vi.fn(() => true),
     listActiveSessionsForUser: vi.fn(() => []),
     loadUserIdentityRecords: vi.fn(() => []),
     loadUserPreferences: vi.fn(() => ({})),
     metricsRegistry,
     normalizeUserPreferences: vi.fn((value) => value || {}),
     requireAuth,
-    resolveEnrollmentFromSession: vi.fn(() => ({ secret: "secret" })),
-    resolveMfaMetadata: vi.fn(() => ({
-      accountLabel: "user-1",
-      iconUrl: "",
-      issuer: "Nekomata",
-    })),
     revokeSessionBySid: vi.fn(async () => undefined),
-    saveSessionState: vi.fn(async () => undefined),
-    startTotpEnrollment: vi.fn(() => null),
     userPreferencesMaxBytes: 1024,
-    verifyTotpCode: vi.fn(() => true),
-    verifyTotpOrRecoveryCode: vi.fn(() => ({ method: "totp", ok: true })),
     writeUserIdentityRecords: vi.fn(),
-    writeUserMfaTotpRecord: vi.fn(),
     writeUserPreferences: vi.fn((userId, value) => ({ userId, ...value })),
     upsertUserIdentityRecord: vi.fn(),
     ...overrides,
@@ -172,23 +146,8 @@ describe("registerSelfServiceRoutes", () => {
     });
   });
 
-  it("inicia o enrollment de TOTP", async () => {
-    const startTotpEnrollment = vi.fn(() => ({
-      enrollmentToken: "token-1",
-      otpauthUrl: "otpauth://totp/test",
-      secret: "SECRET123",
-    }));
-    const resolveMfaMetadata = vi.fn(() => ({
-      accountLabel: "user-1",
-      iconUrl: "",
-      issuer: "Nekomata",
-    }));
-    const dependencies = createDependencies({
-      isTotpEnabledForUser: vi.fn(() => false),
-      resolveMfaMetadata,
-      saveSessionState: vi.fn(async () => undefined),
-      startTotpEnrollment,
-    });
+  it("rejeita o enrollment legado de TOTP", async () => {
+    const dependencies = createDependencies();
     const routeLayer = getRouteLayer(
       dependencies.router,
       "post",
@@ -200,26 +159,15 @@ describe("registerSelfServiceRoutes", () => {
       session: { user: { id: "user-1", username: "admin" } },
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(startTotpEnrollment).toHaveBeenCalled();
-    expect(resolveMfaMetadata).toHaveBeenCalled();
+    expect(res.statusCode).toBe(410);
     expect(res.body).toMatchObject({
-      enrollmentToken: "token-1",
-      manualSecret: "SECRET123",
+      error: "legacy_totp_endpoint_removed",
+      replacement: "better_auth_client",
     });
   });
 
-  it("confirma o enrollment de TOTP", async () => {
-    const writeUserMfaTotpRecord = vi.fn();
-    const dependencies = createDependencies({
-      getPendingMfaEnrollmentState: vi.fn(() => ({
-        pending: false,
-        user: null,
-        redirectTarget: "/dashboard",
-      })),
-      saveSessionState: vi.fn(async () => undefined),
-      writeUserMfaTotpRecord,
-    });
+  it("rejeita a confirmação legada de enrollment de TOTP", async () => {
+    const dependencies = createDependencies();
     const routeLayer = getRouteLayer(
       dependencies.router,
       "post",
@@ -238,18 +186,15 @@ describe("registerSelfServiceRoutes", () => {
       },
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(writeUserMfaTotpRecord).toHaveBeenCalledTimes(1);
-    expect(res.body).toMatchObject({ ok: true, recoveryCodesRemaining: 1 });
+    expect(res.statusCode).toBe(410);
+    expect(res.body).toMatchObject({
+      error: "legacy_totp_endpoint_removed",
+      replacement: "better_auth_client",
+    });
   });
 
-  it("desativa TOTP com código válido", async () => {
-    const deleteUserMfaTotpRecord = vi.fn();
-    const dependencies = createDependencies({
-      deleteUserMfaTotpRecord,
-      isTotpEnabledForUser: vi.fn(() => true),
-      verifyTotpOrRecoveryCode: vi.fn(() => ({ method: "totp", ok: true })),
-    });
+  it("rejeita a desativação legada de TOTP", async () => {
+    const dependencies = createDependencies();
     const routeLayer = getRouteLayer(dependencies.router, "post", "/api/me/security/totp/disable");
 
     const res = await invokeRoute(routeLayer, {
@@ -257,9 +202,11 @@ describe("registerSelfServiceRoutes", () => {
       session: { user: { id: "user-1" } },
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(deleteUserMfaTotpRecord).toHaveBeenCalledWith("user-1");
-    expect(res.body).toEqual({ ok: true });
+    expect(res.statusCode).toBe(410);
+    expect(res.body).toMatchObject({
+      error: "legacy_totp_endpoint_removed",
+      replacement: "better_auth_client",
+    });
   });
 
   it("lista sessões ativas", async () => {

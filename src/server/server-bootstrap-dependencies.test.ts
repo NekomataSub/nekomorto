@@ -90,18 +90,18 @@ describe("server bootstrap dependency builders", () => {
     );
 
     expect(dependencies.session.apiContractVersion).toEqual(createNamedValue("apiContractVersion"));
-    expect(dependencies.selfService.startTotpEnrollment).toEqual(
-      createNamedValue("startTotpEnrollment"),
+    expect(dependencies.selfService.listActiveSessionsForUser).toEqual(
+      createNamedValue("listActiveSessionsForUser"),
     );
     expect(dependencies).not.toHaveProperty("operational");
   });
 
   it("fails fast when a required direct route dependency is undefined", () => {
     const selfServiceSource = buildDirectRouteSource("selfService");
-    selfServiceSource.startTotpEnrollment = undefined;
+    selfServiceSource.listActiveSessionsForUser = undefined;
 
     expect(() => buildDirectRouteDependencies({ routes: ["selfService"] }, selfServiceSource)).toThrow(
-      /startTotpEnrollment/,
+      /listActiveSessionsForUser/,
     );
   });
 
@@ -117,8 +117,8 @@ describe("server bootstrap dependency builders", () => {
     expect(dependencies.operational.metricsTokenNormalized).toEqual(
       createNamedValue("metricsTokenNormalized"),
     );
-    expect(dependencies.selfService.startTotpEnrollment).toEqual(
-      createNamedValue("startTotpEnrollment"),
+    expect(dependencies.selfService.listActiveSessionsForUser).toEqual(
+      createNamedValue("listActiveSessionsForUser"),
     );
     expect(dependencies.selfService).not.toHaveProperty("ignored");
   });
@@ -148,7 +148,6 @@ describe("server bootstrap dependency builders", () => {
       isEpubImportJobStorageAvailable: () => true,
       isProjectImageImportJobStorageAvailable: () => false,
       metricsTokenNormalized: undefined,
-      mfaRecoveryCodePepper: undefined,
       primaryAppOrigin: undefined,
       proxyDiscordAvatarRequest: createNamedValue("proxyDiscordAvatarRequest"),
       scopes: undefined,
@@ -166,7 +165,7 @@ describe("server bootstrap dependency builders", () => {
       }),
     );
     expect(dependencies.operational.metricsTokenNormalized).toBe("metrics-token");
-    expect(dependencies.selfService.mfaRecoveryCodePepper).toBe("pepper");
+    expect(dependencies.selfService.userPreferencesMaxBytes).toBe(4096);
   });
 
   it("builds the server route dependency source from multiple fragments without leaking extras", () => {

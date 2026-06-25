@@ -104,7 +104,7 @@ export const createAdminExportRuntime = (dependencies = {}) => {
     writeExportFile,
   } = dependencies;
 
-  const buildExportRowsByDataset = ({ dataset, filters }) => {
+  const buildExportRowsByDataset = async ({ dataset, filters }) => {
     const normalizedDataset = normalizeExportDataset(dataset);
     const normalizedFilters = normalizeExportFilters(filters);
 
@@ -208,7 +208,7 @@ export const createAdminExportRuntime = (dependencies = {}) => {
       };
     }
 
-    let sessionRows = loadUserSessionIndexRecords({ includeRevoked: true });
+    let sessionRows = await loadUserSessionIndexRecords({ includeRevoked: true });
     sessionRows = filterByDateRange(sessionRows, {
       dateFrom: normalizedFilters.dateFrom,
       dateTo: normalizedFilters.dateTo,
@@ -272,7 +272,7 @@ export const createAdminExportRuntime = (dependencies = {}) => {
       error: null,
     });
     try {
-      const payload = buildExportRowsByDataset({
+      const payload = await buildExportRowsByDataset({
         dataset: processing.dataset,
         filters: processing.filters,
       });

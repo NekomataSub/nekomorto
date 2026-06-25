@@ -21,7 +21,7 @@ Arquivos usados em producao:
 Premissas:
 
 - `DATABASE_URL` obrigatoria
-- sessao em PostgreSQL (`SESSION_TABLE=user_sessions`)
+- sessoes autenticadas no PostgreSQL via Better Auth (`auth_sessions`)
 - `/api/health` com `dataSource=db`
 - runtime Node pinado em `24.14.0` (npm `11.x`)
 - upgrades de runtime/deps apenas via PR dedicado com gate completo
@@ -67,7 +67,6 @@ cp ops/prod/.env.prod.example .env.prod
 NODE_ENV=production
 DATABASE_URL=postgresql://nekomorto_app:<senha>@postgres:5432/nekomorto
 SESSION_SECRET=<segredo_forte>
-SESSION_TABLE=user_sessions
 APP_ORIGIN=https://nekomata.moe,https://www.nekomata.moe
 ADMIN_ORIGINS=<origens_admin>
 MAINTENANCE_MODE=false

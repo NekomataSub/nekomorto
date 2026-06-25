@@ -116,10 +116,10 @@ describe("admin-export-runtime", () => {
     expect(() => createAdminExportRuntime()).toThrow(/missing required dependencies/i);
   });
 
-  it("builds normalized user export rows and respects the max row limit", () => {
+  it("builds normalized user export rows and respects the max row limit", async () => {
     const runtime = createAdminExportRuntime(createDeps());
 
-    const payload = runtime.buildExportRowsByDataset({
+    const payload = await runtime.buildExportRowsByDataset({
       dataset: "users",
       filters: {},
     });

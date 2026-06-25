@@ -290,27 +290,6 @@ const CONTRACT_BASE = Object.freeze({
       cache: "no-store",
     },
     {
-      method: "POST",
-      path: "/api/me/security/totp/enroll/start",
-      auth: "session",
-      cache: "no-store",
-      idempotent: "optional_by_header",
-    },
-    {
-      method: "POST",
-      path: "/api/me/security/totp/enroll/confirm",
-      auth: "session",
-      cache: "no-store",
-      idempotent: "optional_by_header",
-    },
-    {
-      method: "POST",
-      path: "/api/me/security/totp/disable",
-      auth: "session",
-      cache: "no-store",
-      idempotent: "optional_by_header",
-    },
-    {
       method: "GET",
       path: "/api/me/sessions",
       auth: "session",

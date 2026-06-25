@@ -37,7 +37,6 @@ export const registerSecurityRoutes = ({
   appendSecretRotation,
   canManageSecurityAdmin,
   dataEncryptionKeyring,
-  deleteUserMfaTotpRecord,
   resetBetterAuthPasskeysForUser,
   resetBetterAuthTotpForUser,
   emitSecurityEvent,
@@ -210,7 +209,6 @@ export const registerSecurityRoutes = ({
       if (!result.userFound) {
         return res.status(404).json({ error: "auth_user_not_found" });
       }
-      deleteUserMfaTotpRecord(targetId);
       appendAuditLog(req, "auth.mfa.reset_admin", "users", { targetId, ...result });
       emitSecurityEvent({
         req,
@@ -252,7 +250,7 @@ export const registerSecurityRoutes = ({
     }
   });
 
-  app.get("/api/admin/users/:id/sessions", requireAuth, (req, res) => {
+  app.get("/api/admin/users/:id/sessions", requireAuth, async (req, res, next) => {
     const actorId = String(req.session?.user?.id || "").trim();
     if (!isOwner(actorId)) {
       return res.status(403).json({ error: "forbidden" });
@@ -261,22 +259,26 @@ export const registerSecurityRoutes = ({
     if (!targetId) {
       return res.status(400).json({ error: "invalid_target_id" });
     }
-    const sessions = listActiveSessionsForUser(targetId).map((entry) => ({
-      sid: entry.sid,
-      userId: entry.userId,
-      createdAt: entry.createdAt || null,
-      lastSeenAt: entry.lastSeenAt || null,
-      lastIp: entry.lastIp || "",
-      userAgent: entry.userAgent || "",
-      current: false,
-      isCurrent: false,
-      revokedAt: entry.revokedAt || null,
-      isPendingMfa: Boolean(entry.isPendingMfa),
-    }));
-    return res.json({ sessions });
+    try {
+      const sessions = (await listActiveSessionsForUser(targetId)).map((entry) => ({
+        sid: entry.sid,
+        userId: entry.userId,
+        createdAt: entry.createdAt || null,
+        lastSeenAt: entry.lastSeenAt || null,
+        lastIp: entry.lastIp || "",
+        userAgent: entry.userAgent || "",
+        current: false,
+        isCurrent: false,
+        revokedAt: entry.revokedAt || null,
+        isPendingMfa: Boolean(entry.isPendingMfa),
+      }));
+      return res.json({ sessions });
+    } catch (error) {
+      return next(error);
+    }
   });
 
-  app.get("/api/admin/sessions/active", requireAuth, (req, res) => {
+  app.get("/api/admin/sessions/active", requireAuth, async (req, res, next) => {
     res.setHeader("Cache-Control", "no-store");
     const actorId = String(req.session?.user?.id || "").trim();
     if (!isOwner(actorId)) {
@@ -295,11 +297,16 @@ export const registerSecurityRoutes = ({
       normalizeUsers(loadUsers()).map((entry) => [String(entry.id || ""), entry]),
     );
     const currentSid = String(req.sessionID || "");
-    const rows = loadUserSessionIndexRecords({ includeRevoked: false })
-      .filter((entry) => !entry.revokedAt)
-      .sort(
-        (a, b) => new Date(b.lastSeenAt || 0).getTime() - new Date(a.lastSeenAt || 0).getTime(),
-      );
+    let rows = [];
+    try {
+      rows = (await loadUserSessionIndexRecords({ includeRevoked: false }))
+        .filter((entry) => !entry.revokedAt)
+        .sort(
+          (a, b) => new Date(b.lastSeenAt || 0).getTime() - new Date(a.lastSeenAt || 0).getTime(),
+        );
+    } catch (error) {
+      return next(error);
+    }
     const total = rows.length;
     const start = (page - 1) * limit;
     const sessions = rows.slice(start, start + limit).map((entry) => {
@@ -327,7 +334,7 @@ export const registerSecurityRoutes = ({
     });
   });
 
-  app.delete("/api/admin/users/:id/sessions/:sid", requireAuth, async (req, res) => {
+  app.delete("/api/admin/users/:id/sessions/:sid", requireAuth, async (req, res, next) => {
     const actorId = String(req.session?.user?.id || "").trim();
     if (!isOwner(actorId)) {
       return res.status(403).json({ error: "forbidden" });
@@ -337,21 +344,25 @@ export const registerSecurityRoutes = ({
     if (!targetId || !sid) {
       return res.status(400).json({ error: "invalid_params" });
     }
-    const target = listActiveSessionsForUser(targetId).find(
-      (entry) => String(entry.sid || "") === sid,
-    );
-    if (!target) {
-      return res.status(404).json({ error: "session_not_found" });
+    try {
+      const target = (await listActiveSessionsForUser(targetId)).find(
+        (entry) => String(entry.sid || "") === sid,
+      );
+      if (!target) {
+        return res.status(404).json({ error: "session_not_found" });
+      }
+      await revokeSessionBySid({
+        sid,
+        revokedBy: actorId || null,
+        revokeReason: "admin_revoke",
+      });
+      appendAuditLog(req, "auth.sessions.admin_revoke", "users", {
+        targetId,
+        sid,
+      });
+      return res.json({ ok: true });
+    } catch (error) {
+      return next(error);
     }
-    await revokeSessionBySid({
-      sid,
-      revokedBy: actorId || null,
-      revokeReason: "admin_revoke",
-    });
-    appendAuditLog(req, "auth.sessions.admin_revoke", "users", {
-      targetId,
-      sid,
-    });
-    return res.json({ ok: true });
   });
 };

@@ -48,21 +48,6 @@ const bootSmoke = vi.hoisted(() => {
   };
 });
 
-vi.mock("connect-pg-simple", () => {
-  class FakePgSessionStore {
-    constructor(_options: unknown) {}
-    get() {}
-    set() {}
-    destroy() {}
-    touch() {}
-    on() {}
-  }
-
-  return {
-    default: () => FakePgSessionStore,
-  };
-});
-
 vi.mock("pg", () => ({
   Pool: class FakePool {
     constructor() {}
