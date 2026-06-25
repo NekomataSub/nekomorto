@@ -4,8 +4,6 @@ import {
   buildOriginConfig,
   isAllowedOrigin,
   resolveAuthAppOrigin,
-  resolveDiscordRedirectUri,
-  resolveGoogleRedirectUri,
 } from "../../server/lib/origin-config.js";
 
 describe("origin-config", () => {
@@ -14,20 +12,29 @@ describe("origin-config", () => {
       buildOriginConfig({
         appOriginEnv: "",
         adminOriginsEnv: "",
-        discordRedirectUriEnv: "auto",
         isProduction: true,
       }),
     ).toThrow(/APP_ORIGIN/);
   });
 
-  it("validates DISCORD_REDIRECT_URI when explicitly configured", () => {
-    expect(() =>
-      buildOriginConfig({
-        appOriginEnv: "https://site.example.com",
-        discordRedirectUriEnv: "/login",
-        isProduction: true,
-      }),
-    ).toThrow(/DISCORD_REDIRECT_URI/);
+  it("normalizes application and admin origins without legacy OAuth redirect config", () => {
+    const config = buildOriginConfig({
+      appOriginEnv: "https://site.example.com,https://www.example.com",
+      adminOriginsEnv: "https://admin.example.com",
+      isProduction: true,
+    });
+
+    expect(config).toEqual({
+      appOrigins: ["https://site.example.com", "https://www.example.com"],
+      adminOrigins: ["https://admin.example.com"],
+      allowedOrigins: [
+        "https://site.example.com",
+        "https://www.example.com",
+        "https://admin.example.com",
+      ],
+      primaryAppOrigin: "https://site.example.com",
+      primaryAppHost: "site.example.com",
+    });
   });
 
   it("allows only configured origins in production", () => {
@@ -90,291 +97,6 @@ describe("origin-config", () => {
     ).toBe(false);
   });
 
-  it("resolves Discord redirect URI from request origin when using auto mode", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      discordRedirectUriEnv: "auto",
-      isProduction: true,
-    });
-    const uri = resolveDiscordRedirectUri({
-      req: {
-        headers: { origin: "https://site.example.com" },
-        protocol: "https",
-      },
-      configuredDiscordRedirectUri: config.configuredDiscordRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: (origin) =>
-        isAllowedOrigin({
-          origin,
-          allowedOrigins: config.allowedOrigins,
-          isProduction: true,
-        }),
-    });
-
-    expect(uri).toBe("https://site.example.com/login");
-    expect(uri).not.toBe("auto");
-  });
-
-  it("prefers the backend host origin for the Discord callback when available", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com,https://api.example.com",
-      discordRedirectUriEnv: "auto",
-      isProduction: true,
-    });
-    const uri = resolveDiscordRedirectUri({
-      req: {
-        headers: {
-          host: "api.example.com",
-          referer: "https://site.example.com/login",
-        },
-        protocol: "https",
-      },
-      configuredDiscordRedirectUri: config.configuredDiscordRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: (origin) =>
-        isAllowedOrigin({
-          origin,
-          allowedOrigins: config.allowedOrigins,
-          isProduction: true,
-        }),
-    });
-
-    expect(uri).toBe("https://api.example.com/login");
-  });
-
-  it("uses explicit Discord redirect URI when configured", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      discordRedirectUriEnv: "https://auth.example.com/login",
-      isProduction: true,
-    });
-    const uri = resolveDiscordRedirectUri({
-      req: {
-        headers: { origin: "https://site.example.com" },
-        protocol: "https",
-      },
-      configuredDiscordRedirectUri: config.configuredDiscordRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: () => true,
-    });
-
-    expect(uri).toBe("https://auth.example.com/login");
-  });
-
-  it("validates GOOGLE_REDIRECT_URI when explicitly configured", () => {
-    expect(() =>
-      buildOriginConfig({
-        appOriginEnv: "https://site.example.com",
-        googleRedirectUriEnv: "/auth/google/callback",
-        isProduction: true,
-      }),
-    ).toThrow(/GOOGLE_REDIRECT_URI/);
-  });
-
-  it("resolves Google redirect URI from request origin when using auto mode", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      googleRedirectUriEnv: "auto",
-      isProduction: true,
-    });
-    const uri = resolveGoogleRedirectUri({
-      req: {
-        headers: { origin: "https://site.example.com" },
-        protocol: "https",
-      },
-      configuredGoogleRedirectUri: config.configuredGoogleRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: (origin) =>
-        isAllowedOrigin({
-          origin,
-          allowedOrigins: config.allowedOrigins,
-          isProduction: true,
-        }),
-    });
-
-    expect(uri).toBe("https://site.example.com/auth/google/callback");
-    expect(uri).not.toBe("auto");
-  });
-
-  it("uses explicit Google redirect URI when configured", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      googleRedirectUriEnv: "https://auth.example.com/auth/google/callback",
-      isProduction: true,
-    });
-    const uri = resolveGoogleRedirectUri({
-      req: {
-        headers: { origin: "https://site.example.com" },
-        protocol: "https",
-      },
-      configuredGoogleRedirectUri: config.configuredGoogleRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: () => true,
-    });
-
-    expect(uri).toBe("https://auth.example.com/auth/google/callback");
-  });
-
-  it("prefers the backend host origin for the Google callback when available", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com,https://api.example.com",
-      googleRedirectUriEnv: "auto",
-      isProduction: true,
-    });
-    const uri = resolveGoogleRedirectUri({
-      req: {
-        headers: {
-          host: "api.example.com",
-          referer: "https://site.example.com/login",
-        },
-        protocol: "https",
-      },
-      configuredGoogleRedirectUri: config.configuredGoogleRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: (origin) =>
-        isAllowedOrigin({
-          origin,
-          allowedOrigins: config.allowedOrigins,
-          isProduction: true,
-        }),
-    });
-
-    expect(uri).toBe("https://api.example.com/auth/google/callback");
-  });
-
-  it("falls back to primary app origin for Google when request origin is not allowed", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      googleRedirectUriEnv: "auto",
-      isProduction: true,
-    });
-    const uri = resolveGoogleRedirectUri({
-      req: {
-        headers: { origin: "https://another.example.com" },
-        protocol: "https",
-      },
-      configuredGoogleRedirectUri: config.configuredGoogleRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: (origin) =>
-        isAllowedOrigin({
-          origin,
-          allowedOrigins: config.allowedOrigins,
-          isProduction: true,
-        }),
-    });
-
-    expect(uri).toBe("https://site.example.com/auth/google/callback");
-  });
-
-  it("resolves Google redirect URI in development with the callback path", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "",
-      googleRedirectUriEnv: "auto",
-      isProduction: false,
-    });
-    const uri = resolveGoogleRedirectUri({
-      req: {
-        headers: { host: "127.0.0.1:8080" },
-        protocol: "http",
-      },
-      configuredGoogleRedirectUri: config.configuredGoogleRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: (origin) =>
-        isAllowedOrigin({
-          origin,
-          allowedOrigins: config.allowedOrigins,
-          isProduction: false,
-        }),
-    });
-
-    expect(uri).toBe("http://127.0.0.1:8080/auth/google/callback");
-  });
-
-  it("exposes configuredGoogleRedirectUri in boot config normalization", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      googleRedirectUriEnv: "https://site.example.com/auth/google/callback",
-      isProduction: true,
-    });
-
-    expect(config.configuredGoogleRedirectUri).toBe(
-      "https://site.example.com/auth/google/callback",
-    );
-  });
-
-  it("keeps configuredGoogleRedirectUri null when Google redirect is auto", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      googleRedirectUriEnv: "auto",
-      isProduction: true,
-    });
-
-    expect(config.configuredGoogleRedirectUri).toBeNull();
-  });
-
-  it("normalizes Google redirect URI values using absolute URLs", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      googleRedirectUriEnv: "https://site.example.com/auth/google/callback",
-      isProduction: true,
-    });
-    const uri = resolveGoogleRedirectUri({
-      req: {
-        headers: { origin: "https://site.example.com" },
-        protocol: "https",
-      },
-      configuredGoogleRedirectUri: config.configuredGoogleRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: () => true,
-    });
-
-    expect(uri).toBe("https://site.example.com/auth/google/callback");
-  });
-
-  it("uses Google callback path instead of the Discord login path", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      googleRedirectUriEnv: "auto",
-      isProduction: true,
-    });
-    const uri = resolveGoogleRedirectUri({
-      req: {
-        headers: { origin: "https://site.example.com" },
-        protocol: "https",
-      },
-      configuredGoogleRedirectUri: config.configuredGoogleRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: () => true,
-    });
-
-    expect(uri.endsWith("/auth/google/callback")).toBe(true);
-    expect(uri.endsWith("/login")).toBe(false);
-  });
-
-  it("falls back to primary app origin when request origin is not allowed", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      discordRedirectUriEnv: "auto",
-      isProduction: true,
-    });
-    const uri = resolveDiscordRedirectUri({
-      req: {
-        headers: { origin: "https://another.example.com" },
-        protocol: "https",
-      },
-      configuredDiscordRedirectUri: config.configuredDiscordRedirectUri,
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: (origin) =>
-        isAllowedOrigin({
-          origin,
-          allowedOrigins: config.allowedOrigins,
-          isProduction: true,
-        }),
-    });
-
-    expect(uri).toBe("https://site.example.com/login");
-  });
-
   it("uses the preserved session origin for auth redirects when it is allowed", () => {
     const config = buildOriginConfig({
       appOriginEnv: "https://site.example.com",
@@ -399,30 +121,7 @@ describe("origin-config", () => {
     expect(origin).toBe("https://admin.example.com");
   });
 
-  it("uses the request origin for auth redirects when there is no preserved session origin", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "https://site.example.com",
-      isProduction: true,
-    });
-    const origin = resolveAuthAppOrigin({
-      req: {
-        headers: { referer: "https://site.example.com/login" },
-        protocol: "https",
-      },
-      sessionOrigin: "",
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: (candidate) =>
-        isAllowedOrigin({
-          origin: candidate,
-          allowedOrigins: config.allowedOrigins,
-          isProduction: true,
-        }),
-    });
-
-    expect(origin).toBe("https://site.example.com");
-  });
-
-  it("falls back to the primary app origin when the session and request origins are invalid", () => {
+  it("falls back to the primary app origin when session and request origins are invalid", () => {
     const config = buildOriginConfig({
       appOriginEnv: "https://site.example.com",
       isProduction: true,
@@ -443,28 +142,5 @@ describe("origin-config", () => {
     });
 
     expect(origin).toBe("https://site.example.com");
-  });
-
-  it("accepts localhost session origins in development mode", () => {
-    const config = buildOriginConfig({
-      appOriginEnv: "",
-      isProduction: false,
-    });
-    const origin = resolveAuthAppOrigin({
-      req: {
-        headers: { referer: "http://127.0.0.1:8080/login" },
-        protocol: "http",
-      },
-      sessionOrigin: "http://localhost:5173",
-      primaryAppOrigin: config.primaryAppOrigin,
-      isAllowedOriginFn: (candidate) =>
-        isAllowedOrigin({
-          origin: candidate,
-          allowedOrigins: config.allowedOrigins,
-          isProduction: false,
-        }),
-    });
-
-    expect(origin).toBe("http://localhost:5173");
   });
 });

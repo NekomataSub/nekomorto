@@ -83,8 +83,6 @@ const isLocalOrPrivateHost = (hostname) => {
 export const buildOriginConfig = ({
   appOriginEnv = "",
   adminOriginsEnv = "",
-  discordRedirectUriEnv = "auto",
-  googleRedirectUriEnv = "auto",
   isProduction = false,
   devPrimaryOriginFallback = DEFAULT_DEV_PRIMARY_ORIGIN,
 } = {}) => {
@@ -108,25 +106,12 @@ export const buildOriginConfig = ({
     }
   })();
 
-  const rawDiscordRedirectUri = normalizeString(discordRedirectUriEnv);
-  const configuredDiscordRedirectUri =
-    rawDiscordRedirectUri && rawDiscordRedirectUri.toLowerCase() !== "auto"
-      ? parseHttpUrl(rawDiscordRedirectUri, "DISCORD_REDIRECT_URI").toString()
-      : null;
-  const rawGoogleRedirectUri = normalizeString(googleRedirectUriEnv);
-  const configuredGoogleRedirectUri =
-    rawGoogleRedirectUri && rawGoogleRedirectUri.toLowerCase() !== "auto"
-      ? parseHttpUrl(rawGoogleRedirectUri, "GOOGLE_REDIRECT_URI").toString()
-      : null;
-
   return {
     appOrigins,
     adminOrigins,
     allowedOrigins,
     primaryAppOrigin,
     primaryAppHost,
-    configuredDiscordRedirectUri,
-    configuredGoogleRedirectUri,
   };
 };
 
@@ -195,58 +180,3 @@ export const resolveAuthAppOrigin = ({
 
   return normalizeOriginCandidate(primaryAppOrigin) || String(primaryAppOrigin || "").trim();
 };
-
-const resolveProviderRedirectUri = ({
-  req,
-  configuredRedirectUri,
-  primaryAppOrigin,
-  isAllowedOriginFn,
-  callbackPath,
-}) => {
-  if (configuredRedirectUri) {
-    return configuredRedirectUri;
-  }
-  const hostCandidate = resolveAllowedOriginCandidate(resolveHostOrigin(req), isAllowedOriginFn);
-  if (hostCandidate) {
-    return `${hostCandidate}${callbackPath}`;
-  }
-  const requestCandidate = resolveAllowedOriginCandidate(
-    resolveRequestOrigin(req),
-    isAllowedOriginFn,
-  );
-  if (requestCandidate) {
-    return `${requestCandidate}${callbackPath}`;
-  }
-  const fallbackOrigin =
-    normalizeOriginCandidate(primaryAppOrigin) || String(primaryAppOrigin || "").trim();
-  return `${fallbackOrigin}${callbackPath}`;
-};
-
-export const resolveDiscordRedirectUri = ({
-  req,
-  configuredDiscordRedirectUri,
-  primaryAppOrigin,
-  isAllowedOriginFn,
-}) => {
-  return resolveProviderRedirectUri({
-    req,
-    configuredRedirectUri: configuredDiscordRedirectUri,
-    primaryAppOrigin,
-    isAllowedOriginFn,
-    callbackPath: "/login",
-  });
-};
-
-export const resolveGoogleRedirectUri = ({
-  req,
-  configuredGoogleRedirectUri,
-  primaryAppOrigin,
-  isAllowedOriginFn,
-}) =>
-  resolveProviderRedirectUri({
-    req,
-    configuredRedirectUri: configuredGoogleRedirectUri,
-    primaryAppOrigin,
-    isAllowedOriginFn,
-    callbackPath: "/auth/google/callback",
-  });

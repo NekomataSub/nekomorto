@@ -50,7 +50,6 @@ const buildDirectRouteRegistrationSource = () => ({
   ...buildDirectRouteSource("session"),
   ...buildDirectRouteSource("operational"),
   ...buildDirectRouteSource("selfService"),
-  ...buildDirectRouteSource("auth"),
 });
 
 const buildServerRouteSource = () =>
@@ -81,26 +80,28 @@ const buildServerRouteFragmentSource = () =>
 describe("server bootstrap dependency builders", () => {
   it("builds the requested direct route dependency scopes", () => {
     const sessionSource = buildDirectRouteSource("session");
-    const authSource = buildDirectRouteSource("auth");
+    const selfServiceSource = buildDirectRouteSource("selfService");
 
     const dependencies = buildDirectRouteDependencies(
-      { routes: ["session", "auth"] },
+      { routes: ["session", "selfService"] },
       sessionSource,
-      authSource,
+      selfServiceSource,
       { ignored: true },
     );
 
     expect(dependencies.session.apiContractVersion).toEqual(createNamedValue("apiContractVersion"));
-    expect(dependencies.auth.discordClientId).toEqual(createNamedValue("discordClientId"));
+    expect(dependencies.selfService.startTotpEnrollment).toEqual(
+      createNamedValue("startTotpEnrollment"),
+    );
     expect(dependencies).not.toHaveProperty("operational");
   });
 
   it("fails fast when a required direct route dependency is undefined", () => {
-    const authSource = buildDirectRouteSource("auth");
-    authSource.discordClientSecret = undefined;
+    const selfServiceSource = buildDirectRouteSource("selfService");
+    selfServiceSource.startTotpEnrollment = undefined;
 
-    expect(() => buildDirectRouteDependencies({ routes: ["auth"] }, authSource)).toThrow(
-      /discordClientSecret/,
+    expect(() => buildDirectRouteDependencies({ routes: ["selfService"] }, selfServiceSource)).toThrow(
+      /startTotpEnrollment/,
     );
   });
 
@@ -119,8 +120,7 @@ describe("server bootstrap dependency builders", () => {
     expect(dependencies.selfService.startTotpEnrollment).toEqual(
       createNamedValue("startTotpEnrollment"),
     );
-    expect(dependencies.auth.discordClientId).toEqual(createNamedValue("discordClientId"));
-    expect(dependencies.auth).not.toHaveProperty("ignored");
+    expect(dependencies.selfService).not.toHaveProperty("ignored");
   });
 
   it("builds direct route registration dependencies from root aliases and capability getters", () => {
@@ -167,9 +167,6 @@ describe("server bootstrap dependency builders", () => {
     );
     expect(dependencies.operational.metricsTokenNormalized).toBe("metrics-token");
     expect(dependencies.selfService.mfaRecoveryCodePepper).toBe("pepper");
-    expect(dependencies.auth.discordClientId).toBe("discord-client-id");
-    expect(dependencies.auth.primaryAppOrigin).toBe("https://app.example.com");
-    expect(dependencies.auth.scopes).toEqual(["identify"]);
   });
 
   it("builds the server route dependency source from multiple fragments without leaking extras", () => {

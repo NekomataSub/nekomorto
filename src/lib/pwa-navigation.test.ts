@@ -7,7 +7,7 @@ describe("pwa-navigation", () => {
     "/dashboard",
     "/dashboard/posts",
     "/dashboard/posts?tab=scheduled",
-    "/auth/discord?next=%2Fdashboard",
+    "/api/auth/sign-in/social?provider=discord",
     "/api/me",
     "/login",
     "/login?code=fake&state=fake",

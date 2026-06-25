@@ -25,4 +25,14 @@ describe("Better Auth runtime contract", () => {
     expect(source).toContain('cookieHeader.includes("nekomorto-auth.session_token=")');
     expect(source).toContain("req.session.user = null");
   });
+
+  it("keeps legacy OAuth entrypoints out of the active direct route boot", () => {
+    const directRoutes = repoFile("server/bootstrap/register-direct-server-routes.js");
+    const betterAuthRuntime = repoFile("server/lib/better-auth-runtime.js");
+    expect(directRoutes).not.toContain("registerAuthRoutes");
+    expect(directRoutes).not.toContain('"auth"');
+    expect(betterAuthRuntime).toContain('app.get("/auth/discord"');
+    expect(betterAuthRuntime).toContain('app.get("/auth/google/callback"');
+    expect(betterAuthRuntime).toContain("legacy_auth_removed");
+  });
 });

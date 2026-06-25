@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { buildBetterAuthMethods } from "./better-auth-runtime.js";
 
 const setNoStore = (res) => {
   res.setHeader("Cache-Control", "no-store");
@@ -44,6 +45,14 @@ const buildSessionUserPayload = ({ buildMySecuritySummary, buildUserPayload, use
   };
 };
 
+const buildBetterAuthSessionUserPayload = async ({ buildUserPayload, user }) => {
+  const base = buildUserPayload(user);
+  return {
+    ...base,
+    authMethods: await buildBetterAuthMethods(user?.id),
+  };
+};
+
 const buildPendingSessionUserPayload = ({ buildMySecuritySummary, user }) => {
   const base = {
     id: user?.id,
@@ -72,7 +81,7 @@ export const registerSessionRoutes = ({
 }) => {
   const router = Router();
 
-  router.get("/api/me", requireUserSessionOrPendingAuth, (req, res) => {
+  router.get("/api/me", requireUserSessionOrPendingAuth, async (req, res, next) => {
     setNoStore(res);
     if (!req.session?.user && req.session?.pendingMfaUser?.id) {
       return res.status(401).json({
@@ -95,16 +104,28 @@ export const registerSessionRoutes = ({
       });
     }
 
-    return res.json(
-      buildSessionUserPayload({
-        buildMySecuritySummary,
-        buildUserPayload,
-        user: req.session.user,
-      }),
-    );
+    try {
+      if (req.betterAuthSession?.user?.id) {
+        return res.json(
+          await buildBetterAuthSessionUserPayload({
+            buildUserPayload,
+            user: req.session.user,
+          }),
+        );
+      }
+      return res.json(
+        buildSessionUserPayload({
+          buildMySecuritySummary,
+          buildUserPayload,
+          user: req.session.user,
+        }),
+      );
+    } catch (error) {
+      return next(error);
+    }
   });
 
-  router.get("/api/public/me", (req, res) => {
+  router.get("/api/public/me", async (req, res, next) => {
     setNoStore(res);
     if (!req.session?.user) {
       return res.json({
@@ -114,13 +135,25 @@ export const registerSessionRoutes = ({
       });
     }
 
-    return res.json({
-      user: buildSessionUserPayload({
-        buildMySecuritySummary,
-        buildUserPayload,
-        user: req.session.user,
-      }),
-    });
+    try {
+      if (req.betterAuthSession?.user?.id) {
+        return res.json({
+          user: await buildBetterAuthSessionUserPayload({
+            buildUserPayload,
+            user: req.session.user,
+          }),
+        });
+      }
+      return res.json({
+        user: buildSessionUserPayload({
+          buildMySecuritySummary,
+          buildUserPayload,
+          user: req.session.user,
+        }),
+      });
+    } catch (error) {
+      return next(error);
+    }
   });
 
   router.get("/api/public/discord-avatar/:userId/:avatarFile", async (req, res) => {

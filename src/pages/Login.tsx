@@ -110,6 +110,8 @@ const Login = () => {
         return "Falha de segurança na autenticação. Tente novamente.";
       case "token_exchange_failed":
         return "Não foi possível concluir a autenticação.";
+      case "legacy_auth_removed":
+        return "Use os botões de login desta página para iniciar a autenticação.";
       case "user_fetch_failed":
         return "Não foi possível buscar seus dados.";
       case "missing_code":

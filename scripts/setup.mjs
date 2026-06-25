@@ -33,7 +33,6 @@ const main = async () => {
   const sessionTable = await ask("SESSION_TABLE", "user_sessions");
   const maintenanceMode = await ask("MAINTENANCE_MODE", "false");
   const appOrigin = await ask("APP_ORIGIN", "http://127.0.0.1:5173");
-  const redirectUri = await ask("DISCORD_REDIRECT_URI", "http://127.0.0.1:8080/login");
   const discordClientId = await ask("DISCORD_CLIENT_ID");
   const discordClientSecret = await ask("DISCORD_CLIENT_SECRET");
   const sessionSecret = (await ask("SESSION_SECRET (leave blank to generate)")) || randomSecret();
@@ -56,7 +55,6 @@ const main = async () => {
     `APP_ORIGIN=${appOrigin}`,
     `DISCORD_CLIENT_ID=${discordClientId}`,
     `DISCORD_CLIENT_SECRET=${discordClientSecret}`,
-    `DISCORD_REDIRECT_URI=${redirectUri}`,
     `SESSION_SECRET=${sessionSecret}`,
     `BETTER_AUTH_SECRET=${betterAuthSecret}`,
     `OWNER_IDS=${ownerIds}`,

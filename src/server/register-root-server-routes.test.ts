@@ -49,7 +49,6 @@ const buildRootRouteSource = (): Record<string, any> => {
     ...buildDirectRouteSource("session"),
     ...buildDirectRouteSource("operational"),
     ...buildDirectRouteSource("selfService"),
-    ...buildDirectRouteSource("auth"),
     ...serverSource,
     API_CONTRACT_VERSION: "v1",
     DISCORD_API: createNamedValue("DISCORD_API"),
@@ -113,10 +112,9 @@ describe("registerRootServerRoutes", () => {
 
   it("fails fast when a direct-route dependency resolves to undefined", () => {
     const source = buildRootRouteSource();
-    source.discordClientId = undefined;
-    source.DISCORD_CLIENT_ID = undefined;
+    source.startTotpEnrollment = undefined;
 
-    expect(() => createRootServerRouteContexts(source)).toThrow(/discordClientId/);
+    expect(() => createRootServerRouteContexts(source)).toThrow(/startTotpEnrollment/);
   });
 
   it("fails fast when a grouped server-route dependency resolves to undefined", () => {

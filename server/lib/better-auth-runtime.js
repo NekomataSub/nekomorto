@@ -159,6 +159,35 @@ const toLegacySessionUser = (user) => ({
   avatarUrl: user.image || null,
 });
 
+export const buildBetterAuthMethods = async (userId) => {
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) {
+    return [];
+  }
+  const [accounts, passkeyCount] = await Promise.all([
+    prisma.authAccount.findMany({
+      where: { userId: normalizedUserId },
+      select: { providerId: true, createdAt: true, updatedAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.authPasskey.count({ where: { userId: normalizedUserId } }),
+  ]);
+  const methods = accounts.map((account) => ({
+    provider: String(account.providerId || "")
+      .trim()
+      .toLowerCase(),
+    linked: true,
+    emailNormalized: null,
+    emailVerified: false,
+    hasPasskey: false,
+    linkedAt: account.createdAt,
+    lastUsedAt: account.updatedAt,
+  }));
+  return passkeyCount > 0
+    ? [...methods, { provider: "passkey", linked: true, hasPasskey: true }]
+    : methods;
+};
+
 export const betterAuthSessionBridge = async (req, _res, next) => {
   if (!req.session) {
     return next();
@@ -238,6 +267,13 @@ const requireBetterAuthSession = (req, res, next) => {
 };
 
 export const registerBetterAuthCompatibilityRoutes = (app) => {
+  const redirectLegacyAuthEntry = (_req, res) =>
+    res.redirect(302, "/login?error=legacy_auth_removed");
+
+  app.get("/auth/discord", redirectLegacyAuthEntry);
+  app.get("/auth/google", redirectLegacyAuthEntry);
+  app.get("/auth/google/callback", redirectLegacyAuthEntry);
+
   app.post("/api/logout", async (req, res, next) => {
     try {
       const response = await auth.handler(

@@ -32,7 +32,6 @@ describe("registerDirectServerRoutes", () => {
         session: buildScopeDependencies("session"),
         operational: buildScopeDependencies("operational"),
         selfService: buildScopeDependencies("selfService"),
-        auth: buildScopeDependencies("auth"),
       },
       { registrars },
     );
@@ -45,7 +44,6 @@ describe("registerDirectServerRoutes", () => {
       session: buildScopeDependencies("session"),
       operational: buildScopeDependencies("operational"),
       selfService: buildScopeDependencies("selfService"),
-      auth: buildScopeDependencies("auth"),
     };
     scopes.session.apiContractVersion = undefined;
 
@@ -53,13 +51,11 @@ describe("registerDirectServerRoutes", () => {
       session: vi.fn(),
       operational: vi.fn(),
       selfService: vi.fn(),
-      auth: vi.fn(),
     };
 
     expect(() => registerDirectServerRoutes(scopes, { registrars })).toThrow(/apiContractVersion/);
     expect(registrars.session).not.toHaveBeenCalled();
     expect(registrars.operational).not.toHaveBeenCalled();
     expect(registrars.selfService).not.toHaveBeenCalled();
-    expect(registrars.auth).not.toHaveBeenCalled();
   });
 });

@@ -283,7 +283,6 @@ import {
 import { injectNonceIntoHtmlScripts } from "./lib/security-headers.js";
 import {
   buildAuthRedirectUrl,
-  establishAuthenticatedSession,
   saveSessionState,
 } from "./lib/session-auth.js";
 import { stripHtml } from "./lib/site-meta-builders.js";
@@ -727,8 +726,6 @@ const {
   ANALYTICS_RETENTION_DAYS,
   ALLOWED_ORIGINS,
   BOOTSTRAP_TOKEN,
-  CONFIGURED_DISCORD_REDIRECT_URI,
-  CONFIGURED_GOOGLE_REDIRECT_URI,
   DATABASE_URL,
   DISCORD_CLIENT_ID,
   DISCORD_CLIENT_SECRET,
@@ -957,8 +954,6 @@ const {
   getRequestIp,
   httpServer,
   isAllowedOrigin,
-  resolveDiscordRedirectUri,
-  resolveGoogleRedirectUri,
   toAbsoluteUrl,
   viteDevServer,
 } = await createServerPlatformRuntime({
@@ -966,8 +961,6 @@ const {
   fs,
   repoRootDir: REPO_ROOT_DIR,
   allowedOrigins: ALLOWED_ORIGINS,
-  configuredDiscordRedirectUri: CONFIGURED_DISCORD_REDIRECT_URI,
-  configuredGoogleRedirectUri: CONFIGURED_GOOGLE_REDIRECT_URI,
   primaryAppOrigin: PRIMARY_APP_ORIGIN,
   isProduction,
 });
@@ -2258,7 +2251,6 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   ensureOwnerUser,
   ensureUploadEntryHasRequiredVariants,
   ensureWebhookSettingsNoConflict,
-  establishAuthenticatedSession,
   evaluateOperationalMonitoring,
   findUserIdentityRecord,
   upsertUserIdentityRecord,
@@ -2286,7 +2278,6 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   getPendingMfaEnrollmentRedirectTarget,
   getPendingMfaEnrollmentState,
   getRequestIp,
-  resolveGoogleRedirectUri,
   getUploadExtFromMime,
   getUploadFolderFromUrlValue,
   getUploadMimeFromExtension,
@@ -2396,7 +2387,6 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   requireAuth,
   requirePrimaryOwner,
   resolveAuthAppOrigin,
-  resolveDiscordRedirectUri,
   resolveEditorialEventChannel,
   resolveEnrollmentFromSession,
   resolveEpisodeLookup,

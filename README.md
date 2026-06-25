@@ -349,10 +349,8 @@ Convencoes usadas nas tabelas:
 | --- | --- | --- | --- | --- | --- |
 | `DISCORD_CLIENT_ID` | `dev base`, `prod compose`, `dev deploy` | `production` | vazio | string | Client ID do OAuth do Discord. |
 | `DISCORD_CLIENT_SECRET` | `dev base`, `prod compose`, `dev deploy` | `production` | vazio | string secreta | Client secret do OAuth do Discord. |
-| `DISCORD_REDIRECT_URI` | legado/rollback | nunca | `auto` | `auto` ou `URL http(s)` absoluta | Mantido somente para rollback do OAuth anterior; Better Auth usa `<APP_ORIGIN>/api/auth/callback/discord`. |
 | `SESSION_SECRET` | `dev base`, `prod compose`, `dev deploy` | `production`, exceto quando `SESSION_SECRETS` estiver preenchido | vazio; em dev, se `SESSION_SECRETS` tambem estiver vazio, cai no fallback inseguro `dev-session-secret` | string secreta longa | Segredo principal de sessao HTTP. |
 | `BETTER_AUTH_SECRET` | `dev base`, `prod compose`, `dev deploy` | `production` | vazio | string secreta longa e independente | Assina cookies e material criptográfico do Better Auth. Rotacionar invalida estados OAuth/2FA pendentes; preserve o valor anterior durante rollback. |
-| `GOOGLE_REDIRECT_URI` | legado/rollback | nunca | `auto` | `auto` ou `URL http(s)` absoluta | Mantido somente para rollback; Better Auth usa `<APP_ORIGIN>/api/auth/callback/google`. |
 | `SESSION_SECRETS` | `dev base`, `prod compose`, `dev deploy` | nunca | vazio | `CSV` de secrets, mais novo primeiro | Lista de rotacao de secrets de sessao. Quando preenchida, substitui `SESSION_SECRET` como lista aceita e o primeiro valor vira o ativo. |
 | `SESSION_TABLE` | `dev base`, `prod compose`, `dev deploy` | nunca | `user_sessions` | nome de tabela SQL | Nome da tabela usada pelo `connect-pg-simple`. |
 | `OWNER_IDS` | `dev base`, `prod compose`, `dev deploy` | `production` quando `BOOTSTRAP_TOKEN` estiver vazio | vazio; em dev existe fallback interno para um owner local do projeto | `CSV` de IDs de usuario do Discord | Owners iniciais carregados no boot. |
@@ -563,7 +561,6 @@ Edite `.env.prod` com valores reais, incluindo:
 - `DISCORD_CLIENT_SECRET`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
-- `GOOGLE_REDIRECT_URI`
 - `OWNER_IDS` ou `BOOTSTRAP_TOKEN`
 - `APP_IMAGE_REPO` e `APP_IMAGE_TAG` (opcionais; defaults para GHCR + `latest`)
 - `TRAEFIK_ACME_EMAIL` quando `PROXY_PROVIDER=traefik`
@@ -573,21 +570,20 @@ Para producao same-origin (recomendado), nao configure `VITE_API_BASE`.
 Em ambiente realmente `production`, origens locais so serao aceitas se estiverem permitidas por `APP_ORIGIN`.
 No Discord Developer Portal, confirme as redirect URIs:
 
-- `https://<APP_DOMAIN>/login` (obrigatoria)
-- `https://<APP_WWW_DOMAIN>/login` (recomendada)
+- `https://<APP_DOMAIN>/api/auth/callback/discord` (obrigatoria)
+- `https://<APP_WWW_DOMAIN>/api/auth/callback/discord` (recomendada)
 
 No Google Cloud Console, confirme as redirect URIs autorizadas:
 
-- `https://<APP_DOMAIN>/auth/google/callback` (obrigatoria)
-- `https://<APP_WWW_DOMAIN>/auth/google/callback` (recomendada, se esse host for usado)
-
-Para Google em producao, prefira sempre `GOOGLE_REDIRECT_URI` explicita com um dominio canônico. Nao use `/login` no Google por analogia ao Discord; a callback correta do Google neste projeto e `/auth/google/callback`.
+- `https://<APP_DOMAIN>/api/auth/callback/google` (obrigatoria)
+- `https://<APP_WWW_DOMAIN>/api/auth/callback/google` (recomendada, se esse host for usado)
 
 Para desenvolvimento local, o valor esperado e:
 
-- `GOOGLE_REDIRECT_URI=http://127.0.0.1:8080/auth/google/callback`
+- `http://127.0.0.1:8080/api/auth/callback/discord`
+- `http://127.0.0.1:8080/api/auth/callback/google`
 
-Esse valor precisa bater exatamente com o que estiver cadastrado no Google Cloud Console; qualquer diferenca de host, schema ou path causa `redirect_uri_mismatch`.
+Esses valores precisam bater exatamente com o que estiver cadastrado nos provedores; qualquer diferenca de host, schema ou path causa `redirect_uri_mismatch`.
 
 ### 8.4 DNS, dominio e escolha do proxy
 

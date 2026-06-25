@@ -65,7 +65,6 @@ const buildRootSource = () => {
     ...buildDirectRouteSource("session"),
     ...buildDirectRouteSource("operational"),
     ...buildDirectRouteSource("selfService"),
-    ...buildDirectRouteSource("auth"),
     ...serverSource,
     API_CONTRACT_VERSION: "v1",
     DISCORD_API: createNamedValue("DISCORD_API"),
@@ -94,7 +93,6 @@ describe("buildRootRouteRegistrationDependencies", () => {
 
     expect(dependencies.routeRuntimeGroups).toBe(routeRuntimeGroups);
     expect(dependencies.publicMediaRuntime).toBe(routeRuntimeGroups.publicMediaRuntime);
-    expect(dependencies.DISCORD_CLIENT_ID).toBe("discord-client-id");
     expect(dependencies.getPostOgCachedRender).toEqual(createNamedValue("getPostOgCachedRender"));
   });
 
@@ -128,7 +126,7 @@ describe("buildRootRouteRegistrationDependencies", () => {
 
     const contexts = createRootServerRouteContexts(rootDependencies);
 
-    expect(contexts.directRouteDependencies.auth.discordClientId).toBe("discord-client-id");
+    expect(contexts.directRouteDependencies.selfService.mfaRecoveryCodePepper).toBe("pepper");
     expect(contexts.serverRouteDependencies.og.getProjectOgCachedRender).toEqual(
       createNamedValue("getProjectOgCachedRender"),
     );

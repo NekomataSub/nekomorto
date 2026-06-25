@@ -28,7 +28,7 @@ const CONTRACT_BASE = Object.freeze({
   notes: [
     "Endpoints de escrita aceitam Idempotency-Key opcional para deduplicacao segura.",
     "Rate limit usa backend local em memoria (otimizado para single-instance).",
-    "Fluxo MFA opcional usa pending_mfa; finalize em POST /api/auth/mfa/verify.",
+    "Fluxo MFA usa Better Auth em /api/auth/*; clientes devem usar authClient.twoFactor.",
     "Endpoints publicos de conteudo expoem mediaVariants com presets responsivos para srcset por largura (incluindo cardHomeXs/cardHomeSm/heroXs/heroSm/heroMd/posterThumbSm); a geracao atual produz AVIF e os consumidores preservam compatibilidade com webp/fallback legados.",
     "Endpoints de upload podem retornar variantsGenerated e variantGenerationError para observabilidade.",
     "Publicacao de episodios/capitulos valida acesso publico real: anime e similares exigem ao menos uma fonte completa; light novel exige texto no leitor ou fonte; manga/webtoon exigem paginas ou fonte. Erros esperados: download_sources_required_for_publication e reader_content_or_download_required_for_publication.",
@@ -339,13 +339,6 @@ const CONTRACT_BASE = Object.freeze({
       method: "DELETE",
       path: "/api/me/sessions/others",
       auth: "session",
-      cache: "no-store",
-      idempotent: "optional_by_header",
-    },
-    {
-      method: "POST",
-      path: "/api/auth/mfa/verify",
-      auth: "pending_mfa_session",
       cache: "no-store",
       idempotent: "optional_by_header",
     },
