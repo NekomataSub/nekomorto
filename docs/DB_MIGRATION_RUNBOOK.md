@@ -148,7 +148,7 @@ Fluxo do pipeline:
 
 1. o workflow roda `npm run typecheck` e `npm run test:a11y`
 2. o job de preview roda `npm run typecheck:ts7-preview` com `continue-on-error`
-3. o job de build publica `ghcr.io/nekomatasub/nekomorto` com tags `latest` e `sha-<commit>`
+3. o job de build roda em matrix sobre dois runners nativos do GitHub Actions: `ubuntu-latest` (amd64) e `ubuntu-24.04-arm` (arm64). Cada leg compila nativamente e publica em `ghcr.io/nekomatasub/nekomorto` com tags `latest` e `sha-<commit>`. O GHCR consolida os dois leg em um unico multi-arch manifest list (linux/amd64 + linux/arm64); o `docker pull` resolve a camada correta para a arquitetura do host automaticamente
 
 Deploy depois da publicacao:
 

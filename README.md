@@ -731,6 +731,14 @@ Fluxo CI:
 2. Em paralelo, o job `ts7_preview` roda `npm run typecheck:ts7-preview` com `continue-on-error` para observabilidade do preview nativo.
 3. O job `build_and_push` publica `ghcr.io/nekomatasub/nekomorto` com tags `latest` e `sha-<commit>`.
 
+Arquiteturas suportadas na imagem publicada:
+
+- A imagem publicada e um **multi-arch manifest list** (OCI image index) com camadas para `linux/amd64` e `linux/arm64`. O `docker pull` resolve a camada certa para a arquitetura do host automaticamente; nao e necessario trocar tag, variavel ou `platform` no compose.
+- Cobertura inclui hosts amd64 (x86_64) e arm64 (aarch64) como AWS Graviton, Oracle Ampere, Google Tau T2A, hosts ARM bare-metal e Apple Silicon via Docker Desktop/Virtualization.framework.
+- O job `build_and_push` roda em **matrix** com dois runners nativos do GitHub Actions em paralelo: `ubuntu-latest` (amd64) e `ubuntu-24.04-arm` (arm64). Cada leg compila a sua arquitetura nativamente e faz push das mesmas tags; o GHCR consolida tudo num unico manifest list. Nao usamos emulacao via QEMU, entao o `prisma generate` (que roda dentro do `node:26-alpine` multi-arch do Dockerfile) usa o schema-engine nativo da plataforma e empacota a engine correta no client Prisma via `binaryTargets = ["native", "linux-musl-openssl-3.0.x"]`. O `Dockerfile`, `docker-compose.prod.yml`, schema Prisma e o codigo da app nao foram alterados para suportar arm64.
+- O tempo total do job cresce porque os dois legs rodam em paralelo; o wall-clock e dominado pelo leg mais lento.
+- Para confirmar a arquitetura de uma tag especifica, use `docker manifest inspect ghcr.io/nekomatasub/nekomorto:<tag>` e veja a lista de `manifests[].platform`.
+
 Deploy:
 
 - O GitHub Actions nao executa mais deploy remoto por SSH.
