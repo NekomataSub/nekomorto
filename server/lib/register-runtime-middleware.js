@@ -99,6 +99,134 @@ export const buildPwaManifestPayload = ({
   };
 };
 
+const getSafeResponseField = (payload, keys) => {
+  if (!payload || typeof payload !== "object") {
+    return "";
+  }
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim().slice(0, 180);
+    }
+  }
+  return "";
+};
+
+const resolveOperationOutcome = ({ method, responsePayload, statusCode }) => {
+  if (statusCode >= 200 && statusCode < 300) {
+    return {
+      operationStatus: "succeeded",
+      operationSuccess: true,
+      outcome: "success",
+    };
+  }
+  if (statusCode >= 300 && statusCode < 400) {
+    return {
+      operationStatus: "redirected",
+      operationSuccess: true,
+      outcome: "redirect",
+    };
+  }
+
+  const responseError = getSafeResponseField(responsePayload, ["error", "code", "message"]);
+  const normalizedError = responseError.toLowerCase();
+  let outcome = "error";
+  if (statusCode === 400) {
+    outcome = "bad_request";
+  } else if (statusCode === 401) {
+    outcome = "unauthorized";
+  } else if (statusCode === 403 || normalizedError.includes("permission")) {
+    outcome = "forbidden";
+  } else if (statusCode === 404) {
+    outcome = "not_found";
+  } else if (statusCode === 409) {
+    outcome = "conflict";
+  } else if (statusCode === 422 || normalizedError.includes("valid")) {
+    outcome = "validation_failed";
+  } else if (statusCode === 429) {
+    outcome = "rate_limited";
+  } else if (statusCode === 503) {
+    outcome = "unavailable";
+  } else if (statusCode >= 500) {
+    outcome = "server_error";
+  }
+
+  return {
+    operationStatus: "failed",
+    operationSuccess: false,
+    outcome,
+    responseError,
+    responseMessage: getSafeResponseField(responsePayload, ["detail", "reason", "message"]),
+    isMutatingOperation: MUTATING_HTTP_METHODS.has(String(method || "").toUpperCase()),
+  };
+};
+
+const normalizeRouteSegment = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+const resolveOperationAction = (method, routePath) => {
+  const normalizedMethod = String(method || "").toUpperCase();
+  if (routePath.includes("/logout")) {
+    return "logout";
+  }
+  if (routePath.includes("/login") || routePath.startsWith("/auth/")) {
+    return "authenticate";
+  }
+  if (normalizedMethod === "POST") {
+    return "create";
+  }
+  if (normalizedMethod === "PUT" || normalizedMethod === "PATCH") {
+    return "update";
+  }
+  if (normalizedMethod === "DELETE") {
+    return "delete";
+  }
+  if (normalizedMethod === "GET" || normalizedMethod === "HEAD") {
+    return "read";
+  }
+  return normalizedMethod.toLowerCase() || "request";
+};
+
+const resolveOperationResource = (routePath) => {
+  const segments = String(routePath || "")
+    .split("/")
+    .map(normalizeRouteSegment)
+    .filter(Boolean);
+  const apiIndex = segments[0] === "api" ? 1 : 0;
+  const first = segments[apiIndex] || "root";
+  const second = segments[apiIndex + 1] || "";
+  if (first === "public") {
+    return second ? `public.${second}` : "public";
+  }
+  if (first === "admin") {
+    return second ? `admin.${second}` : "admin";
+  }
+  if (first === "me") {
+    return second ? `current_user.${second}` : "current_user";
+  }
+  if (first === "dashboard") {
+    return second ? `dashboard.${second}` : "dashboard";
+  }
+  if (first === "auth") {
+    return second ? `auth.${second}` : "auth";
+  }
+  return first || "root";
+};
+
+const resolveOperationName = ({ method, routePath }) => {
+  const operationAction = resolveOperationAction(method, routePath);
+  const operationResource = resolveOperationResource(routePath);
+  return {
+    operation: `${operationResource}.${operationAction}`,
+    operationAction,
+    operationResource,
+  };
+};
+
 export const registerRuntimeMiddleware = ({
   app,
   attachAuthSession,
@@ -157,12 +285,20 @@ export const registerRuntimeMiddleware = ({
             ? serverLogger.log.bind(serverLogger)
             : console.log;
     if (isServerLogPretty) {
+      const details = [
+        payload.operation ? `operation=${payload.operation}` : "",
+        payload.outcome ? `outcome=${payload.outcome}` : "",
+        payload.responseError ? `error=${payload.responseError}` : "",
+        payload.responseMessage ? `message="${payload.responseMessage}"` : "",
+        payload.userId ? `userId=${payload.userId}` : "",
+        `requestId=${payload.requestId || "-"}`,
+      ]
+        .filter(Boolean)
+        .join(" ");
       logFn(
         `[${payload.ts}] ${String(level).toUpperCase()} ${payload.msg} ${payload.method || ""} ${
           payload.route || ""
-        } ${payload.statusCode || ""} ${payload.durationMs ?? ""}ms requestId=${
-          payload.requestId || "-"
-        }`,
+        } ${payload.statusCode || ""} ${payload.durationMs ?? ""}ms ${details}`,
       );
       return;
     }
@@ -212,6 +348,16 @@ export const registerRuntimeMiddleware = ({
       return true;
     }
     const requestPath = resolveRequestPath(req);
+    const method = String(req.method || "").toUpperCase();
+    if (
+      (method === "GET" || method === "HEAD") &&
+      (requestPath === "/api/public" || requestPath.startsWith("/api/public/"))
+    ) {
+      return false;
+    }
+    if (MUTATING_HTTP_METHODS.has(method)) {
+      return true;
+    }
     if (resolvedRequestScope === "all") {
       return true;
     }
@@ -413,6 +559,14 @@ export const registerRuntimeMiddleware = ({
       route: String(req.path || ""),
     });
     const startedAt = Date.now();
+    const originalJson = typeof res.json === "function" ? res.json.bind(res) : null;
+    let responsePayload = null;
+    if (originalJson) {
+      res.json = (payload) => {
+        responsePayload = payload;
+        return originalJson(payload);
+      };
+    }
     res.on("finish", () => {
       const durationMs = stopTimer();
       metricsRegistry.inc("http_requests_total", {
@@ -423,6 +577,16 @@ export const registerRuntimeMiddleware = ({
       if (isRequestInLogScope(req, Number(res.statusCode || 0))) {
         const statusCode = Number(res.statusCode || 0);
         const level = statusCode >= 500 ? "error" : statusCode >= 400 ? "warn" : "info";
+        const operationOutcome = resolveOperationOutcome({
+          method: req.method,
+          responsePayload,
+          statusCode,
+        });
+        const routePath = resolveRequestPath(req) || String(req.path || "");
+        const operationName = resolveOperationName({
+          method: req.method,
+          routePath,
+        });
         const log = {
           level,
           msg: "http_request",
@@ -434,8 +598,10 @@ export const registerRuntimeMiddleware = ({
             req.session?.pendingMfaEnrollmentUser?.id ||
             null,
           method: String(req.method || "").toUpperCase(),
-          route: resolveRequestPath(req) || String(req.path || ""),
+          route: routePath,
           statusCode,
+          ...operationName,
+          ...operationOutcome,
           durationMs: Math.round(durationMs),
           ip: getRequestIp(req) || "",
           ua: String(req.headers["user-agent"] || "").slice(0, 200),

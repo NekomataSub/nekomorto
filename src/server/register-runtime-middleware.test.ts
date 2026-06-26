@@ -362,11 +362,11 @@ describe("registerRuntimeMiddleware request logging", () => {
     const result = await invokeMiddlewareStack([middleware], {
       headers: { "content-length": "12", "user-agent": "vitest" },
       method: "GET",
-      originalUrl: "/api/health",
-      path: "/api/health",
+      originalUrl: "/api/me",
+      path: "/api/me",
       requestId: "req-logger-1",
       session: {},
-      url: "/api/health",
+      url: "/api/me",
     });
     result.res.emit("finish");
 
@@ -374,9 +374,68 @@ describe("registerRuntimeMiddleware request logging", () => {
     const payload = JSON.parse(String(serverLogger.log.mock.calls[0][0]));
     expect(payload).toMatchObject({
       msg: "http_request",
+      operation: "current_user.read",
+      operationAction: "read",
+      operationResource: "current_user",
+      operationStatus: "succeeded",
+      operationSuccess: true,
+      outcome: "success",
       requestId: "req-logger-1",
-      route: "/api/health",
+      route: "/api/me",
       statusCode: 200,
+    });
+  });
+
+  it("logs failed api operations with the response error category", async () => {
+    const serverLogger = {
+      error: vi.fn(),
+      log: vi.fn(),
+      warn: vi.fn(),
+    };
+    const { entries } = createRuntimeDependencies({
+      serverLogger,
+    });
+    const middleware = getRequestLoggingMiddleware(entries);
+
+    const result = await invokeMiddlewareStack(
+      [
+        middleware,
+        (_req: unknown, res: ReturnType<typeof createResponse>) =>
+          res.status(403).json({ error: "forbidden", detail: "missing project permission" }),
+      ],
+      {
+        headers: { "content-length": "24", "user-agent": "vitest" },
+        method: "PATCH",
+        originalUrl: "/api/projects/projeto-x",
+        path: "/api/projects/projeto-x",
+        requestId: "req-forbidden-1",
+        session: {
+          user: {
+            id: "user-1",
+          },
+        },
+        url: "/api/projects/projeto-x",
+      },
+    );
+    result.res.emit("finish");
+
+    expect(serverLogger.warn).toHaveBeenCalledTimes(1);
+    const payload = JSON.parse(String(serverLogger.warn.mock.calls[0][0]));
+    expect(payload).toMatchObject({
+      isMutatingOperation: true,
+      msg: "http_request",
+      operationStatus: "failed",
+      operationSuccess: false,
+      operation: "projects.update",
+      operationAction: "update",
+      operationResource: "projects",
+      outcome: "forbidden",
+      requestId: "req-forbidden-1",
+      responseError: "forbidden",
+      responseMessage: "missing project permission",
+      route: "/api/projects/projeto-x",
+      statusCode: 403,
+      userId: "user-1",
     });
   });
 
@@ -407,6 +466,63 @@ describe("registerRuntimeMiddleware request logging", () => {
     expect(serverLogger.error).not.toHaveBeenCalled();
   });
 
+  it("does not log healthy public api reads in the default api scope", async () => {
+    const serverLogger = {
+      error: vi.fn(),
+      log: vi.fn(),
+      warn: vi.fn(),
+    };
+    const { entries } = createRuntimeDependencies({
+      serverLogger,
+    });
+    const middleware = getRequestLoggingMiddleware(entries);
+
+    const result = await invokeMiddlewareStack([middleware], {
+      headers: { "user-agent": "vitest" },
+      method: "GET",
+      originalUrl: "/api/public/bootstrap",
+      path: "/api/public/bootstrap",
+      requestId: "req-public-bootstrap",
+      session: {},
+      url: "/api/public/bootstrap",
+    });
+    result.res.emit("finish");
+
+    expect(serverLogger.log).not.toHaveBeenCalled();
+    expect(serverLogger.warn).not.toHaveBeenCalled();
+    expect(serverLogger.error).not.toHaveBeenCalled();
+  });
+
+  it("prints operation and outcome in pretty request logs", async () => {
+    const serverLogger = {
+      error: vi.fn(),
+      log: vi.fn(),
+      warn: vi.fn(),
+    };
+    const { entries } = createRuntimeDependencies({
+      isServerLogPretty: true,
+      serverLogger,
+    });
+    const middleware = getRequestLoggingMiddleware(entries);
+
+    const result = await invokeMiddlewareStack([middleware], {
+      headers: { "user-agent": "vitest" },
+      method: "PUT",
+      originalUrl: "/api/users/user_123",
+      path: "/api/users/user_123",
+      requestId: "req-pretty-user",
+      session: {},
+      url: "/api/users/user_123",
+    });
+    result.res.emit("finish");
+
+    expect(serverLogger.log).toHaveBeenCalledTimes(1);
+    const line = String(serverLogger.log.mock.calls[0][0]);
+    expect(line).toContain("operation=users.update");
+    expect(line).toContain("outcome=success");
+    expect(line).toContain("requestId=req-pretty-user");
+  });
+
   it("logs non-api error responses in the default api scope", async () => {
     const serverLogger = {
       error: vi.fn(),
@@ -434,6 +550,10 @@ describe("registerRuntimeMiddleware request logging", () => {
     const payload = JSON.parse(String(serverLogger.warn.mock.calls[0][0]));
     expect(payload).toMatchObject({
       msg: "http_request",
+      operation: "projetos.read",
+      operationStatus: "failed",
+      operationSuccess: false,
+      outcome: "not_found",
       requestId: "req-public-404",
       route: "/projetos/desconhecido",
       statusCode: 404,
