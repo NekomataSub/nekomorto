@@ -26,6 +26,18 @@ describe("Better Auth runtime contract", () => {
     expect(source).toContain("req.session.user = null");
   });
 
+  it("rejects retired managed users before and after Better Auth sessions are created", () => {
+    const source = repoFile("server/lib/better-auth-runtime.js");
+
+    expect(source).toContain("isUserProfileEligibleForAuth(entry)");
+    expect(source).toContain("session: {");
+    expect(source).toContain("create: {");
+    expect(source).toContain("before: async (session)");
+    expect(source).toContain("findAuthEligibleUserProfileById(session?.userId)");
+    expect(source).toContain("await findAuthEligibleUserProfileById(session.user.id)");
+    expect(source).toContain("prisma.authSession.deleteMany");
+  });
+
   it("keeps legacy OAuth entrypoints out of the active direct route boot", () => {
     const directRoutes = repoFile("server/bootstrap/register-direct-server-routes.js");
     const betterAuthRuntime = repoFile("server/lib/better-auth-runtime.js");

@@ -3,7 +3,6 @@ import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { betterAuth } from "better-auth";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { admin, twoFactor } from "better-auth/plugins";
-import { prisma } from "./prisma-client.js";
 import {
   AccessRole,
   defaultPermissionsForRole,
@@ -13,6 +12,7 @@ import {
 import { betterAuthAccessControl, betterAuthRoles } from "./better-auth-access.js";
 import { oauthTwoFactorGate } from "./better-auth-oauth-2fa.js";
 import { resolveBetterAuthOriginConfig } from "./better-auth-origin.js";
+import { prisma } from "./prisma-client.js";
 
 const { baseURL: appOrigin, trustedOrigins } = resolveBetterAuthOriginConfig({
   appOriginEnv: process.env.APP_ORIGIN,
@@ -37,6 +37,28 @@ const normalizeAuthPermissions = (permissions, { fallbackRole = AccessRole.NORMA
     return sanitized;
   }
   return defaultPermissionsForRole(fallbackRole);
+};
+
+export const normalizeUserProfileStatus = (user) =>
+  String(user?.status || user?.data?.status || "")
+    .trim()
+    .toLowerCase();
+
+export const isRetiredUserProfile = (user) => normalizeUserProfileStatus(user) === "retired";
+
+export const isUserProfileEligibleForAuth = (user) =>
+  Boolean(user?.id) && !isRetiredUserProfile(user);
+
+const findAuthEligibleUserProfileById = async (userId) => {
+  const normalizedId = String(userId || "").trim();
+  if (!normalizedId) {
+    return null;
+  }
+  const user = await prisma.userRecord.findUnique({
+    where: { id: normalizedId },
+    select: { id: true, status: true, data: true },
+  });
+  return isUserProfileEligibleForAuth(user) ? user : null;
 };
 
 const resolveOwnerRole = (userId, owners = []) => {
@@ -112,7 +134,9 @@ const findApprovedUserByEmail = async (email) => {
       select: { userId: true, position: true },
       orderBy: { position: "asc" },
     }),
-    prisma.userRecord.findMany({ select: { id: true, accessRole: true, data: true } }),
+    prisma.userRecord.findMany({
+      select: { id: true, accessRole: true, status: true, data: true },
+    }),
   ]);
   const owners = [
     ...ownerIdsFromEnv.map((userId, position) => ({ userId, position })),
@@ -128,7 +152,11 @@ const findApprovedUserByEmail = async (email) => {
     const storedEmail = String(entry.data?.email || "")
       .trim()
       .toLowerCase();
-    return approvedIds.has(String(entry.id)) && storedEmail === normalizedEmail;
+    return (
+      approvedIds.has(String(entry.id)) &&
+      storedEmail === normalizedEmail &&
+      isUserProfileEligibleForAuth(entry)
+    );
   });
   if (matches.length !== 1) {
     return null;
@@ -199,6 +227,14 @@ export const auth = betterAuth({
               permissions: approved.resolvedPermissions || [],
             },
           };
+        },
+      },
+    },
+    session: {
+      create: {
+        before: async (session) => {
+          const approved = await findAuthEligibleUserProfileById(session?.userId);
+          return Boolean(approved);
         },
       },
     },
@@ -433,9 +469,16 @@ export const betterAuthSessionBridge = async (req, _res, next) => {
   }
   try {
     const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
-    req.betterAuthSession = session || null;
-    req.sessionID = session?.session?.token ? String(session.session.token) : "";
-    req.session.user = session?.user ? toLegacySessionUser(session.user) : null;
+    const profile = session?.user?.id
+      ? await findAuthEligibleUserProfileById(session.user.id)
+      : null;
+    if (session?.session?.token && !profile) {
+      await prisma.authSession.deleteMany({ where: { token: String(session.session.token) } });
+    }
+    const approvedSession = profile ? session : null;
+    req.betterAuthSession = approvedSession || null;
+    req.sessionID = approvedSession?.session?.token ? String(approvedSession.session.token) : "";
+    req.session.user = approvedSession?.user ? toLegacySessionUser(approvedSession.user) : null;
     req.session.pendingMfaUser = null;
     req.session.pendingMfaEnrollmentUser = null;
   } catch (error) {
