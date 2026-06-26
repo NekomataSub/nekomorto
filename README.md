@@ -462,6 +462,9 @@ Fora do escopo desta fase:
 | `ADMIN_EXPORT_TTL_HOURS` | `dev base`, `prod compose` | nunca | `24` | inteiro em horas, clamp `1-168` | Tempo de vida dos arquivos em `ADMIN_EXPORTS_DIR`. |
 | `METRICS_ENABLED` | `dev base`, `prod compose`, `dev deploy` | nunca | `false` | `bool backend` | Habilita a exposicao de metrics operacionais. |
 | `METRICS_TOKEN` | `dev base`, `prod compose`, `dev deploy` | quando `METRICS_ENABLED=true` | vazio | string secreta | Token exigido para acessar metrics quando elas estiverem habilitadas. |
+| `SERVER_LOG_LEVEL` | `dev base`, `prod compose`, `dev deploy` | nunca | `info` | `debug`, `info`, `warn`, `error`, `silent` | Controla a verbosidade dos logs de console do servidor, independentemente de `METRICS_ENABLED`. |
+| `SERVER_LOG_REQUEST_SCOPE` | `dev base`, `prod compose`, `dev deploy` | nunca | `api` | `api`, `public`, `all` | Define quais requests saudaveis aparecem no console. `api` registra `/api` e `/auth`; erros `4xx/5xx` sempre entram. |
+| `SERVER_LOG_PRETTY` | `dev base`, `prod compose`, `dev deploy` | nunca | `true` em dev, `false` em production | `bool backend` | Usa formato legivel no console quando `true`; quando `false`, emite JSON estruturado. |
 | `OPERATIONAL_HEALTH_TOKEN` | `dev base`, `prod compose`, `dev deploy` | quando diagnóstico remoto detalhado for necessário | vazio | string secreta | Token opcional para payload detalhado de `/api/health` e `/api/health/ready` fora de loopback. Sem token, esses endpoints públicos retornam payload sanitizado. |
 | `OPS_ALERTS_WEBHOOK_ENABLED` | `dev base`, `prod compose` | nunca | `false` | `bool backend` | Liga os alertas operacionais/webhooks da categoria 6. |
 | `OPS_ALERTS_WEBHOOK_PROVIDER` | `dev base`, `prod compose` | quando `OPS_ALERTS_WEBHOOK_ENABLED=true` | `discord` | `discord` | Provider do webhook. Hoje somente `discord` e suportado; valores diferentes fazem o envio ser ignorado. |

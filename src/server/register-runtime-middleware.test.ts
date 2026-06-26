@@ -150,6 +150,7 @@ const createResponse = () => ({
   body: null as unknown,
   ended: false,
   headers: new Map<string, string>(),
+  listeners: new Map<string, Array<() => void>>(),
   locals: {} as Record<string, unknown>,
   redirectedTo: "",
   statusCode: 200,
@@ -159,6 +160,20 @@ const createResponse = () => ({
   },
   json(payload: unknown) {
     this.body = payload;
+    return this;
+  },
+  emit(eventName: string) {
+    const callbacks = this.listeners.get(eventName) || [];
+    callbacks.forEach((callback) => callback());
+    return this;
+  },
+  getHeader(name: string) {
+    return this.headers.get(String(name).toLowerCase());
+  },
+  on(eventName: string, callback: () => void) {
+    const callbacks = this.listeners.get(eventName) || [];
+    callbacks.push(callback);
+    this.listeners.set(eventName, callbacks);
     return this;
   },
   setHeader(name: string, value: unknown) {
@@ -315,6 +330,114 @@ describe("registerRuntimeMiddleware security headers", () => {
     expect(result.res.headers.get("content-security-policy")).not.toContain(
       "script-src 'self' 'unsafe-inline'",
     );
+  });
+});
+
+describe("registerRuntimeMiddleware request logging", () => {
+  const getRequestLoggingMiddleware = (entries: Array<{ method: string; args: unknown[] }>) => {
+    const entry = entries.find(
+      (candidate) =>
+        candidate.method === "use" &&
+        candidate.args.some((arg) => typeof arg === "function" && String(arg).includes("http_request")),
+    );
+    expect(entry).toBeTruthy();
+    if (!entry) {
+      throw new Error("missing request logging middleware");
+    }
+    return entry.args[0];
+  };
+
+  it("logs api requests even when metrics are disabled", async () => {
+    const serverLogger = {
+      error: vi.fn(),
+      log: vi.fn(),
+      warn: vi.fn(),
+    };
+    const { entries } = createRuntimeDependencies({
+      isMetricsEnabled: false,
+      serverLogger,
+    });
+    const middleware = getRequestLoggingMiddleware(entries);
+
+    const result = await invokeMiddlewareStack([middleware], {
+      headers: { "content-length": "12", "user-agent": "vitest" },
+      method: "GET",
+      originalUrl: "/api/health",
+      path: "/api/health",
+      requestId: "req-logger-1",
+      session: {},
+      url: "/api/health",
+    });
+    result.res.emit("finish");
+
+    expect(serverLogger.log).toHaveBeenCalledTimes(1);
+    const payload = JSON.parse(String(serverLogger.log.mock.calls[0][0]));
+    expect(payload).toMatchObject({
+      msg: "http_request",
+      requestId: "req-logger-1",
+      route: "/api/health",
+      statusCode: 200,
+    });
+  });
+
+  it("does not log healthy static assets in the default api scope", async () => {
+    const serverLogger = {
+      error: vi.fn(),
+      log: vi.fn(),
+      warn: vi.fn(),
+    };
+    const { entries } = createRuntimeDependencies({
+      serverLogger,
+    });
+    const middleware = getRequestLoggingMiddleware(entries);
+
+    const result = await invokeMiddlewareStack([middleware], {
+      headers: { "user-agent": "vitest" },
+      method: "GET",
+      originalUrl: "/assets/app.js",
+      path: "/assets/app.js",
+      requestId: "req-asset-1",
+      session: {},
+      url: "/assets/app.js",
+    });
+    result.res.emit("finish");
+
+    expect(serverLogger.log).not.toHaveBeenCalled();
+    expect(serverLogger.warn).not.toHaveBeenCalled();
+    expect(serverLogger.error).not.toHaveBeenCalled();
+  });
+
+  it("logs non-api error responses in the default api scope", async () => {
+    const serverLogger = {
+      error: vi.fn(),
+      log: vi.fn(),
+      warn: vi.fn(),
+    };
+    const { entries } = createRuntimeDependencies({
+      serverLogger,
+    });
+    const middleware = getRequestLoggingMiddleware(entries);
+
+    const result = await invokeMiddlewareStack([middleware], {
+      headers: { "user-agent": "vitest" },
+      method: "GET",
+      originalUrl: "/projetos/desconhecido",
+      path: "/projetos/desconhecido",
+      requestId: "req-public-404",
+      session: {},
+      url: "/projetos/desconhecido",
+    });
+    result.res.status(404);
+    result.res.emit("finish");
+
+    expect(serverLogger.warn).toHaveBeenCalledTimes(1);
+    const payload = JSON.parse(String(serverLogger.warn.mock.calls[0][0]));
+    expect(payload).toMatchObject({
+      msg: "http_request",
+      requestId: "req-public-404",
+      route: "/projetos/desconhecido",
+      statusCode: 404,
+    });
   });
 });
 

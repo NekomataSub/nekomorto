@@ -4,6 +4,12 @@ import { betterAuth } from "better-auth";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { admin, twoFactor } from "better-auth/plugins";
 import { prisma } from "./prisma-client.js";
+import {
+  AccessRole,
+  defaultPermissionsForRole,
+  normalizeAccessRole,
+  sanitizePermissionsForStorage,
+} from "./authz.js";
 import { betterAuthAccessControl, betterAuthRoles } from "./better-auth-access.js";
 import { oauthTwoFactorGate } from "./better-auth-oauth-2fa.js";
 import { resolveBetterAuthOriginConfig } from "./better-auth-origin.js";
@@ -16,6 +22,66 @@ const { baseURL: appOrigin, trustedOrigins } = resolveBetterAuthOriginConfig({
 const authSecret = String(
   process.env.BETTER_AUTH_SECRET || process.env.SESSION_SECRET || "",
 ).trim();
+const authAccessCache = new Map();
+const ownerIdsFromEnv = String(process.env.OWNER_IDS || "")
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean);
+
+const normalizeAuthPermissions = (permissions, { fallbackRole = AccessRole.NORMAL } = {}) => {
+  const sanitized = sanitizePermissionsForStorage(permissions, {
+    acceptLegacyStar: true,
+    keepUnknown: false,
+  });
+  if (Array.isArray(permissions)) {
+    return sanitized;
+  }
+  return defaultPermissionsForRole(fallbackRole);
+};
+
+const resolveOwnerRole = (userId, owners = []) => {
+  const ownerIndex = owners.findIndex((entry) => String(entry.userId) === String(userId));
+  if (ownerIndex === 0) {
+    return AccessRole.OWNER_PRIMARY;
+  }
+  if (ownerIndex > 0) {
+    return AccessRole.OWNER_SECONDARY;
+  }
+  return null;
+};
+
+const resolveAccessRoleForAuthUser = ({ userId, accessRole, owners = [] } = {}) => {
+  const ownerRole = resolveOwnerRole(userId, owners);
+  if (ownerRole) {
+    return ownerRole;
+  }
+  const normalizedRole = normalizeAccessRole(accessRole, AccessRole.NORMAL);
+  if (
+    normalizedRole === AccessRole.OWNER_PRIMARY ||
+    normalizedRole === AccessRole.OWNER_SECONDARY
+  ) {
+    return AccessRole.NORMAL;
+  }
+  return normalizedRole;
+};
+
+const toAuthAccessRecord = (entry) => {
+  const accessRole = normalizeAccessRole(entry?.role, AccessRole.NORMAL);
+  return {
+    id: String(entry?.id || ""),
+    accessRole,
+    permissions: normalizeAuthPermissions(entry?.permissions, { fallbackRole: accessRole }),
+  };
+};
+
+const setAuthAccessCacheRecord = (entry) => {
+  const record = toAuthAccessRecord(entry);
+  if (!record.id) {
+    return null;
+  }
+  authAccessCache.set(record.id, record);
+  return record;
+};
 
 const socialProviders = {};
 if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET) {
@@ -40,7 +106,7 @@ const findApprovedUserByEmail = async (email) => {
   if (!normalizedEmail) {
     return null;
   }
-  const [allowed, owners, users] = await Promise.all([
+  const [allowed, storedOwners, users] = await Promise.all([
     prisma.allowedUserRecord.findMany({ select: { userId: true } }),
     prisma.ownerIdRecord.findMany({
       select: { userId: true, position: true },
@@ -48,6 +114,15 @@ const findApprovedUserByEmail = async (email) => {
     }),
     prisma.userRecord.findMany({ select: { id: true, accessRole: true, data: true } }),
   ]);
+  const owners = [
+    ...ownerIdsFromEnv.map((userId, position) => ({ userId, position })),
+    ...storedOwners
+      .filter((entry) => !ownerIdsFromEnv.includes(String(entry.userId)))
+      .map((entry, index) => ({
+        ...entry,
+        position: ownerIdsFromEnv.length + index,
+      })),
+  ];
   const approvedIds = new Set([...allowed, ...owners].map((entry) => String(entry.userId)));
   const matches = users.filter((entry) => {
     const storedEmail = String(entry.data?.email || "")
@@ -58,15 +133,17 @@ const findApprovedUserByEmail = async (email) => {
   if (matches.length !== 1) {
     return null;
   }
-  const ownerIndex = owners.findIndex((entry) => String(entry.userId) === String(matches[0].id));
+  const resolvedRole = resolveAccessRoleForAuthUser({
+    userId: matches[0].id,
+    accessRole: matches[0].accessRole,
+    owners,
+  });
   return {
     ...matches[0],
-    resolvedRole:
-      ownerIndex === 0
-        ? "owner_primary"
-        : ownerIndex > 0
-          ? "owner_secondary"
-          : matches[0].accessRole,
+    resolvedRole,
+    resolvedPermissions: normalizeAuthPermissions(matches[0].data?.permissions, {
+      fallbackRole: resolvedRole,
+    }),
   };
 };
 
@@ -79,7 +156,17 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   emailAndPassword: { enabled: false },
   socialProviders,
-  user: { modelName: "AuthUser" },
+  user: {
+    modelName: "AuthUser",
+    additionalFields: {
+      permissions: {
+        type: "string[]",
+        required: false,
+        input: false,
+        defaultValue: [],
+      },
+    },
+  },
   session: {
     modelName: "AuthSession",
     expiresIn: 60 * 60 * 24 * 7,
@@ -109,6 +196,7 @@ export const auth = betterAuth({
               ...user,
               id: approved.id,
               role: approved.resolvedRole || "normal",
+              permissions: approved.resolvedPermissions || [],
             },
           };
         },
@@ -157,6 +245,8 @@ const toLegacySessionUser = (user) => ({
   username: String(user.name || user.email || user.id),
   email: user.email || null,
   avatarUrl: user.image || null,
+  accessRole: normalizeAccessRole(user.role, AccessRole.NORMAL),
+  permissions: normalizeAuthPermissions(user.permissions, { fallbackRole: user.role }),
 });
 
 const createRequestSessionShim = () => ({
@@ -201,6 +291,129 @@ export const buildBetterAuthMethods = async (userId) => {
   return passkeyCount > 0
     ? [...methods, { provider: "passkey", linked: true, hasPasskey: true }]
     : methods;
+};
+
+export const refreshBetterAuthAccessCache = async () => {
+  if (!prisma.authUser || typeof prisma.authUser.findMany !== "function") {
+    return authAccessCache;
+  }
+  const users = await prisma.authUser.findMany({
+    select: { id: true, role: true, permissions: true },
+    orderBy: { createdAt: "asc" },
+  });
+  authAccessCache.clear();
+  users.forEach(setAuthAccessCacheRecord);
+  return authAccessCache;
+};
+
+export const getBetterAuthAccessRecord = (userId) => {
+  const normalizedId = String(userId || "").trim();
+  if (!normalizedId) {
+    return null;
+  }
+  return authAccessCache.get(normalizedId) || null;
+};
+
+export const loadBetterAuthOwnerIds = () => {
+  const records = [...authAccessCache.values()];
+  const primary = records
+    .filter((entry) => entry.accessRole === AccessRole.OWNER_PRIMARY)
+    .map((entry) => entry.id);
+  const secondary = records
+    .filter((entry) => entry.accessRole === AccessRole.OWNER_SECONDARY)
+    .map((entry) => entry.id);
+  return [...primary, ...secondary];
+};
+
+export const primeBetterAuthAccessCacheFromUsers = ({ users = [], ownerIds = [] } = {}) => {
+  const owners = (Array.isArray(ownerIds) ? ownerIds : []).map((userId, position) => ({
+    userId: String(userId),
+    position,
+  }));
+  (Array.isArray(users) ? users : []).forEach((user) => {
+    const userId = String(user?.id || "").trim();
+    if (!userId) {
+      return;
+    }
+    const accessRole = resolveAccessRoleForAuthUser({
+      userId,
+      accessRole: user?.accessRole,
+      owners,
+    });
+    setAuthAccessCacheRecord({
+      id: userId,
+      role: accessRole,
+      permissions: user?.permissions || [],
+    });
+  });
+};
+
+export const updateBetterAuthUserAccess = async ({ userId, accessRole, permissions } = {}) => {
+  const normalizedId = String(userId || "").trim();
+  if (!normalizedId) {
+    return false;
+  }
+  const normalizedRole = normalizeAccessRole(accessRole, AccessRole.NORMAL);
+  const normalizedPermissions = normalizeAuthPermissions(permissions, {
+    fallbackRole: normalizedRole,
+  });
+  if (!prisma.authUser || typeof prisma.authUser.updateMany !== "function") {
+    setAuthAccessCacheRecord({
+      id: normalizedId,
+      role: normalizedRole,
+      permissions: normalizedPermissions,
+    });
+    return false;
+  }
+  const result = await prisma.authUser.updateMany({
+    where: { id: normalizedId },
+    data: {
+      role: normalizedRole,
+      permissions: normalizedPermissions,
+    },
+  });
+  if (result.count > 0) {
+    setAuthAccessCacheRecord({
+      id: normalizedId,
+      role: normalizedRole,
+      permissions: normalizedPermissions,
+    });
+  }
+  return result.count > 0;
+};
+
+export const syncBetterAuthAccessFromUsers = async ({ users = [], ownerIds = [] } = {}) => {
+  if (!prisma.authUser || typeof prisma.authUser.findMany !== "function") {
+    primeBetterAuthAccessCacheFromUsers({ users, ownerIds });
+    return authAccessCache;
+  }
+  const owners = (Array.isArray(ownerIds) ? ownerIds : []).map((userId, position) => ({
+    userId: String(userId),
+    position,
+  }));
+  const usersById = new Map(
+    (Array.isArray(users) ? users : []).map((user) => [String(user?.id || ""), user]),
+  );
+  const authUsers = await prisma.authUser.findMany({
+    select: { id: true, role: true, permissions: true },
+    orderBy: { createdAt: "asc" },
+  });
+  await Promise.all(
+    authUsers.map((authUser) => {
+      const profileUser = usersById.get(String(authUser.id));
+      const accessRole = resolveAccessRoleForAuthUser({
+        userId: authUser.id,
+        accessRole: profileUser?.accessRole || AccessRole.NORMAL,
+        owners,
+      });
+      return updateBetterAuthUserAccess({
+        userId: authUser.id,
+        accessRole,
+        permissions: Array.isArray(profileUser?.permissions) ? profileUser.permissions : [],
+      });
+    }),
+  );
+  return refreshBetterAuthAccessCache();
 };
 
 export const betterAuthSessionBridge = async (req, _res, next) => {

@@ -21,6 +21,13 @@ const CLIENT_STATIC_ASSET_EXACT_PATHS = new Set([
   "/robots.txt",
 ]);
 const PUBLIC_ASSET_RATE_LIMIT_STATE = Symbol("publicAssetRateLimitState");
+const SERVER_LOG_LEVEL_PRIORITY = Object.freeze({
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40,
+  silent: 100,
+});
 
 export const resolvePwaCriticalAssetPath = ({ clientDistDir, requestPath }) => {
   const normalizedPath = String(requestPath || "").trim();
@@ -104,7 +111,6 @@ export const registerRuntimeMiddleware = ({
   idempotencyTtlMs,
   isAllowedOrigin,
   isMaintenanceMode,
-  isMetricsEnabled,
   isProduction,
   isPwaDevEnabled,
   loadSiteSettings,
@@ -118,6 +124,10 @@ export const registerRuntimeMiddleware = ({
   primaryAppHost,
   primaryAppOrigin,
   registerBeforeBodyParsers,
+  serverLogLevel = "info",
+  serverLogRequestScope = "api",
+  serverLogger = console,
+  isServerLogPretty = false,
   setStaticCacheHeaders,
   staticDefaultCacheControl,
   trustProxy = 1,
@@ -126,6 +136,38 @@ export const registerRuntimeMiddleware = ({
   viteDevServer,
 }) => {
   const PUBLIC_ASSET_METHODS = new Set(["GET", "HEAD"]);
+  const resolvedServerLogLevel = SERVER_LOG_LEVEL_PRIORITY[serverLogLevel] ? serverLogLevel : "info";
+  const resolvedRequestScope = ["api", "public", "all"].includes(serverLogRequestScope)
+    ? serverLogRequestScope
+    : "api";
+
+  const canLogAtLevel = (level) =>
+    SERVER_LOG_LEVEL_PRIORITY[resolvedServerLogLevel] <= SERVER_LOG_LEVEL_PRIORITY[level];
+
+  const writeServerLog = (level, payload) => {
+    if (!canLogAtLevel(level)) {
+      return;
+    }
+    const logFn =
+      level === "error" && typeof serverLogger.error === "function"
+        ? serverLogger.error.bind(serverLogger)
+        : level === "warn" && typeof serverLogger.warn === "function"
+          ? serverLogger.warn.bind(serverLogger)
+          : typeof serverLogger.log === "function"
+            ? serverLogger.log.bind(serverLogger)
+            : console.log;
+    if (isServerLogPretty) {
+      logFn(
+        `[${payload.ts}] ${String(level).toUpperCase()} ${payload.msg} ${payload.method || ""} ${
+          payload.route || ""
+        } ${payload.statusCode || ""} ${payload.durationMs ?? ""}ms requestId=${
+          payload.requestId || "-"
+        }`,
+      );
+      return;
+    }
+    logFn(JSON.stringify(payload));
+  };
 
   const rejectRateLimitedAssetRead = (res) => {
     res.setHeader("Cache-Control", "no-store");
@@ -163,6 +205,20 @@ export const registerRuntimeMiddleware = ({
           requestPath,
         }),
     );
+  };
+
+  const isRequestInLogScope = (req, statusCode) => {
+    if (statusCode >= 400) {
+      return true;
+    }
+    const requestPath = resolveRequestPath(req);
+    if (resolvedRequestScope === "all") {
+      return true;
+    }
+    if (resolvedRequestScope === "public") {
+      return !isPublicAssetReadRequest(req);
+    }
+    return requestPath === "/auth" || requestPath.startsWith("/auth/") || requestPath.startsWith("/api");
   };
 
   const enforcePublicAssetReadRateLimit = async (req, res, next) => {
@@ -364,9 +420,11 @@ export const registerRuntimeMiddleware = ({
         route: String(req.path || ""),
         status: String(res.statusCode || 0),
       });
-      if (isMetricsEnabled) {
+      if (isRequestInLogScope(req, Number(res.statusCode || 0))) {
+        const statusCode = Number(res.statusCode || 0);
+        const level = statusCode >= 500 ? "error" : statusCode >= 400 ? "warn" : "info";
         const log = {
-          level: res.statusCode >= 500 ? "error" : "info",
+          level,
           msg: "http_request",
           ts: new Date().toISOString(),
           requestId: req.requestId || null,
@@ -376,8 +434,8 @@ export const registerRuntimeMiddleware = ({
             req.session?.pendingMfaEnrollmentUser?.id ||
             null,
           method: String(req.method || "").toUpperCase(),
-          route: String(req.path || ""),
-          statusCode: Number(res.statusCode || 0),
+          route: resolveRequestPath(req) || String(req.path || ""),
+          statusCode,
           durationMs: Math.round(durationMs),
           ip: getRequestIp(req) || "",
           ua: String(req.headers["user-agent"] || "").slice(0, 200),
@@ -385,7 +443,7 @@ export const registerRuntimeMiddleware = ({
           bytesOut: Number(res.getHeader("content-length") || 0) || 0,
           elapsedMs: Date.now() - startedAt,
         };
-        console.log(JSON.stringify(log));
+        writeServerLog(level, log);
       }
     });
     return next();

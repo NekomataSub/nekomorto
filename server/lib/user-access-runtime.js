@@ -63,6 +63,8 @@ export const createUserAccessRuntime = (dependencies = {}) => {
     defaultPermissionsForRole,
     expandLegacyPermissions,
     filterAnalyticsEvents,
+    getAuthAccessRecord,
+    loadAuthOwnerIds,
     isOwner,
     isPrimaryOwner,
     isRbacV2AcceptLegacyStar = false,
@@ -91,9 +93,32 @@ export const createUserAccessRuntime = (dependencies = {}) => {
     writeUsers,
   } = dependencies;
 
-  const resolveOwnerIds = () => loadOwnerIds().map((id) => String(id));
+  const resolveOwnerIds = () => {
+    const authOwnerIds =
+      typeof loadAuthOwnerIds === "function" ? loadAuthOwnerIds().map((id) => String(id)) : [];
+    return Array.from(new Set([...loadOwnerIds().map((id) => String(id)), ...authOwnerIds]));
+  };
   const resolvePrimaryOwnerId = (ownerIds = resolveOwnerIds()) =>
     ownerIds[0] ? String(ownerIds[0]) : null;
+  const resolveAuthAccessRecord = (userId) =>
+    typeof getAuthAccessRecord === "function" ? getAuthAccessRecord(userId) : null;
+  const normalizeNonOwnerAccessRole = (accessRole) => {
+    const normalizedRole = normalizeAccessRole(accessRole, AccessRole.NORMAL);
+    if (
+      normalizedRole === AccessRole.OWNER_PRIMARY ||
+      normalizedRole === AccessRole.OWNER_SECONDARY
+    ) {
+      return AccessRole.NORMAL;
+    }
+    return normalizedRole;
+  };
+  const resolveEffectiveAccessRole = ({ userId, accessRole, ownerIds, primaryOwnerId }) =>
+    computeEffectiveAccessRole({
+      userId,
+      accessRole: normalizeNonOwnerAccessRole(accessRole),
+      ownerIds,
+      primaryOwnerId,
+    });
 
   const inferLegacyAccessRole = (user) => {
     const permissions = Array.isArray(user?.permissions)
@@ -125,15 +150,16 @@ export const createUserAccessRuntime = (dependencies = {}) => {
     return next;
   };
 
-  const normalizeUsers = (users) => {
+  const normalizeUsers = (users, { useAuthAccess = true } = {}) => {
     const ownerIds = resolveOwnerIds();
     const primaryOwnerId = resolvePrimaryOwnerId(ownerIds);
     return users.map((user, index) => {
       const normalizedId = String(user.id || "");
       const legacyRole = inferLegacyAccessRole(user);
-      const accessRole = computeEffectiveAccessRole({
+      const authAccess = useAuthAccess ? resolveAuthAccessRecord(normalizedId) : null;
+      const accessRole = resolveEffectiveAccessRole({
         userId: normalizedId,
-        accessRole: normalizeAccessRole(user.accessRole, legacyRole),
+        accessRole: authAccess?.accessRole || normalizeAccessRole(user.accessRole, legacyRole),
         ownerIds,
         primaryOwnerId,
       });
@@ -150,7 +176,7 @@ export const createUserAccessRuntime = (dependencies = {}) => {
         socials: sanitizeSocials(user.socials),
         favoriteWorks: sanitizeFavoriteWorksByCategory(user.favoriteWorks),
         status: user.status === "retired" ? "retired" : "active",
-        permissions: normalizePermissionsRaw(user.permissions),
+        permissions: normalizePermissionsRaw(authAccess?.permissions || user.permissions),
         roles: removeOwnerRoleLabel(Array.isArray(user.roles) ? user.roles.filter(Boolean) : []),
         avatarDisplay: normalizeAvatarDisplay(user.avatarDisplay),
         accessRole,
@@ -177,16 +203,17 @@ export const createUserAccessRuntime = (dependencies = {}) => {
     const user = users.find((item) => item.id === normalizedId) || null;
     const ownerIds = resolveOwnerIds();
     const primaryOwnerId = resolvePrimaryOwnerId(ownerIds);
-    const accessRole = computeEffectiveAccessRole({
+    const authAccess = resolveAuthAccessRecord(normalizedId);
+    const accessRole = resolveEffectiveAccessRole({
       userId: normalizedId,
-      accessRole: user?.accessRole || AccessRole.NORMAL,
+      accessRole: authAccess?.accessRole || user?.accessRole || AccessRole.NORMAL,
       ownerIds,
       primaryOwnerId,
     });
     const grants = computeGrants({
       userId: normalizedId,
       accessRole,
-      permissions: user?.permissions,
+      permissions: authAccess?.permissions || user?.permissions,
       ownerIds,
       primaryOwnerId,
       acceptLegacyStar: isRbacV2AcceptLegacyStar,
@@ -208,6 +235,10 @@ export const createUserAccessRuntime = (dependencies = {}) => {
   };
 
   const findLegacyPermissionsByUserId = (userId) => {
+    const authAccess = resolveAuthAccessRecord(userId);
+    if (authAccess?.permissions) {
+      return authAccess.permissions;
+    }
     const user = normalizeUsers(loadUsers()).find((item) => item.id === String(userId));
     return Array.isArray(user?.permissions) ? user.permissions : [];
   };
@@ -550,7 +581,7 @@ export const createUserAccessRuntime = (dependencies = {}) => {
   const enforceUserAccessInvariants = (usersInput) => {
     const ownerIds = resolveOwnerIds();
     const primaryOwnerId = resolvePrimaryOwnerId(ownerIds);
-    return normalizeUsers(usersInput).map((user) => {
+    return normalizeUsers(usersInput, { useAuthAccess: false }).map((user) => {
       const effectiveAccessRole = computeEffectiveAccessRole({
         userId: user.id,
         accessRole: user.accessRole,
@@ -609,7 +640,7 @@ export const createUserAccessRuntime = (dependencies = {}) => {
       ? ownerIdsInput.map((id) => String(id))
       : resolveOwnerIds();
     const primaryOwnerId = resolvePrimaryOwnerId(ownerIds);
-    const accessRole = computeEffectiveAccessRole({
+    const accessRole = resolveEffectiveAccessRole({
       userId: user.id,
       accessRole: user.accessRole,
       ownerIds,
@@ -632,7 +663,7 @@ export const createUserAccessRuntime = (dependencies = {}) => {
   };
 
   const applyOwnerRole = (user) => {
-    const isOwnerUser = isOwner(user.id);
+    const isOwnerUser = resolveOwnerIds().includes(String(user.id));
     return {
       ...user,
       roles: addOwnerRoleLabel(user.roles || [], isOwnerUser),
@@ -664,12 +695,12 @@ export const createUserAccessRuntime = (dependencies = {}) => {
 
   const syncAllowedUsers = (users) => {
     const activeIds = users.filter((user) => user.status === "active").map((user) => user.id);
-    const unique = Array.from(new Set([...loadOwnerIds(), ...activeIds]));
+    const unique = Array.from(new Set([...resolveOwnerIds(), ...activeIds]));
     writeAllowedUsers(unique);
   };
 
   const ensureOwnerUser = (sessionUser) => {
-    if (!sessionUser || !isOwner(sessionUser.id)) {
+    if (!sessionUser || !resolveOwnerIds().includes(String(sessionUser.id))) {
       return;
     }
 

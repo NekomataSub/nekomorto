@@ -78,13 +78,18 @@ import { createAuditLogStore } from "./lib/audit-log-store.js";
 import * as authzLib from "./lib/authz.js";
 import {
   betterAuthSessionBridge,
+  getBetterAuthAccessRecord,
   listBetterAuthActiveSessionsForUser,
   loadBetterAuthSessionIndexRecords,
+  loadBetterAuthOwnerIds,
+  primeBetterAuthAccessCacheFromUsers,
   registerBetterAuthCompatibilityRoutes,
   registerBetterAuthHandler,
+  refreshBetterAuthAccessCache,
   revokeBetterAuthSessionBySid,
   resetBetterAuthPasskeysForUser,
   resetBetterAuthTotpForUser,
+  syncBetterAuthAccessFromUsers,
   touchBetterAuthSessionIndexFromRequest,
 } from "./lib/better-auth-runtime.js";
 import {
@@ -764,13 +769,82 @@ const {
   isPwaDevEnabled,
   isRbacV2AcceptLegacyStar,
   isRbacV2Enabled,
+  isServerLogPretty,
   normalizeSiteSettings,
   normalizeUploadsDeep,
   projectImageExportJobsDir,
   projectImageImportJobsDir,
+  serverLogLevel,
+  serverLogRequestScope,
   sessionCookieConfig,
 } = buildServerBootConfig({
   repoRootDir: REPO_ROOT_DIR,
+});
+
+const SERVER_LOG_LEVEL_PRIORITY = Object.freeze({
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40,
+  silent: 100,
+});
+
+const canLogServerEvent = (level) =>
+  SERVER_LOG_LEVEL_PRIORITY[serverLogLevel] <= SERVER_LOG_LEVEL_PRIORITY[level];
+
+const normalizeLogError = (error) => ({
+  name: String(error?.name || "Error"),
+  message: String(error?.message || error || ""),
+  code: error?.code ? String(error.code) : undefined,
+  stack: typeof error?.stack === "string" ? error.stack : undefined,
+});
+
+const logServerEvent = (level, msg, details = {}) => {
+  if (!canLogServerEvent(level)) {
+    return;
+  }
+  const payload = {
+    level,
+    msg,
+    ts: new Date().toISOString(),
+    ...details,
+  };
+  const logFn =
+    level === "error" ? console.error : level === "warn" ? console.warn : console.log;
+  if (isServerLogPretty) {
+    const detailText = Object.entries(details)
+      .filter(([, value]) => value !== undefined && value !== null && value !== "")
+      .map(([key, value]) => `${key}=${typeof value === "object" ? JSON.stringify(value) : value}`)
+      .join(" ");
+    logFn(`[${payload.ts}] ${level.toUpperCase()} ${msg}${detailText ? ` ${detailText}` : ""}`);
+    return;
+  }
+  logFn(JSON.stringify(payload));
+};
+
+const serverLogger = {
+  error: (message) => logServerEvent("error", "server_log", { message: String(message || "") }),
+  log: (message) => logServerEvent("info", "server_log", { message: String(message || "") }),
+  warn: (message) => logServerEvent("warn", "server_log", { message: String(message || "") }),
+};
+
+process.on("warning", (warning) => {
+  logServerEvent("warn", "process_warning", {
+    warning: normalizeLogError(warning),
+  });
+});
+
+process.on("unhandledRejection", (reason) => {
+  logServerEvent("error", "unhandled_rejection", {
+    error: normalizeLogError(reason),
+  });
+});
+
+process.on("uncaughtException", (error) => {
+  logServerEvent("error", "uncaught_exception", {
+    error: normalizeLogError(error),
+  });
+  process.exit(1);
 });
 
 const metricsRegistry = createMetricsRegistry({
@@ -945,6 +1019,52 @@ const {
   sanitizeIconSource,
 });
 
+const syncBetterAuthAccessFromCurrentState = (usersInput = null, ownerIdsInput = null) =>
+  syncBetterAuthAccessFromUsers({
+    users: Array.isArray(usersInput) ? usersInput : loadUsers(),
+    ownerIds: resolveEffectiveOwnerIds(ownerIdsInput, { includeAuthOwners: false }),
+  }).catch((error) => {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "better_auth_access_sync_failed",
+        error: error?.message || String(error),
+      }),
+    );
+  });
+
+const normalizeRuntimeOwnerIds = (ids) =>
+  Array.from(
+    new Set((Array.isArray(ids) ? ids : []).map((id) => String(id || "").trim()).filter(Boolean)),
+  );
+
+const resolveEffectiveOwnerIds = (ownerIdsInput = null, { includeAuthOwners = true } = {}) =>
+  normalizeRuntimeOwnerIds([
+    ...OWNER_IDS,
+    ...(Array.isArray(ownerIdsInput) ? ownerIdsInput : loadOwnerIds()),
+    ...(includeAuthOwners ? loadBetterAuthOwnerIds() : []),
+  ]);
+
+const writeUsersWithBetterAuthAccess = (users) => {
+  writeUsers(users);
+  primeBetterAuthAccessCacheFromUsers({ users, ownerIds: resolveEffectiveOwnerIds() });
+  void syncBetterAuthAccessFromCurrentState(users, null);
+};
+
+const writeOwnerIdsWithBetterAuthAccess = (ids) => {
+  writeOwnerIds(ids);
+  const ownerIds = resolveEffectiveOwnerIds(ids, { includeAuthOwners: false });
+  primeBetterAuthAccessCacheFromUsers({ users: loadUsers(), ownerIds });
+  void syncBetterAuthAccessFromCurrentState(null, ids);
+};
+
+const isEffectiveOwner = (id) => resolveEffectiveOwnerIds().includes(String(id));
+const getEffectivePrimaryOwnerId = () => resolveEffectiveOwnerIds()[0] || null;
+const isEffectivePrimaryOwner = (id) => {
+  const primaryOwnerId = getEffectivePrimaryOwnerId();
+  return Boolean(primaryOwnerId && String(id) === String(primaryOwnerId));
+};
+
 const {
   clientDistDir,
   clientRootDir,
@@ -962,6 +1082,15 @@ const {
   primaryAppOrigin: PRIMARY_APP_ORIGIN,
   isProduction,
 });
+
+logServerEvent("info", "server_runtime_created", {
+  mode: isProduction ? "production" : "development",
+  viteDevServer: Boolean(viteDevServer),
+  clientDistDir,
+  primaryAppHost: PRIMARY_APP_HOST || "unset",
+});
+
+await refreshBetterAuthAccessCache();
 
 const clientBuildManifest = readClientBuildManifest({
   clientRootDir,
@@ -1022,6 +1151,17 @@ if (isProduction && !OWNER_IDS.length && !BOOTSTRAP_TOKEN) {
   throw new Error("Missing OWNER_IDS or BOOTSTRAP_TOKEN in env.");
 }
 
+logServerEvent("info", "server_boot_config", {
+  mode: isProduction ? "production" : "development",
+  port: Number(PORT),
+  maintenance: isMaintenanceMode,
+  metrics: isMetricsEnabled,
+  logLevel: serverLogLevel,
+  logRequestScope: serverLogRequestScope,
+  logPretty: isServerLogPretty,
+  publicOriginHost: PRIMARY_APP_HOST || "unset",
+});
+
 registerRuntimeMiddleware({
   app,
   attachAuthSession: betterAuthSessionBridge,
@@ -1045,6 +1185,10 @@ registerRuntimeMiddleware({
   pwaManifestCacheControl: PWA_MANIFEST_CACHE_CONTROL,
   pwaThemeColorDark: PWA_THEME_COLOR_DARK,
   pwaThemeColorLight: PWA_THEME_COLOR_LIGHT,
+  serverLogLevel,
+  serverLogRequestScope,
+  serverLogger: console,
+  isServerLogPretty,
   primaryAppHost: PRIMARY_APP_HOST,
   primaryAppOrigin: PRIMARY_APP_ORIGIN,
   registerBeforeBodyParsers: registerBetterAuthHandler,
@@ -1404,17 +1548,19 @@ const userRuntime = createUserRuntimeBundle(
     expandLegacyPermissions,
     filterAnalyticsEvents,
     generateTotpSecret,
+    getAuthAccessRecord: getBetterAuthAccessRecord,
     getDispatchCriticalSecurityEventWebhook: () => dispatchCriticalSecurityEventWebhook,
     getIpv4Network24,
     getRequestIp,
     hashRecoveryCode,
     isDiscordAvatarUrl,
-    isOwner,
+    isOwner: isEffectiveOwner,
     isPlainObject,
-    isPrimaryOwner,
+    isPrimaryOwner: isEffectivePrimaryOwner,
     isRbacV2AcceptLegacyStar,
     isRbacV2Enabled,
     loadAnalyticsEvents,
+    loadAuthOwnerIds: loadBetterAuthOwnerIds,
     loadComments,
     loadOwnerIds,
     loadPosts,
@@ -1450,7 +1596,7 @@ const userRuntime = createUserRuntimeBundle(
     upsertSecurityEvent,
     verifyTotpCode,
     writeAllowedUsers,
-    writeUsers,
+    writeUsers: writeUsersWithBetterAuthAccess,
   }),
 );
 
@@ -1487,6 +1633,8 @@ const loadUserSessionIndexRecords = loadBetterAuthSessionIndexRecords;
 const revokeSessionBySid = revokeBetterAuthSessionBySid;
 const revokeUserSessionIndexRecord = () => {};
 const updateSessionIndexFromRequest = touchBetterAuthSessionIndexFromRequest;
+
+await syncBetterAuthAccessFromCurrentState();
 
 const { evaluateOperationalMonitoring } = createOperationalMonitoringRuntime(
   buildOperationalMonitoringRuntimeDependencies({
@@ -1624,8 +1772,8 @@ const {
 } = webhookRuntime;
 
 const { requireAuth, requirePrimaryOwner } = createRouteGuards({
-  isOwner,
-  isPrimaryOwner,
+  isOwner: (id) => isEffectiveOwner(id) || isOwner(id),
+  isPrimaryOwner: (id) => isEffectivePrimaryOwner(id) || isPrimaryOwner(id),
 });
 
 const adminExportRuntime = createAdminExportRuntime(
@@ -2262,7 +2410,7 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   getInstitutionalOgCachedRender,
   getPageTitleFromPath,
   getPostOgCachedRender,
-  getPrimaryOwnerId,
+  getPrimaryOwnerId: () => getEffectivePrimaryOwnerId() || getPrimaryOwnerId(),
   getProjectEpisodePageCount,
   getProjectOgCachedRender,
   getProjectReadingOgCachedRender,
@@ -2296,9 +2444,9 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   isEpubImportJobStorageAvailable,
   isHomeHeroShellEnabled,
   isMetricsEnabled,
-  isOwner,
+  isOwner: (id) => isEffectiveOwner(id) || isOwner(id),
   isPlainObject,
-  isPrimaryOwner,
+  isPrimaryOwner: (id) => isEffectivePrimaryOwner(id) || isPrimaryOwner(id),
   isPrivateUploadFolder,
   isProjectImageImportJobStorageAvailable,
   isRbacV2Enabled,
@@ -2315,7 +2463,7 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   loadIntegrationSettings,
   loadIntegrationSettingsSources,
   loadLinkTypes,
-  loadOwnerIds,
+  loadOwnerIds: () => resolveEffectiveOwnerIds(),
   loadUserIdentityRecords,
   loadPages,
   loadPostVersions,
@@ -2430,7 +2578,7 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   writeIntegrationSettings,
   writeAllowedUsers,
   writeLinkTypes,
-  writeOwnerIds,
+  writeOwnerIds: writeOwnerIdsWithBetterAuthAccess,
   writePages: writePagesWithPublicPrerender,
   writePosts: writePostsWithPublicPrerender,
   writeProjects: writeProjectsWithPublicPrerender,
@@ -2441,7 +2589,7 @@ const rootRouteRegistrationDependencies = buildRootServerRegistrationSource({
   writeUploadBufferToStaging,
   writeUploads,
   writeUserPreferences,
-  writeUsers,
+  writeUsers: writeUsersWithBetterAuthAccess,
 });
 
 const rootRouteContexts = createRootServerRouteContexts(rootRouteRegistrationDependencies);
@@ -2456,7 +2604,17 @@ if (isAstroPublicRuntimeEnabled) {
 }
 
 registerServerRoutes(rootRouteContexts.serverRouteDependencies);
-app.use(createGlobalErrorHandler());
+app.use(
+  createGlobalErrorHandler({
+    logger: (payload) => {
+      try {
+        logServerEvent("error", "request_failed", JSON.parse(String(payload)));
+      } catch {
+        logServerEvent("error", "request_failed", { payload: String(payload) });
+      }
+    },
+  }),
+);
 
 const listenPort = Number(PORT);
 startServerJobs({
@@ -2469,6 +2627,7 @@ startServerJobs({
   isAutoUploadReorganizationOnStartupEnabled,
   isMaintenanceMode,
   listenPort,
+  logger: serverLogger,
   operationalAlertsWebhookState,
   rateLimiter,
   runAutoUploadReorganization: runAutoUploadReorganizationWithPublicPrerender,
@@ -2479,11 +2638,15 @@ startServerJobs({
 });
 
 const drainPersistQueueOnShutdown = async (signal) => {
-  console.log(`[server] ${signal} received, draining persist queue...`);
+  logServerEvent("info", "shutdown_signal_received", { signal });
   try {
     await dataRepositoryAdaptersRuntime.flushPersistQueue?.();
-  } catch {
-    // ignore drain errors during shutdown
+    logServerEvent("info", "shutdown_persist_queue_drained", { signal });
+  } catch (error) {
+    logServerEvent("error", "shutdown_persist_queue_drain_failed", {
+      signal,
+      error: normalizeLogError(error),
+    });
   }
   process.exit(0);
 };

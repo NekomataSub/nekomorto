@@ -232,6 +232,62 @@ describe("user-access-runtime", () => {
     );
   });
 
+  it("uses Better Auth access records before legacy profile permissions", () => {
+    const runtime = createUserAccessRuntime(
+      createDeps({
+        getAuthAccessRecord: (userId) =>
+          String(userId) === "editor-1"
+            ? {
+                id: "editor-1",
+                accessRole: "normal",
+                permissions: ["projects_v2"],
+              }
+            : null,
+        loadAuthOwnerIds: () => [],
+        isRbacV2Enabled: true,
+      }),
+    );
+
+    const context = runtime.getUserAccessContextById("editor-1");
+
+    expect(context.accessRole).toBe("normal");
+    expect(context.grants).toEqual({ permissions: ["projects_v2"] });
+    expect(runtime.canManageProjects("editor-1")).toBe(true);
+    expect(runtime.canManagePosts("editor-1")).toBe(false);
+  });
+
+  it("keeps runtime owners ahead of Better Auth owners", () => {
+    const runtime = createUserAccessRuntime(
+      createDeps({
+        loadAuthOwnerIds: () => ["auth-owner", "owner-1"],
+        getAuthAccessRecord: (userId) =>
+          String(userId) === "auth-owner"
+            ? {
+                id: "auth-owner",
+                accessRole: "owner_primary",
+                permissions: ["*"],
+              }
+            : null,
+        isRbacV2Enabled: true,
+      }),
+    );
+
+    expect(runtime.getUserAccessContextById("owner-1")).toEqual(
+      expect.objectContaining({
+        accessRole: "owner_primary",
+        isOwner: true,
+        isPrimaryOwner: true,
+      }),
+    );
+    expect(runtime.getUserAccessContextById("auth-owner")).toEqual(
+      expect.objectContaining({
+        accessRole: "owner_secondary",
+        isOwner: true,
+        isPrimaryOwner: false,
+      }),
+    );
+  });
+
   it("builds dashboard overview metrics and analytics series", () => {
     const runtime = createUserAccessRuntime(createDeps());
 
@@ -329,5 +385,48 @@ describe("user-access-runtime", () => {
     ]);
     expect(deps.writeAllowedUsers).toHaveBeenCalledWith(["owner-1", "editor-1"]);
     expect(runtime.permissionsForRead(["users_access_v2"])).toEqual(["users_access_v2"]);
+  });
+
+  it("does not let stale Better Auth access override user access mutations", () => {
+    const runtime = createUserAccessRuntime(
+      createDeps({
+        getAuthAccessRecord: (userId) =>
+          String(userId) === "editor-1"
+            ? {
+                id: "editor-1",
+                accessRole: "admin",
+                permissions: ["users_v2"],
+              }
+            : null,
+        isRbacV2Enabled: true,
+        loadAuthOwnerIds: () => [],
+      }),
+    );
+
+    expect(
+      runtime.enforceUserAccessInvariants([
+        {
+          id: "editor-1",
+          name: "Editor",
+          phrase: "",
+          bio: "",
+          avatarUrl: null,
+          avatarDisplay: "square",
+          socials: [],
+          favoriteWorks: {},
+          status: "active",
+          permissions: ["posts_v2"],
+          roles: ["staff"],
+          accessRole: "normal",
+          order: 0,
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        id: "editor-1",
+        accessRole: "normal",
+        permissions: ["posts_v2"],
+      }),
+    ]);
   });
 });

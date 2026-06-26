@@ -42,10 +42,12 @@ export const createUserProfileRuntime = (dependencies = {}) => {
     createRevisionToken,
     ensureOwnerUser,
     enforceUserAccessInvariants,
+    getAuthAccessRecord,
     isDiscordAvatarUrl,
     isOwner,
     isRbacV2AcceptLegacyStar = false,
     isRbacV2Enabled = false,
+    loadAuthOwnerIds,
     loadOwnerIds,
     loadUploads,
     loadUsers,
@@ -130,6 +132,16 @@ export const createUserProfileRuntime = (dependencies = {}) => {
     revision: buildUserProfileRevisionToken(user, uploadsInput),
   });
 
+  const normalizeNonOwnerAccessRole = (accessRole) => {
+    if (
+      accessRole === AccessRole.OWNER_PRIMARY ||
+      accessRole === AccessRole.OWNER_SECONDARY
+    ) {
+      return AccessRole.NORMAL;
+    }
+    return accessRole || AccessRole.NORMAL;
+  };
+
   const syncSessionUserDisplayProfile = (req, user, uploadsInput = null) => {
     if (!req?.session?.user || !user) {
       return;
@@ -155,18 +167,26 @@ export const createUserProfileRuntime = (dependencies = {}) => {
     const users = normalizeUsers(loadUsers());
     const matched = users.find((user) => user.id === String(sessionUser.id));
     const uploads = loadUploads();
-    const ownerIds = loadOwnerIds().map((id) => String(id));
+    const authAccess =
+      typeof getAuthAccessRecord === "function" ? getAuthAccessRecord(sessionUser?.id) : null;
+    const authOwnerIds =
+      typeof loadAuthOwnerIds === "function" ? loadAuthOwnerIds().map((id) => String(id)) : [];
+    const ownerIds = Array.from(
+      new Set([...loadOwnerIds().map((id) => String(id)), ...authOwnerIds]),
+    );
     const primaryOwnerId = ownerIds[0] ? String(ownerIds[0]) : null;
     const accessRole = computeEffectiveAccessRole({
       userId: sessionUser?.id,
-      accessRole: matched?.accessRole || AccessRole.NORMAL,
+      accessRole: normalizeNonOwnerAccessRole(
+        authAccess?.accessRole || matched?.accessRole || AccessRole.NORMAL,
+      ),
       ownerIds,
       primaryOwnerId,
     });
     const grants = computeGrants({
       userId: sessionUser?.id,
       accessRole,
-      permissions: matched?.permissions,
+      permissions: authAccess?.permissions || matched?.permissions,
       ownerIds,
       primaryOwnerId,
       acceptLegacyStar: isRbacV2AcceptLegacyStar,
@@ -190,7 +210,7 @@ export const createUserProfileRuntime = (dependencies = {}) => {
       socials: matched?.socials || sessionUser?.socials || [],
       favoriteWorks: matched?.favoriteWorks || sessionUser?.favoriteWorks || {},
       status: matched?.status || sessionUser?.status || "active",
-      permissions: permissionsForRead(matched?.permissions || []),
+      permissions: permissionsForRead(authAccess?.permissions || matched?.permissions || []),
       roles,
       accessRole,
       ownerIds,

@@ -14,6 +14,23 @@ export const parseEnvInteger = (value, fallback, min, max) => {
   return Math.min(Math.max(Math.floor(parsed), min), max);
 };
 
+const SERVER_LOG_LEVELS = new Set(["debug", "info", "warn", "error", "silent"]);
+const SERVER_LOG_REQUEST_SCOPES = new Set(["api", "public", "all"]);
+
+export const normalizeServerLogLevel = (value, fallback = "info") => {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return SERVER_LOG_LEVELS.has(normalized) ? normalized : fallback;
+};
+
+export const normalizeServerLogRequestScope = (value, fallback = "api") => {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return SERVER_LOG_REQUEST_SCOPES.has(normalized) ? normalized : fallback;
+};
+
 export const buildServerBootConfig = ({ env = process.env, repoRootDir = process.cwd() } = {}) => {
   const {
     DATABASE_URL = "",
@@ -59,6 +76,9 @@ export const buildServerBootConfig = ({ env = process.env, repoRootDir = process
     PUBLIC_PRERENDER_ENABLED: PUBLIC_PRERENDER_ENABLED_ENV = "",
     PUBLIC_PRERENDER_DIR: PUBLIC_PRERENDER_DIR_ENV = "",
     ANALYTICS_COMPACTION_INTERVAL_MS: ANALYTICS_COMPACTION_INTERVAL_MS_ENV = "",
+    SERVER_LOG_LEVEL: SERVER_LOG_LEVEL_ENV = "",
+    SERVER_LOG_PRETTY: SERVER_LOG_PRETTY_ENV = "",
+    SERVER_LOG_REQUEST_SCOPE: SERVER_LOG_REQUEST_SCOPE_ENV = "",
     VITE_PWA_DEV_ENABLED: VITE_PWA_DEV_ENABLED_ENV = "false",
     HOME_HERO_SHELL_ENABLED: HOME_HERO_SHELL_ENABLED_ENV = "true",
     NODE_ENV = "",
@@ -82,6 +102,9 @@ export const buildServerBootConfig = ({ env = process.env, repoRootDir = process
   const isPwaDevEnabled = VITE_PWA_DEV_ENABLED_ENV === "true";
   const isHomeHeroShellEnabled = isTruthyEnv(HOME_HERO_SHELL_ENABLED_ENV, true);
   const isPublicPrerenderEnabled = isTruthyEnv(PUBLIC_PRERENDER_ENABLED_ENV, isProduction);
+  const serverLogLevel = normalizeServerLogLevel(SERVER_LOG_LEVEL_ENV, "info");
+  const serverLogRequestScope = normalizeServerLogRequestScope(SERVER_LOG_REQUEST_SCOPE_ENV, "api");
+  const isServerLogPretty = isTruthyEnv(SERVER_LOG_PRETTY_ENV, !isProduction);
   const MFA_ENROLLMENT_TTL_MS = Number.isFinite(Number(MFA_ENROLLMENT_TTL_MS_ENV))
     ? Math.min(Math.max(Math.floor(Number(MFA_ENROLLMENT_TTL_MS_ENV)), 60_000), 24 * 60 * 60 * 1000)
     : 10 * 60 * 1000;
@@ -248,9 +271,12 @@ export const buildServerBootConfig = ({ env = process.env, repoRootDir = process
     normalizeUploadsDeep,
     projectImageExportJobsDir,
     projectImageImportJobsDir,
+    serverLogLevel,
+    serverLogRequestScope,
     sessionCookieConfig,
     sessionSecretList,
     IDEMPOTENCY_TTL_MS,
+    isServerLogPretty,
   };
 };
 

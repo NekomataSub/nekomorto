@@ -1,26 +1,42 @@
 const runStartupMaintenance = async ({
   enqueueAnalyticsCompactionJob,
   isAutoUploadReorganizationOnStartupEnabled,
+  logger = console,
   runAutoUploadReorganization,
   runStartupSecuritySanitization,
 } = {}) => {
   try {
-    runStartupSecuritySanitization?.();
-  } catch {
-    // ignore startup sanitization failures on boot
+    if (typeof runStartupSecuritySanitization === "function") {
+      runStartupSecuritySanitization();
+      logger.log?.("[server] startup security sanitization completed");
+    }
+  } catch (error) {
+    logger.error?.(
+      `[server] startup security sanitization failed: ${String(error?.message || error)}`,
+    );
   }
 
   try {
-    await enqueueAnalyticsCompactionJob?.({ trigger: "startup" });
-  } catch {
-    // ignore analytics compaction failures on boot
+    if (typeof enqueueAnalyticsCompactionJob === "function") {
+      await enqueueAnalyticsCompactionJob({ trigger: "startup" });
+      logger.log?.("[server] startup analytics compaction enqueued");
+    }
+  } catch (error) {
+    logger.error?.(
+      `[server] startup analytics compaction failed: ${String(error?.message || error)}`,
+    );
   }
 
   if (isAutoUploadReorganizationOnStartupEnabled) {
     try {
-      await runAutoUploadReorganization?.({ trigger: "startup" });
-    } catch {
-      // ignore auto-reorganization failures on boot
+      if (typeof runAutoUploadReorganization === "function") {
+        await runAutoUploadReorganization({ trigger: "startup" });
+        logger.log?.("[server] startup upload reorganization completed");
+      }
+    } catch (error) {
+      logger.error?.(
+        `[server] startup upload reorganization failed: ${String(error?.message || error)}`,
+      );
     }
   }
 };
@@ -35,6 +51,7 @@ export const startServerJobs = ({
   isAutoUploadReorganizationOnStartupEnabled,
   isMaintenanceMode,
   listenPort,
+  logger = console,
   onListening,
   operationalAlertsWebhookState,
   rateLimiter,
@@ -45,13 +62,14 @@ export const startServerJobs = ({
   webhookDeliveryWorkerState,
 } = {}) => {
   httpServer.listen(listenPort, () => {
-    console.log(
+    logger.log?.(
       `[server] listening on :${listenPort} (data_source=db, maintenance=${isMaintenanceMode})`,
     );
     setImmediate(() => {
       void runStartupMaintenance({
         enqueueAnalyticsCompactionJob,
         isAutoUploadReorganizationOnStartupEnabled,
+        logger,
         runAutoUploadReorganization,
         runStartupSecuritySanitization,
       });
@@ -65,10 +83,14 @@ export const startServerJobs = ({
       void enqueueAnalyticsCompactionJob({ trigger: "interval" }).catch(() => undefined);
     }, ANALYTICS_COMPACTION_INTERVAL_MS);
     analyticsCompactionState.timer.unref?.();
+    logger.log?.(
+      `[server] analytics compaction scheduled every ${ANALYTICS_COMPACTION_INTERVAL_MS}ms`,
+    );
     webhookDeliveryWorkerState.timer = setInterval(() => {
       void runWebhookDeliveryWorkerTick();
     }, WEBHOOK_WORKER_POLL_INTERVAL_MS);
     webhookDeliveryWorkerState.timer.unref?.();
+    logger.log?.(`[server] webhook worker scheduled every ${WEBHOOK_WORKER_POLL_INTERVAL_MS}ms`);
     setImmediate(() => {
       void runWebhookDeliveryWorkerTick();
     });
@@ -76,6 +98,9 @@ export const startServerJobs = ({
       void runOperationalAlertsSchedulerTick();
     }, OPERATIONAL_ALERTS_SCHEDULER_POLL_MS);
     operationalAlertsWebhookState.timer.unref?.();
+    logger.log?.(
+      `[server] operational alerts scheduler scheduled every ${OPERATIONAL_ALERTS_SCHEDULER_POLL_MS}ms`,
+    );
     setImmediate(() => {
       void runOperationalAlertsSchedulerTick();
     });
@@ -83,14 +108,14 @@ export const startServerJobs = ({
 
   httpServer.on("error", (error) => {
     if (error?.code === "EADDRINUSE") {
-      console.error(
-        `[server] Port ${listenPort} is already in use. Stop the existing process or run "npm run dev" to perform automatic cleanup.`,
+      logger.error?.(
+        `[server] Port ${listenPort} is already in use. Stop the existing process or run "npm run dev" to perform automatic cleanup. code=${String(error.code)}`,
       );
       process.exit(1);
       return;
     }
-    console.error(
-      `[server] Failed to start HTTP server on :${listenPort}. ${String(error?.message || "Unknown error")}`,
+    logger.error?.(
+      `[server] Failed to start HTTP server on :${listenPort}. ${String(error?.stack || error?.message || "Unknown error")}`,
     );
     process.exit(1);
   });
