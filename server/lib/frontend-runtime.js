@@ -71,6 +71,8 @@ export const createViteDevServer = async ({
     middlewareMode: true,
     hmr: {
       overlay: false,
+    },
+    ws: {
       ...(httpServer ? { server: httpServer } : {}),
     },
   };

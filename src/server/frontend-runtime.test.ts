@@ -80,6 +80,8 @@ describe("frontend-runtime", () => {
             middlewareMode: true,
             hmr: expect.objectContaining({
               overlay: false,
+            }),
+            ws: expect.objectContaining({
               server: httpServer,
             }),
           }),
