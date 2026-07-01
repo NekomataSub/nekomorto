@@ -6,6 +6,7 @@ services:
     depends_on:
       app:
         condition: service_healthy
+    command: tunnel --no-autoupdate run
     env_file:
       - ${ENV_FILE:-.env.prod}
     environment:
