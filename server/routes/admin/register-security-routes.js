@@ -299,11 +299,32 @@ export const registerSecurityRoutes = ({
     const currentSid = String(req.sessionID || "");
     let rows = [];
     try {
-      rows = (await loadUserSessionIndexRecords({ includeRevoked: false }))
-        .filter((entry) => !entry.revokedAt)
-        .sort(
-          (a, b) => new Date(b.lastSeenAt || 0).getTime() - new Date(a.lastSeenAt || 0).getTime(),
-        );
+      rows = (await loadUserSessionIndexRecords({ includeRevoked: false })).filter(
+        (entry) => !entry.revokedAt,
+      );
+      const currentBetterAuthSession = req.betterAuthSession?.session || null;
+      const currentBetterAuthToken = String(currentBetterAuthSession?.token || "").trim();
+      const currentBetterAuthUserId = String(req.betterAuthSession?.user?.id || actorId).trim();
+      if (
+        currentBetterAuthToken &&
+        currentBetterAuthUserId &&
+        !rows.some((entry) => String(entry?.sid || "") === currentBetterAuthToken)
+      ) {
+        rows.push({
+          sid: currentBetterAuthToken,
+          userId: currentBetterAuthUserId,
+          createdAt: currentBetterAuthSession.createdAt || null,
+          lastSeenAt:
+            currentBetterAuthSession.updatedAt || currentBetterAuthSession.createdAt || null,
+          lastIp: currentBetterAuthSession.ipAddress || "",
+          userAgent: currentBetterAuthSession.userAgent || "",
+          revokedAt: null,
+          isPendingMfa: false,
+        });
+      }
+      rows.sort(
+        (a, b) => new Date(b.lastSeenAt || 0).getTime() - new Date(a.lastSeenAt || 0).getTime(),
+      );
     } catch (error) {
       return next(error);
     }

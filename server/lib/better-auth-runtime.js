@@ -23,6 +23,8 @@ const authSecret = String(
   process.env.BETTER_AUTH_SECRET || process.env.SESSION_SECRET || "",
 ).trim();
 const authAccessCache = new Map();
+const sessionTouchTsByToken = new Map();
+const SESSION_TOUCH_MIN_INTERVAL_MS = 30 * 1000;
 const ownerIdsFromEnv = String(process.env.OWNER_IDS || "")
   .split(",")
   .map((id) => id.trim())
@@ -547,6 +549,14 @@ const toSessionIndexRecord = (entry, { currentToken = "" } = {}) => ({
   currentForViewer: currentToken ? entry.token === currentToken : false,
 });
 
+const getRequestIpFromHeaders = (req) => {
+  const forwardedFor = String(req?.headers?.["x-forwarded-for"] || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)[0];
+  return forwardedFor || String(req?.ip || req?.socket?.remoteAddress || "").trim();
+};
+
 export const loadBetterAuthSessionIndexRecords = async ({
   userId = null,
   includeRevoked = false,
@@ -574,7 +584,38 @@ export const revokeBetterAuthSessionBySid = async ({ sid } = {}) => {
   return result.count > 0;
 };
 
-export const touchBetterAuthSessionIndexFromRequest = () => {};
+export const touchBetterAuthSessionIndexFromRequest = async (req, { force = false } = {}) => {
+  const token = String(req?.betterAuthSession?.session?.token || req?.sessionID || "").trim();
+  const userId = String(req?.betterAuthSession?.user?.id || req?.session?.user?.id || "").trim();
+  if (!token || !userId || !req?.betterAuthSession?.session?.token) {
+    return false;
+  }
+
+  const nowTs = Date.now();
+  const lastTouchTs = Number(sessionTouchTsByToken.get(token) || 0);
+  if (
+    !force &&
+    Number.isFinite(lastTouchTs) &&
+    nowTs - lastTouchTs < SESSION_TOUCH_MIN_INTERVAL_MS
+  ) {
+    return false;
+  }
+  sessionTouchTsByToken.set(token, nowTs);
+
+  try {
+    await prisma.authSession.updateMany({
+      where: { token, userId },
+      data: {
+        updatedAt: new Date(nowTs),
+        ipAddress: getRequestIpFromHeaders(req) || null,
+        userAgent: String(req?.headers?.["user-agent"] || "").slice(0, 512) || null,
+      },
+    });
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 const requireBetterAuthSession = (req, res, next) => {
   if (!req.betterAuthSession?.user?.id) {

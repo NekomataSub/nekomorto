@@ -33,7 +33,12 @@ const getRoute = (routes, method, path) =>
 
 const createMockRes = () => ({
   body: null as any,
+  headers: {} as Record<string, string>,
   statusCode: 200,
+  setHeader(name: string, value: string) {
+    this.headers[name] = value;
+    return this;
+  },
   status(code) {
     this.statusCode = code;
     return this;
@@ -191,5 +196,88 @@ describe("registerSecurityRoutes", () => {
     expect(dependencies.emitSecurityEvent).toHaveBeenCalledWith(
       expect.objectContaining({ type: "passkey_reset_admin", targetUserId: "user-2" }),
     );
+  });
+
+  it("includes the current Better Auth session when the active-session loader is empty", async () => {
+    const { app, routes } = createAppRecorder();
+    const dependencies = createDependencies({
+      app,
+      overrides: {
+        isOwner: vi.fn((id) => id === "owner-1"),
+        loadUserSessionIndexRecords: vi.fn(async () => []),
+        loadUsers: vi.fn(() => [
+          {
+            id: "owner-1",
+            name: "Owner",
+            avatarUrl: "/uploads/owner.png",
+          },
+        ]),
+      },
+    });
+    registerSecurityRoutes(dependencies);
+
+    const route = getRoute(routes, "GET", "/api/admin/sessions/active");
+    const res = await invokeFinalHandler(route, {
+      query: {},
+      session: { user: { id: "owner-1" } },
+      sessionID: "current-token",
+      betterAuthSession: {
+        session: {
+          token: "current-token",
+          createdAt: "2026-07-01T10:00:00.000Z",
+          updatedAt: "2026-07-01T10:05:00.000Z",
+          ipAddress: "203.0.113.10",
+          userAgent: "Current Browser",
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["Cache-Control"]).toBe("no-store");
+    expect(res.body).toEqual({
+      sessions: [
+        expect.objectContaining({
+          sid: "current-token",
+          userId: "owner-1",
+          userName: "Owner",
+          userAvatarUrl: "/uploads/owner.png",
+          lastIp: "203.0.113.10",
+          userAgent: "Current Browser",
+          currentForViewer: true,
+        }),
+      ],
+      page: 1,
+      limit: 100,
+      total: 1,
+    });
+  });
+
+  it("keeps the active-session inventory forbidden for non-owners", async () => {
+    const { app, routes } = createAppRecorder();
+    const dependencies = createDependencies({
+      app,
+      overrides: {
+        isOwner: vi.fn(() => false),
+        loadUserSessionIndexRecords: vi.fn(async () => [
+          {
+            sid: "sid-1",
+            userId: "user-1",
+            lastSeenAt: "2026-07-01T10:05:00.000Z",
+          },
+        ]),
+      },
+    });
+    registerSecurityRoutes(dependencies);
+
+    const route = getRoute(routes, "GET", "/api/admin/sessions/active");
+    const res = await invokeFinalHandler(route, {
+      query: {},
+      session: { user: { id: "admin-1" } },
+      sessionID: "sid-1",
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.body).toEqual({ error: "forbidden" });
+    expect(dependencies.loadUserSessionIndexRecords).not.toHaveBeenCalled();
   });
 });
