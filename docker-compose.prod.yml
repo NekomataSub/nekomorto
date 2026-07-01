@@ -133,8 +133,8 @@ services:
       APP_WWW_DOMAIN: ${APP_WWW_DOMAIN}
     volumes:
       - ./ops/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - ${NGINX_TLS_CERT_PATH}:/etc/nginx/certs/app.crt:ro
-      - ${NGINX_TLS_KEY_PATH}:/etc/nginx/certs/app.key:ro
+      - ${NGINX_TLS_CERT_PATH:-/dev/null}:/etc/nginx/certs/app.crt:ro
+      - ${NGINX_TLS_KEY_PATH:-/dev/null}:/etc/nginx/certs/app.key:ro
     networks:
       - nekomorto_internal
     logging:
@@ -161,7 +161,7 @@ services:
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
       - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL:-noreply@example.com}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
       - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
