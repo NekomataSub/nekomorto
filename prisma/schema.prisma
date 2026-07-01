@@ -143,12 +143,13 @@ model AuthVerification {
 }
 
 model AuthTwoFactor {
-  id          String   @id
-  secret      String
-  backupCodes String
-  userId      String
-  verified    Boolean  @default(true)
-  user        AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                      String   @id
+  secret                  String
+  backupCodes             String
+  userId                  String
+  verified                Boolean  @default(true)
+  failedVerificationCount Int      @default(0)
+  user                    AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([secret], map: "auth_two_factors_secret_idx")
   @@index([userId], map: "auth_two_factors_userId_idx")
