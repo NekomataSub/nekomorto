@@ -174,7 +174,7 @@ describe("registerUserManagementRoutes", () => {
     );
   });
 
-  it("requires email when creating a managed user", async () => {
+  it("requires email or discord id when creating a managed user", async () => {
     const { app, routes } = createAppRecorder();
     const dependencies = createDependencies({
       app,
@@ -197,12 +197,107 @@ describe("registerUserManagementRoutes", () => {
         id: "",
         name: "Alice",
         email: "",
+        discordUserID: "",
       },
       session: { user: { id: "owner-1" } },
     });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body).toEqual({ error: "email_required" });
+    expect(res.body).toEqual({ error: "email_or_discord_id_required" });
+  });
+
+  it("creates a managed user with only discord id and no email", async () => {
+    const { app, routes } = createAppRecorder();
+    const persistCurrentUsers = vi.fn(({ users }) => users);
+    const dependencies = createDependencies({
+      app,
+      overrides: {
+        persistCurrentUsers,
+        getUserAccessContextById: vi.fn(() => ({
+          accessRole: AccessRole.OWNER_PRIMARY,
+          grants: { manage: true },
+          isOwner: true,
+          isPrimaryOwner: true,
+        })),
+        can: vi.fn(({ permissionId }) => permissionId === PermissionId.USUARIOS),
+      },
+    });
+
+    registerUserManagementRoutes(dependencies);
+
+    const route = getRoute(routes, "POST", "/api/users");
+    const res = await invokeFinalHandler(route, {
+      body: {
+        id: "",
+        name: "Alice",
+        email: "",
+        discordUserID: "123456789012345678",
+      },
+      session: { user: { id: "owner-1" } },
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.user).toEqual(
+      expect.objectContaining({
+        id: expect.stringMatching(/^user_[a-f0-9]{32}$/),
+        name: "Alice",
+        email: null,
+        discordUserID: "123456789012345678",
+      }),
+    );
+    expect(persistCurrentUsers).toHaveBeenCalledWith(
+      expect.objectContaining({
+        users: expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.stringMatching(/^user_[a-f0-9]{32}$/),
+            name: "Alice",
+            email: null,
+            discordUserID: "123456789012345678",
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("creates a managed user with both email and discord id", async () => {
+    const { app, routes } = createAppRecorder();
+    const persistCurrentUsers = vi.fn(({ users }) => users);
+    const dependencies = createDependencies({
+      app,
+      overrides: {
+        persistCurrentUsers,
+        getUserAccessContextById: vi.fn(() => ({
+          accessRole: AccessRole.OWNER_PRIMARY,
+          grants: { manage: true },
+          isOwner: true,
+          isPrimaryOwner: true,
+        })),
+        can: vi.fn(({ permissionId }) => permissionId === PermissionId.USUARIOS),
+      },
+    });
+
+    registerUserManagementRoutes(dependencies);
+
+    const route = getRoute(routes, "POST", "/api/users");
+    const res = await invokeFinalHandler(route, {
+      body: {
+        id: "",
+        name: "Alice",
+        email: "alice@example.com",
+        discordUserID: "123456789012345678",
+      },
+      session: { user: { id: "owner-1" } },
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.user).toEqual(
+      expect.objectContaining({
+        id: expect.stringMatching(/^user_[a-f0-9]{32}$/),
+        name: "Alice",
+        email: "alice@example.com",
+        discordUserID: "123456789012345678",
+      }),
+    );
   });
 
   it("blocks secondary owners from reordering owner accounts", async () => {

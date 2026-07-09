@@ -79,6 +79,7 @@ export const registerUserManagementRoutes = ({
       phrase,
       bio,
       email,
+      discordUserID,
       avatarUrl,
       avatarDisplay,
       socials,
@@ -93,10 +94,13 @@ export const registerUserManagementRoutes = ({
       return res.status(400).json({ error: "name_required" });
     }
 
-    const targetId = String(id || "").trim() || buildGeneratedManagedUserId();
+    const trimmedId = String(id || "").trim();
+    const trimmedEmail = String(email || "").trim();
+    const trimmedDiscordId = String(discordUserID || "").trim();
+    const targetId = trimmedId || buildGeneratedManagedUserId();
 
-    if (!String(email || "").trim()) {
-      return res.status(400).json({ error: "email_required" });
+    if (!trimmedEmail && !trimmedDiscordId) {
+      return res.status(400).json({ error: "email_or_discord_id_required" });
     }
 
     if (!targetId) {
@@ -117,6 +121,7 @@ export const registerUserManagementRoutes = ({
         avatarDisplay,
         avatarUrl,
         bio,
+        discordUserID,
         email,
         favoriteWorks,
         id: targetId,
@@ -169,6 +174,7 @@ export const registerUserManagementRoutes = ({
       avatarUrl,
       bio,
       defaultPermissionsForRole,
+      discordUserID,
       email,
       favoriteWorks,
       id: targetId,

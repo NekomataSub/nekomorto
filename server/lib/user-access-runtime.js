@@ -172,6 +172,7 @@ export const createUserAccessRuntime = (dependencies = {}) => {
         phrase: user.phrase || "",
         bio: user.bio || "",
         email: normalizedEmail || null,
+        discordUserID: String(user.discordUserID || "").trim() || null,
         avatarUrl: user.avatarUrl || null,
         socials: sanitizeSocials(user.socials),
         favoriteWorks: sanitizeFavoriteWorksByCategory(user.favoriteWorks),

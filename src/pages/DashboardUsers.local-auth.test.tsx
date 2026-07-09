@@ -249,7 +249,7 @@ const renderDashboardUsers = (
 const openNewUserDialog = async () => {
   const addButton = await screen.findByRole("button", { name: /adicionar usuário/i });
   fireEvent.click(addButton);
-  await screen.findByLabelText(/id interno/i);
+  await screen.findByLabelText(/id do discord/i);
 };
 
 const clickSave = () => {
@@ -357,14 +357,14 @@ describe("DashboardUsers connected accounts", () => {
     expect(screen.getByText(/e-mail:\s*user@example.com/i)).toBeInTheDocument();
   });
 
-  it("mantém o id interno visível no self-edit de admin", async () => {
+  it("mantém o id do discord visível no self-edit de admin", async () => {
     installLocationMock();
     setupApiMock();
 
     renderDashboardUsers("/dashboard/usuarios?edit=me");
 
     await screen.findAllByText(/métodos de acesso/i);
-    expect(screen.getByLabelText(/id interno/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/id do discord/i)).toBeInTheDocument();
   });
 
   it("esconde o campo editável de e-mail para usuário sem gestão", async () => {
@@ -378,7 +378,7 @@ describe("DashboardUsers connected accounts", () => {
     expect(screen.queryByLabelText(/e-mail de acesso/i)).not.toBeInTheDocument();
   });
 
-  it("esconde também o id interno para usuário sem gestão", async () => {
+  it("esconde também o id do discord para usuário sem gestão", async () => {
     installLocationMock();
     setupApiMock({ currentUser: normalCurrentUserValue });
 
@@ -386,10 +386,10 @@ describe("DashboardUsers connected accounts", () => {
 
     await screen.findByRole("heading", { name: /gest.o de usu.rios/i });
     await screen.findByText(/editar usu.rio/i);
-    expect(screen.queryByLabelText(/id interno/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/id do discord/i)).not.toBeInTheDocument();
   });
 
-  it("explica que o id interno pode ser gerado automaticamente", async () => {
+  it("explica que é preciso informar id do discord ou e-mail", async () => {
     installLocationMock();
     setupApiMock();
 
@@ -397,26 +397,22 @@ describe("DashboardUsers connected accounts", () => {
     await openNewUserDialog();
 
     expect(
-      screen.getByText(/você pode deixar em branco para gerar o id interno automaticamente/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/será definido ao salvar/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/o id interno será gerado automaticamente ao salvar/i),
-    ).toBeInTheDocument();
+      screen.getAllByText(/informe o id do discord ou o e-mail de acesso/i).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
-  it("mostra os campos de id interno e e-mail de acesso na criação", async () => {
+  it("mostra os campos de id do discord e e-mail de acesso na criação", async () => {
     installLocationMock();
     setupApiMock();
 
     renderDashboardUsers("/dashboard/usuarios");
     await openNewUserDialog();
 
-    expect(screen.getByLabelText(/id interno/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/id do discord/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/e-mail de acesso/i)).toHaveAttribute("type", "email");
   });
 
-  it("mostra feedback ao tentar criar usuário sem e-mail", async () => {
+  it("mostra feedback ao tentar criar usuário sem e-mail e sem id", async () => {
     installLocationMock();
     setupApiMock();
 
@@ -427,7 +423,7 @@ describe("DashboardUsers connected accounts", () => {
 
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "Informe o e-mail de acesso",
+        title: "Informe o ID do Discord ou o e-mail de acesso",
         variant: "destructive",
       }),
     );

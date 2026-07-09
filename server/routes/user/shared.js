@@ -325,6 +325,7 @@ export const buildLegacyManagedUser = ({
   avatarDisplay,
   avatarUrl,
   bio,
+  discordUserID,
   favoriteWorks,
   id,
   name,
@@ -347,6 +348,9 @@ export const buildLegacyManagedUser = ({
     String(email || "")
       .trim()
       .toLowerCase() || null,
+  discordUserID:
+    String(discordUserID || "")
+      .trim() || null,
   avatarUrl: avatarUrl || null,
   avatarDisplay: normalizeAvatarDisplay(avatarDisplay),
   socials: sanitizeSocials(socials),
@@ -364,6 +368,7 @@ export const buildRbacManagedUser = ({
   avatarUrl,
   bio,
   defaultPermissionsForRole,
+  discordUserID,
   email,
   favoriteWorks,
   id,
@@ -400,6 +405,9 @@ export const buildRbacManagedUser = ({
       String(email || "")
         .trim()
         .toLowerCase() || null,
+    discordUserID:
+      String(discordUserID || "")
+        .trim() || null,
     avatarUrl: avatarUrl || null,
     avatarDisplay: normalizeAvatarDisplay(avatarDisplay),
     socials: sanitizeSocials(socials),
@@ -428,6 +436,10 @@ export const buildLegacyManagedUserUpdate = ({
         .trim()
         .toLowerCase() || null
     : (existing.email ?? null),
+  discordUserID: Object.prototype.hasOwnProperty.call(update, "discordUserID")
+    ? String(update.discordUserID || "")
+        .trim() || null
+    : (existing.discordUserID ?? null),
   avatarUrl: update.avatarUrl ?? existing.avatarUrl,
   avatarDisplay:
     update.avatarDisplay !== undefined
@@ -467,6 +479,10 @@ export const buildRbacManagedUserUpdate = ({
           .trim()
           .toLowerCase() || null
       : (existing.email ?? null),
+    discordUserID: Object.prototype.hasOwnProperty.call(basicPatch, "discordUserID")
+      ? String(basicPatch.discordUserID || "")
+          .trim() || null
+      : (existing.discordUserID ?? null),
     avatarDisplay:
       basicPatch.avatarDisplay !== undefined
         ? normalizeAvatarDisplay(basicPatch.avatarDisplay)

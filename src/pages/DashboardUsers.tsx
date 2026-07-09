@@ -104,6 +104,7 @@ type UserRecord = {
   phrase: string;
   bio: string;
   email?: string | null;
+  discordUserID?: string | null;
   avatarUrl?: string | null;
   revision?: string | null;
   socials?: Array<{ label: string; href: string }>;
@@ -312,6 +313,7 @@ const createEmptyForm = () => ({
   phrase: "",
   bio: "",
   email: "",
+  discordUserID: "",
   avatarUrl: "",
   socials: [] as Array<{ label: string; href: string }>,
   favoriteWorksDraft: createEmptyFavoriteWorksDraft(),
@@ -756,6 +758,7 @@ const DashboardUsers = () => {
         phrase: user.phrase,
         bio: user.bio,
         email: user.email || "",
+        discordUserID: user.discordUserID || "",
         avatarUrl: user.avatarUrl || "",
         socials: user.socials ? [...user.socials] : [],
         favoriteWorksDraft: toFavoriteWorksDraft(user.favoriteWorks),
@@ -1507,6 +1510,7 @@ const DashboardUsers = () => {
       phrase: formState.phrase.trim(),
       bio: formState.bio.trim(),
       email: formState.email.trim().toLowerCase() || null,
+      discordUserID: formState.discordUserID.trim() || null,
       avatarUrl: formState.avatarUrl.trim() || null,
       socials: formState.socials.filter((item) => item.label.trim() && item.href.trim()),
       favoriteWorks: buildFavoriteWorksPayloadFromDraft(formState.favoriteWorksDraft),
@@ -1545,15 +1549,14 @@ const DashboardUsers = () => {
     if (!editingUser && !basePayload.name) {
       toast({
         title: "Informe pelo menos o nome do usuário",
-        description: "O e-mail de acesso é obrigatório para a pré-criação da conta.",
         variant: "destructive",
       });
       return;
     }
-    if (!editingUser && !basePayload.email) {
+    if (!editingUser && !basePayload.email && !basePayload.discordUserID) {
       toast({
-        title: "Informe o e-mail de acesso",
-        description: "O sistema gera o ID interno automaticamente ao salvar.",
+        title: "Informe o ID do Discord ou o e-mail de acesso",
+        description: "Pelo menos um dos dois é obrigatório para criar o usuário.",
         variant: "destructive",
       });
       return;
@@ -1977,12 +1980,13 @@ const DashboardUsers = () => {
   const editorUserLabel = editingUser ? "Usuário em edição" : "Novo usuário";
   const editorUserTitle = formState.name.trim() || "Sem nome";
   const editorUserId = formState.id.trim() || "Será definido ao salvar";
+  const editorDiscordId = formState.discordUserID.trim();
   const editorAccessRoleLabel =
     ownerToggle || isOwnerRecord ? "Dono" : formState.accessRole === "admin" ? "Admin" : "Normal";
   const editorStatusLabel = formState.status === "active" ? "Ativo" : "Aposentado";
   const editorDialogDescription = editingUser
     ? "Atualize as informações e permissões do usuário."
-    : "Cadastre um novo usuário autorizado. O ID interno será gerado automaticamente ao salvar.";
+    : "Cadastre um novo usuário autorizado. Informe o ID do Discord ou o e-mail de acesso.";
 
   const renderUserCard = ({
     user,
@@ -2355,7 +2359,9 @@ const DashboardUsers = () => {
                       variant="outline"
                       className="w-full min-w-0 max-w-full truncate text-[10px] uppercase tracking-[0.12em] sm:w-auto"
                     >
-                      <span className="truncate">ID {editorUserId}</span>
+                      <span className="truncate">
+                        {editorDiscordId ? `Discord ${editorDiscordId}` : `ID ${editorUserId}`}
+                      </span>
                     </Badge>
                   ) : null}
                   <Badge variant="secondary" className="text-[10px] uppercase tracking-[0.12em]">
@@ -2402,17 +2408,29 @@ const DashboardUsers = () => {
                             <Input
                               id="user-id"
                               value={formState.id}
+                              placeholder="Gerado automaticamente"
+                              disabled
+                            />
+                          </DashboardFieldStack>
+                        ) : null}
+                        {showInternalIdField ? (
+                          <DashboardFieldStack>
+                            <Label htmlFor="user-discord-id">ID do Discord</Label>
+                            <Input
+                              id="user-discord-id"
+                              value={formState.discordUserID}
                               onChange={(event) =>
-                                setFormState((prev) => ({ ...prev, id: event.target.value }))
+                                setFormState((prev) => ({
+                                  ...prev,
+                                  discordUserID: event.target.value,
+                                }))
                               }
-                              placeholder={
-                                editingUser ? "ID interno" : "Gerado automaticamente ao salvar"
-                              }
-                              disabled={Boolean(editingUser) || !canManageUsers}
+                              placeholder="ID numérico do Discord"
+                              disabled={!canEditBasicFields}
                             />
                             {!editingUser ? (
                               <p className="text-xs text-muted-foreground">
-                                Você pode deixar em branco para gerar o ID interno automaticamente.
+                                Informe o ID do Discord ou o e-mail de acesso. Pelo menos um é obrigatório.
                               </p>
                             ) : null}
                           </DashboardFieldStack>

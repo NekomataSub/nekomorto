@@ -63,6 +63,82 @@ const findAuthEligibleUserProfileById = async (userId) => {
   return isUserProfileEligibleForAuth(user) ? user : null;
 };
 
+const repairDiscordOAuthUserIdMismatch = async (authUserId) => {
+  const authUser = await prisma.authUser.findUnique({
+    where: { id: authUserId },
+    include: { accounts: { where: { providerId: "discord" } } },
+  });
+  console.log("[nekomorto] repair: authUser found:", !!authUser, "discord accounts:", authUser?.accounts?.length ?? 0);
+  if (!authUser?.accounts?.[0]?.accountId) {
+    return null;
+  }
+  const discordId = authUser.accounts[0].accountId;
+  console.log("[nekomorto] repair: looking up UserRecord by discordUserID:", discordId);
+  const allRecords = await prisma.userRecord.findMany({
+    select: { id: true, status: true, data: true },
+  });
+  console.log("[nekomorto] repair: total UserRecords:", allRecords.length, "discordIDs:", allRecords.map((r) => String(r.data?.discordUserID || "")).join(", "));
+  const userRecord = allRecords.find(
+    (entry) => String(entry.data?.discordUserID || "").trim() === discordId,
+  ) || null;
+  console.log("[nekomorto] repair: userRecord found:", !!userRecord, userRecord ? `id=${userRecord.id} status=${userRecord.status}` : "");
+  if (!isUserProfileEligibleForAuth(userRecord)) {
+    return null;
+  }
+  if (userRecord.id === authUserId) {
+    return userRecord;
+  }
+  console.log(
+    "[nekomorto] repairing auth user id mismatch:",
+    authUserId,
+    "->",
+    userRecord.id,
+    "discord:",
+    discordId,
+  );
+  const fullAuthUser = await prisma.authUser.findUnique({
+    where: { id: authUserId },
+  });
+  const discordAccount = authUser.accounts[0];
+  await prisma.$transaction([
+    prisma.authUser.delete({ where: { id: authUserId } }),
+    prisma.authUser.create({
+      data: {
+        id: userRecord.id,
+        name: fullAuthUser.name,
+        email: fullAuthUser.email,
+        emailVerified: fullAuthUser.emailVerified,
+        image: fullAuthUser.image,
+        role: fullAuthUser.role,
+        permissions: fullAuthUser.permissions,
+        banned: fullAuthUser.banned,
+        banReason: fullAuthUser.banReason,
+        banExpires: fullAuthUser.banExpires,
+        twoFactorEnabled: fullAuthUser.twoFactorEnabled,
+        createdAt: fullAuthUser.createdAt,
+        updatedAt: fullAuthUser.updatedAt,
+      },
+    }),
+    prisma.authAccount.create({
+      data: {
+        id: discordAccount.id,
+        accountId: discordAccount.accountId,
+        providerId: discordAccount.providerId,
+        userId: userRecord.id,
+        accessToken: discordAccount.accessToken,
+        refreshToken: discordAccount.refreshToken,
+        idToken: discordAccount.idToken,
+        accessTokenExpiresAt: discordAccount.accessTokenExpiresAt,
+        refreshTokenExpiresAt: discordAccount.refreshTokenExpiresAt,
+        scope: discordAccount.scope,
+        createdAt: discordAccount.createdAt,
+        updatedAt: discordAccount.updatedAt,
+      },
+    }),
+  ]);
+  return userRecord;
+};
+
 const resolveOwnerRole = (userId, owners = []) => {
   const ownerIndex = owners.findIndex((entry) => String(entry.userId) === String(userId));
   if (ownerIndex === 0) {
@@ -123,6 +199,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   };
 }
 
+let pendingOAuthAccountId = null;
+
 const findApprovedUserByEmail = async (email) => {
   const normalizedEmail = String(email || "")
     .trim()
@@ -177,6 +255,63 @@ const findApprovedUserByEmail = async (email) => {
   };
 };
 
+const findApprovedUserForOAuth = async (email) => {
+  const byEmail = await findApprovedUserByEmail(email);
+  if (byEmail) {
+    console.log("[nekomorto] oauth approved by email:", byEmail.id);
+    return byEmail;
+  }
+  if (!pendingOAuthAccountId) {
+    console.log("[nekomorto] oauth rejected: no pending account id and no email match");
+    return null;
+  }
+  const discordId = pendingOAuthAccountId;
+  pendingOAuthAccountId = null;
+  console.log("[nekomorto] oauth checking discord id:", discordId);
+  const [allowed, storedOwners, users] = await Promise.all([
+    prisma.allowedUserRecord.findMany({ select: { userId: true } }),
+    prisma.ownerIdRecord.findMany({
+      select: { userId: true, position: true },
+      orderBy: { position: "asc" },
+    }),
+    prisma.userRecord.findMany({
+      select: { id: true, accessRole: true, status: true, data: true },
+    }),
+  ]);
+  const owners = [
+    ...ownerIdsFromEnv.map((userId, position) => ({ userId, position })),
+    ...storedOwners
+      .filter((entry) => !ownerIdsFromEnv.includes(String(entry.userId)))
+      .map((entry, index) => ({
+        ...entry,
+        position: ownerIdsFromEnv.length + index,
+      })),
+  ];
+  const approvedIds = new Set([...allowed, ...owners].map((entry) => String(entry.userId)));
+  const match = users.find(
+    (entry) =>
+      String(entry.data?.discordUserID || "").trim() === discordId &&
+      approvedIds.has(String(entry.id)) &&
+      isUserProfileEligibleForAuth(entry),
+  );
+  if (!match) {
+    return null;
+  }
+  const resolvedRole = resolveAccessRoleForAuthUser({
+    userId: match.id,
+    accessRole: match.accessRole,
+    owners,
+  });
+  return {
+    ...match,
+    resolvedRole,
+    resolvedPermissions: normalizeAuthPermissions(match.data?.permissions, {
+      fallbackRole: resolvedRole,
+    }),
+    syntheticEmail: `${discordId}@users.invalid`,
+  };
+};
+
 export const auth = betterAuth({
   appName: "Nekomorto",
   baseURL: appOrigin,
@@ -217,14 +352,22 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          const approved = await findApprovedUserByEmail(user.email);
+          const approved = await findApprovedUserForOAuth(user.email);
           if (!approved) {
+            console.log("[nekomorto] user.create.before: rejected for email:", user.email);
             return false;
           }
+          console.log(
+            "[nekomorto] user.create.before: approved id:",
+            approved.id,
+            "email:",
+            approved.syntheticEmail || user.email,
+          );
           return {
             data: {
               ...user,
               id: approved.id,
+              email: approved.syntheticEmail || user.email,
               role: approved.resolvedRole || "normal",
               permissions: approved.resolvedPermissions || [],
             },
@@ -236,7 +379,10 @@ export const auth = betterAuth({
       create: {
         before: async (session) => {
           const approved = await findAuthEligibleUserProfileById(session?.userId);
-          return Boolean(approved);
+          if (approved) return true;
+          const repaired = await repairDiscordOAuthUserIdMismatch(session?.userId);
+          if (!repaired) return false;
+          return { data: { userId: repaired.id } };
         },
       },
     },
@@ -260,6 +406,35 @@ export const auth = betterAuth({
       schema: { passkey: { modelName: "AuthPasskey" } },
     }),
     oauthTwoFactorGate(),
+    {
+      id: "nekomorto-discord-account-id-capture",
+      init: (ctx) => {
+        const providers = ctx.socialProviders;
+        if (Array.isArray(providers)) {
+          for (const provider of providers) {
+            if (provider && typeof provider.getUserInfo === "function") {
+              const originalGetUserInfo = provider.getUserInfo;
+              Object.defineProperty(provider, "getUserInfo", {
+                value: async function wrappedGetUserInfo(...args) {
+                  const result = await originalGetUserInfo.apply(this, args);
+                  if (result?.user?.id) {
+                    pendingOAuthAccountId = String(result.user.id);
+                    console.log(
+                      "[nekomorto] captured discord account id:",
+                      pendingOAuthAccountId,
+                    );
+                  }
+                  return result;
+                },
+                writable: true,
+                configurable: true,
+              });
+            }
+          }
+        }
+        return {};
+      },
+    },
   ],
   advanced: {
     cookiePrefix: "nekomorto-auth",

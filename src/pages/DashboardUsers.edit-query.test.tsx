@@ -336,9 +336,8 @@ describe("DashboardUsers edit query", () => {
     await screen.findByRole("heading", { name: /gest.o de usu.rios/i });
     await screen.findByRole("heading", { name: /adicionar usu.rio/i });
     expect(document.querySelector(".project-editor-dialog")).not.toBeNull();
-    expect(screen.getByLabelText(/ID interno/i).parentElement?.className).toContain("gap-2");
+    expect(screen.getByLabelText(/ID do Discord/i).parentElement?.className).toContain("gap-2");
     expect(screen.getByLabelText(/e-mail de acesso/i)).toHaveAttribute("type", "email");
-    expect(screen.getByText(/será definido ao salvar/i)).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByTestId("location-search").textContent).toBe("");
     });
@@ -449,7 +448,7 @@ describe("DashboardUsers edit query", () => {
     );
   });
 
-  it("esconde id interno, e-mail de acesso e badge de id para self-edit sem privilégio de gestão", async () => {
+  it("esconde id do discord, e-mail de acesso e badge de id para self-edit sem privilégio de gestão", async () => {
     useIsMobileMock.mockReturnValue(false);
     setupApiMock({
       currentUserGrants: {
@@ -483,7 +482,7 @@ describe("DashboardUsers edit query", () => {
     await screen.findByRole("heading", { name: /gest.o de usu.rios/i });
     await screen.findByText(/editar usu.rio/i);
 
-    expect(screen.queryByLabelText(/id interno/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/id do discord/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/e-mail de acesso/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/^ID\s/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/^acesso e permissões$/i)).not.toBeInTheDocument();
@@ -588,7 +587,7 @@ describe("DashboardUsers edit query", () => {
     });
   });
 
-  it("mostra id interno, e-mail de acesso e acesso/permissões para self-edit de owner", async () => {
+  it("mostra id do discord, e-mail de acesso e acesso/permissões para self-edit de owner", async () => {
     setupApiMock();
 
     render(
@@ -601,7 +600,7 @@ describe("DashboardUsers edit query", () => {
     await screen.findByRole("heading", { name: /gest.o de usu.rios/i });
     await screen.findByText(/editar usu.rio/i);
 
-    expect(screen.getByLabelText(/id interno/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/id do discord/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/e-mail de acesso/i)).toHaveAttribute("type", "email");
     expect(screen.getAllByText(/^ID\s/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/^acesso e permissões$/i)).toBeInTheDocument();

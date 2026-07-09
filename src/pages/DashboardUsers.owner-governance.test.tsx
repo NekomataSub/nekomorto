@@ -172,6 +172,7 @@ describe("DashboardUsers owner governance", () => {
               user: {
                 ...buildUser({ id: "user-2", name: "LuckShiba", order: 1 }),
                 ...(options?.json || {}),
+                id: "user-2",
               },
             },
             201,
@@ -188,7 +189,7 @@ describe("DashboardUsers owner governance", () => {
     renderPage();
 
     const dialog = await openNewUserDialog();
-    fireEvent.change(within(dialog).getByLabelText("ID interno"), {
+    fireEvent.change(within(dialog).getByLabelText("ID do Discord"), {
       target: { value: "user-2" },
     });
     fireEvent.change(within(dialog).getByLabelText("Nome"), {
@@ -209,8 +210,8 @@ describe("DashboardUsers owner governance", () => {
       });
       expect(createCall).toBeTruthy();
       expect((createCall?.[2] as { json?: Record<string, unknown> }).json).toMatchObject({
-        id: "user-2",
         name: "LuckShiba",
+        discordUserID: "user-2",
         accessRole: "normal",
       });
       expect((createCall?.[2] as { json?: Record<string, unknown> }).json?.accessRole).not.toBe(
@@ -269,7 +270,7 @@ describe("DashboardUsers owner governance", () => {
     renderPage();
 
     const dialog = await openUserDialog("LuckShiba");
-    expect(within(dialog).getByLabelText("ID interno")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("ID do Discord")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("E-mail de acesso")).toBeInTheDocument();
     toggleOwnerSwitch(dialog);
 
@@ -399,7 +400,7 @@ describe("DashboardUsers owner governance", () => {
     renderPage();
 
     const dialog = await openNewUserDialog();
-    fireEvent.change(within(dialog).getByLabelText("ID interno"), {
+    fireEvent.change(within(dialog).getByLabelText("ID do Discord"), {
       target: { value: "user-2" },
     });
     fireEvent.change(within(dialog).getByLabelText("Nome"), {
