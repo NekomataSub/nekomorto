@@ -2404,17 +2404,6 @@ const DashboardUsers = () => {
                       <div className="grid gap-4 md:grid-cols-2">
                         {showInternalIdField ? (
                           <DashboardFieldStack>
-                            <Label htmlFor="user-id">ID interno</Label>
-                            <Input
-                              id="user-id"
-                              value={formState.id}
-                              placeholder="Gerado automaticamente"
-                              disabled
-                            />
-                          </DashboardFieldStack>
-                        ) : null}
-                        {showInternalIdField ? (
-                          <DashboardFieldStack>
                             <Label htmlFor="user-discord-id">ID do Discord</Label>
                             <Input
                               id="user-discord-id"
