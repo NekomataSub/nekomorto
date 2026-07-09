@@ -116,7 +116,7 @@ const hashTypeOptions = [
 
 const parseHashValue = (hash?: string) => {
   const trimmed = String(hash || "").trim();
-  const match = trimmed.match(/^([A-Za-z0-9-]+):\s*(.+)$/);
+  const match = trimmed.match(/^([A-Za-z0-9-]+):\s*(.*)$/);
   if (match) {
     const type = match[1];
     if (hashTypeOptions.some((opt) => opt.value === type)) {
