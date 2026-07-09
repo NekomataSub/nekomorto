@@ -41,6 +41,22 @@ export const useProjectEditorDialogState = ({
     [anilistIdInput, formState],
   );
 
+  const isLibraryOpenRef = useRef(isLibraryOpen);
+  const libraryJustClosedRef = useRef(false);
+  const requestCloseEditorRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    if (!isLibraryOpen && isLibraryOpenRef.current) {
+      libraryJustClosedRef.current = true;
+      const timer = setTimeout(() => {
+        libraryJustClosedRef.current = false;
+      }, 100);
+      isLibraryOpenRef.current = false;
+      return () => clearTimeout(timer);
+    }
+    isLibraryOpenRef.current = isLibraryOpen;
+  }, [isLibraryOpen]);
+
   const closeEditor = useCallback(() => {
     pendingEpisodeFocusRef.current = null;
     setIsEditorOpen(false);
@@ -64,18 +80,22 @@ export const useProjectEditorDialogState = ({
     setConfirmOpen(true);
   }, [closeEditor, isDirty]);
 
+  useEffect(() => {
+    requestCloseEditorRef.current = requestCloseEditor;
+  }, [requestCloseEditor]);
+
   const handleEditorOpenChange = useCallback(
     (next: boolean) => {
-      if (!next && isLibraryOpen) {
+      if (!next && (isLibraryOpenRef.current || libraryJustClosedRef.current)) {
         return;
       }
       if (!next) {
-        requestCloseEditor();
+        requestCloseEditorRef.current();
         return;
       }
       setIsEditorOpen(true);
     },
-    [isLibraryOpen, requestCloseEditor],
+    [],
   );
 
   const markEditorSnapshot = useCallback((nextForm: ProjectForm, nextAniListIdInput: string) => {

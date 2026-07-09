@@ -77,6 +77,9 @@ export const ProjectEditorDialogShell = ({
           event.preventDefault();
         }
       }}
+      onFocusOutside={(event) => {
+        event.preventDefault();
+      }}
       onInteractOutside={(event) => {
         if (shouldPreventEditorDismiss(isLibraryOpen, event.target)) {
           event.preventDefault();
