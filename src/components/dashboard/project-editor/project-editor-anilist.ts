@@ -67,6 +67,21 @@ const formatType = (format?: string | null) => {
   }
 };
 
+const formatCountry = (country?: string | null) => {
+  switch (country) {
+    case "JP":
+      return "Japão";
+    case "KR":
+      return "Coreia do Sul";
+    case "CN":
+      return "China";
+    case "TW":
+      return "Taiwan";
+    default:
+      return country || "";
+  }
+};
+
 const stripHtml = (value?: string | null) =>
   extractPlainTextFromHtml(value, { preserveLineBreaks: true });
 
@@ -176,30 +191,34 @@ export const buildProjectFormPatchFromAniList = ({
       anilistId: media.id,
       title:
         media.title?.romaji || media.title?.english || media.title?.native || previousForm.title,
-      titleOriginal: media.title?.native || "",
-      titleEnglish: media.title?.english || "",
-      synopsis: mergedSynopsis,
-      description: mergedSynopsis,
+      titleOriginal: media.title?.native || previousForm.titleOriginal,
+      titleEnglish: media.title?.english || previousForm.titleEnglish,
+      synopsis: mergedSynopsis || previousForm.synopsis,
+      description: mergedSynopsis || previousForm.description,
       type: formatType(media.format || "") || previousForm.type,
       status: formatStatus(media.status || "") || previousForm.status,
-      year: media.seasonYear ? String(media.seasonYear) : previousForm.year,
+      year: media.seasonYear
+        ? String(media.seasonYear)
+        : media.startDate?.year
+          ? String(media.startDate.year)
+          : previousForm.year,
       studio: studio || previousForm.studio,
-      animationStudios,
+      animationStudios: animationStudios.length ? animationStudios : previousForm.animationStudios,
       episodes: media.episodes ? String(media.episodes) : previousForm.episodes,
       genres: genresFromMedia.length ? genresFromMedia : previousForm.genres,
       tags: tags.length ? tags : previousForm.tags,
       cover: media.coverImage?.extraLarge || media.coverImage?.large || previousForm.cover,
       banner: media.bannerImage || previousForm.banner,
       season: formatSeason(media.season, media.seasonYear) || previousForm.season,
-      country: media.countryOfOrigin || previousForm.country,
+      country: formatCountry(media.countryOfOrigin) || previousForm.country,
       source: media.source || previousForm.source,
-      producers,
+      producers: producers.length ? producers : previousForm.producers,
       score:
         typeof media.averageScore === "number" && Number.isFinite(media.averageScore)
           ? media.averageScore
           : (previousForm.score ?? null),
-      startDate,
-      endDate,
+      startDate: startDate || previousForm.startDate,
+      endDate: endDate || previousForm.endDate,
       relations: relations.length ? relations : previousForm.relations,
       animeStaff: staff.length ? staff : previousForm.animeStaff,
       trailerUrl: trailerUrl || previousForm.trailerUrl,
