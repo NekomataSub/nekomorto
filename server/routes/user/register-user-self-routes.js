@@ -23,6 +23,7 @@ export const registerUserSelfRoutes = ({
   parseEditRevisionOptions,
   persistCurrentUsers,
   pickBasicProfilePatch,
+  removeOwnerRoleLabel,
   requireAuth,
   resolveDiscordAvatarFallbackUrl,
   sanitizeFavoriteWorksByCategory,
@@ -98,6 +99,11 @@ export const registerUserSelfRoutes = ({
         : existing.favoriteWorks,
     };
 
+    const isOwner = ownerIds.includes(targetUserId);
+    if (isOwner && Array.isArray(update.roles)) {
+      updated.roles = removeOwnerRoleLabel(update.roles);
+    }
+
     const beforeSnapshot = currentUserSnapshot;
     users[index] = updated;
     users = persistCurrentUsers({ users });
@@ -109,11 +115,14 @@ export const registerUserSelfRoutes = ({
       userWithAccessForResponse,
     });
 
+    const diffFields = isOwner && Array.isArray(update.roles)
+      ? [...BASIC_PROFILE_FIELDS, "roles"]
+      : BASIC_PROFILE_FIELDS;
     appendAuditLog(req, "users.update_self", "users", {
       id: targetUserId,
       before: beforeSnapshot,
       after: afterSnapshot,
-      changes: diffUserFields(beforeSnapshot, afterSnapshot, BASIC_PROFILE_FIELDS),
+      changes: diffUserFields(beforeSnapshot, afterSnapshot, diffFields),
     });
     req.session.user = targetSessionUser;
     syncSessionUserDisplayProfile(req, persisted, responseUploads);

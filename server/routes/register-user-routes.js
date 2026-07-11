@@ -129,6 +129,7 @@ const SELF_DEPENDENCY_KEYS = [
   "normalizeUsers",
   "parseEditRevisionOptions",
   "pickBasicProfilePatch",
+  "removeOwnerRoleLabel",
   "requireAuth",
   "resolveDiscordAvatarFallbackUrl",
   "sanitizeFavoriteWorksByCategory",

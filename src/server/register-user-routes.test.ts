@@ -580,6 +580,159 @@ describe("registerUserRoutes", () => {
     });
   });
 
+  it("permite que dono edite suas próprias funções via /api/users/self", async () => {
+    const { app, routes } = createAppRecorder();
+    let storedUsers = [
+      {
+        id: "owner-1",
+        name: "Dono",
+        phrase: "",
+        bio: "",
+        email: "owner@example.com",
+        avatarUrl: null,
+        avatarDisplay: { x: 0, y: 0, zoom: 1, rotation: 0 },
+        socials: [],
+        favoriteWorks: { manga: [], anime: [] },
+        status: "active",
+        permissions: ["admin"],
+        roles: ["Dono", "Tradutor", "Revisor"],
+        accessRole: AccessRole.OWNER_PRIMARY,
+        order: 0,
+        username: "owner-1",
+      },
+    ];
+    const dependencies = createDependencies({
+      app,
+      overrides: {
+        loadUsers: vi.fn(() => cloneJson(storedUsers)),
+        normalizeUsers: vi.fn((users) => users),
+        loadUploads: vi.fn(() => []),
+        pickBasicProfilePatch: vi.fn((update) => ({
+          name: update.name,
+        })),
+        removeOwnerRoleLabel: vi.fn((roles) =>
+          roles.filter((r) => String(r).trim().toLowerCase() !== "dono"),
+        ),
+        writeUsers: vi.fn((users) => {
+          storedUsers = cloneJson(users);
+        }),
+        withUserProfileRevision: vi.fn((user) => ({
+          ...user,
+          revision: "self-revision",
+        })),
+      },
+    });
+
+    registerUserRoutes(dependencies);
+
+    const route = getRoute(routes, "PUT", "/api/users/self");
+
+    const res = await invokeRouteHandlers(route, {
+      body: {
+        name: "Dono Atualizado",
+        roles: ["Tradutor", "Legendador"],
+      },
+      session: {
+        user: {
+          id: "owner-1",
+          email: "owner@example.com",
+          avatarUrl: null,
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(dependencies.removeOwnerRoleLabel).toHaveBeenCalledWith(["Tradutor", "Legendador"]);
+    expect(storedUsers[0]).toEqual(
+      expect.objectContaining({
+        id: "owner-1",
+        name: "Dono Atualizado",
+        roles: ["Tradutor", "Legendador"],
+      }),
+    );
+    expect(dependencies.appendAuditLog).toHaveBeenCalledWith(
+      expect.any(Object),
+      "users.update_self",
+      "users",
+      expect.objectContaining({
+        id: "owner-1",
+        changes: expect.objectContaining({ roles: expect.anything() }),
+      }),
+    );
+  });
+
+  it("não altera funções de usuário comum via /api/users/self", async () => {
+    const { app, routes } = createAppRecorder();
+    let storedUsers = [
+      {
+        id: "user-2",
+        name: "Colaborador",
+        phrase: "",
+        bio: "",
+        email: "user@example.com",
+        avatarUrl: null,
+        avatarDisplay: { x: 0, y: 0, zoom: 1, rotation: 0 },
+        socials: [],
+        favoriteWorks: { manga: [], anime: [] },
+        status: "active",
+        permissions: [],
+        roles: ["Tradutor", "Revisor"],
+        accessRole: AccessRole.NORMAL,
+        order: 0,
+        username: "user-2",
+      },
+    ];
+    const dependencies = createDependencies({
+      app,
+      overrides: {
+        loadUsers: vi.fn(() => cloneJson(storedUsers)),
+        normalizeUsers: vi.fn((users) => users),
+        loadUploads: vi.fn(() => []),
+        pickBasicProfilePatch: vi.fn((update) => ({
+          name: update.name,
+        })),
+        removeOwnerRoleLabel: vi.fn((roles) =>
+          roles.filter((r) => String(r).trim().toLowerCase() !== "dono"),
+        ),
+        writeUsers: vi.fn((users) => {
+          storedUsers = cloneJson(users);
+        }),
+        withUserProfileRevision: vi.fn((user) => ({
+          ...user,
+          revision: "self-revision",
+        })),
+      },
+    });
+
+    registerUserRoutes(dependencies);
+
+    const route = getRoute(routes, "PUT", "/api/users/self");
+
+    const res = await invokeRouteHandlers(route, {
+      body: {
+        name: "Colaborador Atualizado",
+        roles: ["Legendador"],
+      },
+      session: {
+        user: {
+          id: "user-2",
+          email: "user@example.com",
+          avatarUrl: null,
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(dependencies.removeOwnerRoleLabel).not.toHaveBeenCalled();
+    expect(storedUsers[0]).toEqual(
+      expect.objectContaining({
+        id: "user-2",
+        name: "Colaborador Atualizado",
+        roles: ["Tradutor", "Revisor"],
+      }),
+    );
+  });
+
   it("rejects PUT /api/users/self when the session id does not match a stored user", async () => {
     const { app, routes } = createAppRecorder();
     const storedUsers = [
